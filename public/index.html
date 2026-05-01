@@ -310,6 +310,126 @@
   /* ── RESPONSIVE ───────────────────────────────────── */
   @media(max-width:1100px){.content{grid-template-columns:1fr}.rail{flex-direction:row;flex-wrap:wrap}.rail-list{flex-direction:row;flex-wrap:wrap}.lead-row{flex:1 1 260px}}
   @media(max-width:760px){.stage{padding:12px}.app{grid-template-columns:1fr;border-radius:20px}.sidebar{flex-direction:row;justify-content:flex-start;padding:10px;overflow-x:auto}.nav-spacer{display:none}.hero-title{font-size:26px}.metric-row{grid-template-columns:1fr}.det-grid{grid-template-columns:1fr}.search-modal{margin:0 12px}}
+
+  /* ── REPORTS VIEW ─────────────────────────────────── */
+  #view-reports{display:flex;flex-direction:column;min-height:0;flex:1}
+  .rep-hero{
+    padding:28px 28px 0;
+    background:radial-gradient(600px 200px at 90% -10%,rgba(149,128,255,.3) 0%,transparent 60%);
+    border-bottom:1px solid rgba(255,255,255,.04);
+  }
+  .rep-hero-inner{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:20px;flex-wrap:wrap}
+  .rep-title{font-size:26px;font-weight:700;letter-spacing:-.025em;color:var(--text)}
+  .rep-sub{font-size:13px;color:var(--text-3);margin-top:6px}
+  .rep-seg{display:inline-flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:3px;gap:2px}
+  .rep-seg button{height:28px;padding:0 13px;font-size:12px;font-weight:500;background:transparent;border:0;border-radius:7px;color:var(--text-3);transition:.15s}
+  .rep-seg button.on{background:rgba(255,255,255,.08);color:var(--text)}
+
+  .rep-feed{
+    flex:1;overflow-y:auto;
+    padding:24px 28px 48px;
+    display:flex;flex-direction:column;gap:16px;
+  }
+
+  /* Individual report card */
+  .rc{
+    background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);
+    border:1px solid rgba(255,255,255,.05);
+    border-left:3px solid var(--rc-color,rgba(255,255,255,.1));
+    border-radius:18px;
+    overflow:hidden;
+    transition:box-shadow .2s;
+  }
+  .rc:hover{box-shadow:0 8px 32px rgba(0,0,0,.3)}
+  .rc[data-grade="A"]{--rc-color:#7ce2b5}
+  .rc[data-grade="B"]{--rc-color:#f7c560}
+  .rc[data-grade="C"]{--rc-color:#ff9f43}
+  .rc[data-grade="D"]{--rc-color:#ff6770}
+
+  .rc-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+    padding:20px 24px 0;
+  }
+  .rc-num{
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-4);margin-bottom:6px;
+  }
+  .rc-name{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1.2}
+  .rc-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px;font-size:12px;color:var(--text-3)}
+  .rc-meta .dot{width:3px;height:3px;border-radius:50%;background:#3a3550}
+
+  .rc-score{display:flex;align-items:center;gap:12px;flex-shrink:0}
+  .rc-ring{position:relative;width:64px;height:64px}
+  .rc-ring svg{transform:rotate(-90deg);width:100%;height:100%}
+  .rc-ring .track{stroke:rgba(255,255,255,.06);stroke-width:5;fill:none}
+  .rc-ring .prog{stroke:var(--score-color,var(--lila));stroke-width:5;fill:none;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+  .rc-ring[data-tone="g"]{--score-color:var(--mint)}
+  .rc-ring[data-tone="y"]{--score-color:var(--amber)}
+  .rc-ring[data-tone="r"]{--score-color:var(--red)}
+  .rc-ring .rnum{position:absolute;inset:0;display:grid;place-items:center;font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .rc-ring .rnum small{font-size:9px;color:var(--text-3);font-weight:500;display:block;line-height:1;margin-top:1px}
+  .rc-gbadge{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:15px;font-weight:700}
+  .rc-gbadge[data-g="A"],.rc-gbadge[data-g="B"]{background:var(--mint-soft);color:var(--mint);border:1px solid var(--mint-line)}
+  .rc-gbadge[data-g="C"]{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber-line)}
+  .rc-gbadge[data-g="D"]{background:var(--red-soft);color:var(--red);border:1px solid var(--red-line)}
+
+  .rc-divider{height:1px;background:rgba(255,255,255,.05);margin:16px 24px}
+
+  .rc-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 24px}
+  .rc-contact{display:flex;flex-wrap:wrap;gap:6px;padding:6px 24px 0}
+
+  .rc-ig-stats{
+    display:flex;margin:12px 24px 0;
+    background:rgba(255,45,120,.05);border:1px solid rgba(255,45,120,.12);border-radius:10px;overflow:hidden;
+  }
+  .rc-ig-stat{flex:1;padding:9px 12px;border-right:1px solid rgba(255,255,255,.04)}
+  .rc-ig-stat:last-child{border-right:0}
+  .rc-ig-stat .v{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1}
+  .rc-ig-stat .l{font-size:9.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-top:3px}
+  .rc-ig-stat .v.good{color:var(--mint)}
+  .rc-ig-stat .v.warn{color:var(--amber)}
+  .rc-ig-stat .v.bad{color:var(--red)}
+
+  .rc-tags{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 24px}
+  .rc-tag-lbl{font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .rc-tag-lbl .ll{flex:1;height:1px;background:rgba(255,255,255,.05)}
+  .rc-tag-lbl.p{color:var(--red)}
+  .rc-tag-lbl.o{color:var(--mint)}
+  .rc-pillset{display:flex;flex-wrap:wrap;gap:5px}
+
+  .rc-accs{padding:0 24px 20px;display:flex;flex-direction:column;gap:8px}
+  .rc-acc{border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02);overflow:hidden}
+  .rc-acc-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s}
+  .rc-acc-head:hover{background:rgba(255,255,255,.04)}
+  .rc-acc-title{display:flex;align-items:center;gap:10px}
+  .rc-acc-icon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center}
+  .rc-acc-icon.rep{background:linear-gradient(135deg,#3a2f55,#22193a);border:1px solid rgba(149,128,255,.3);color:var(--lila)}
+  .rc-acc-icon.mail{background:linear-gradient(135deg,#3a2438,#2a1827);border-color:rgba(255,45,120,.3);border:1px solid rgba(255,45,120,.3);color:var(--pink-2)}
+  .rc-acc-icon svg{width:12px;height:12px}
+  .rc-acc-lbl{font-size:12.5px;font-weight:600}
+  .rc-acc-sub{font-size:11px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;margin-left:4px}
+  .rc-chev{width:16px;height:16px;color:var(--text-3);transition:transform .25s}
+  .rc-acc.open .rc-chev{transform:rotate(180deg);color:var(--text-2)}
+  .rc-acc-body{max-height:0;overflow:hidden;transition:max-height .35s}
+  .rc-acc.open .rc-acc-body{max-height:800px}
+  .rc-acc-inner{
+    padding:4px 16px 16px 44px;
+    border-top:1px solid rgba(255,255,255,.05);
+    opacity:0;transform:translateY(-4px);
+    transition:opacity .3s ease .05s,transform .3s ease .05s;
+    font-size:13px;line-height:1.75;color:var(--text-2);
+  }
+  .rc-acc.open .rc-acc-inner{opacity:1;transform:none}
+  .rc-report-text{white-space:pre-wrap}
+  .rc-mail-block{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:14px 16px;margin-top:10px;white-space:pre-wrap;position:relative}
+  .rc-mail-from{font-size:11px;color:var(--text-3);display:block;padding-bottom:9px;margin-bottom:9px;border-bottom:1px dashed rgba(255,255,255,.07)}
+  .rc-mail-from b{color:var(--text-2);font-weight:500}
+  .rc-copy{position:absolute;top:10px;right:10px;height:24px;padding:0 9px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--text-3);font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px;transition:.15s}
+  .rc-copy:hover{background:rgba(255,255,255,.1);color:var(--text)}
+  .rc-copy svg{width:10px;height:10px}
+  .rc-empty{padding:10px 0;color:var(--text-4);font-size:12px}
+
+  @media(max-width:760px){.rep-feed{padding:16px 16px 40px}.rc-tags{grid-template-columns:1fr}.rc-head{flex-wrap:wrap}.rep-hero{padding:20px 16px 0}}
 </style>
 </head>
 <body>
@@ -395,6 +515,8 @@
         </div>
       </div>
 
+      <!-- ── VIEW: Dashboard ── -->
+      <div id="view-dashboard">
       <div class="hero">
         <div class="hero-row">
           <div>
@@ -453,6 +575,32 @@
         </aside>
       </div>
 
+      </div><!-- /view-dashboard -->
+
+      <!-- ── VIEW: Reports ── -->
+      <div id="view-reports" style="display:none">
+        <div class="rep-hero">
+          <div class="rep-hero-inner">
+            <div>
+              <h2 class="rep-title">Tüm Lead Raporları</h2>
+              <p class="rep-sub" id="rep-sub"></p>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button class="ghost" onclick="exportCSV()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                CSV İndir
+              </button>
+              <div class="rep-seg" id="rep-sort">
+                <button class="on" onclick="repSort(this,'score')">Skor</button>
+                <button onclick="repSort(this,'name')">İsim</button>
+                <button onclick="repSort(this,'date')">Tarih</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rep-feed" id="rep-feed"></div>
+      </div>
+
     </section>
   </div>
 </div>
@@ -470,6 +618,7 @@ var SK = 'zeplin_statuses_v1';
 var activeFilter = 'all';
 var activeLeadName = leads[0] ? leads[0].name : '';
 var searchSelIdx = 0;
+var repSortMode = 'score';
 
 function getStatuses(){ try{ return JSON.parse(localStorage.getItem(SK)||'{}'); }catch(e){ return {}; } }
 function getStatus(name){ return getStatuses()[name]||'yeni'; }
@@ -839,7 +988,176 @@ function newLeadClick(){
 function navClick(el){
   document.querySelectorAll('.nav-icon').forEach(function(n){ n.classList.remove('active'); });
   el.classList.add('active');
-  toast('Bu bölüm yakında açılacak!','info');
+  var title = el.getAttribute('title');
+  if(title === 'Reports'){
+    document.getElementById('view-dashboard').style.display = 'none';
+    document.getElementById('view-reports').style.display = 'flex';
+    renderReports(repSortMode);
+  } else if(title === 'Leads'){
+    document.getElementById('view-dashboard').style.display = 'block';
+    document.getElementById('view-reports').style.display = 'none';
+  } else {
+    toast('Bu bölüm yakında açılacak!','info');
+  }
+}
+
+// ──────────────────────────────────────────────────────
+// REPORTS
+// ──────────────────────────────────────────────────────
+function fmtNum(n){
+  if(!n && n!==0) return '—';
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=1000) return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+function renderReports(sortBy){
+  sortBy = sortBy || repSortMode;
+  var sorted = leads.slice();
+  if(sortBy==='score') sorted.sort(function(a,b){ return b.scoring.score - a.scoring.score; });
+  else if(sortBy==='name') sorted.sort(function(a,b){ return a.name.localeCompare(b.name,'tr'); });
+  else sorted.sort(function(a,b){
+    var da=a.last_analyzed||''; var db=b.last_analyzed||'';
+    return db.localeCompare(da);
+  });
+
+  var sortLabel = sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
+  document.getElementById('rep-sub').textContent = sorted.length+' lead · Sıralama: '+sortLabel;
+
+  var html = sorted.map(function(L, idx){
+    var s = L.scoring;
+    var tone = gradeToTone(s.grade);
+    var igStats = (L.social && L.social.stats) || {};
+    var st = getStatus(L.name);
+    var mp = parseMail(L.ai_email);
+
+    // Score ring
+    var ringHtml =
+      '<div class="rc-ring" data-tone="'+tone+'" data-score="'+s.score+'">' +
+        '<svg viewBox="0 0 56 56"><circle class="track" cx="28" cy="28" r="23"></circle><circle class="prog" cx="28" cy="28" r="23" stroke-dasharray="144.5" stroke-dashoffset="144.5"></circle></svg>' +
+        '<div class="rnum">'+s.score+'<small>/100</small></div>' +
+      '</div>';
+
+    // Grade badge
+    var gbadge = '<div class="rc-gbadge" data-g="'+s.grade+'">'+s.grade+'</div>';
+
+    // Link chips
+    var chips = '';
+    if(L.website && L.website.has_website && L.website.website_url){
+      var wUrl = L.website.website_url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+      chips += '<a class="chip" href="'+esc(L.website.website_url)+'" target="_blank"><span class="fav" style="--fav:#76a6ff"></span>'+esc(wUrl)+'<span class="ext">↗</span></a>';
+    } else {
+      chips += '<span class="chip empty"><span class="fav"></span>Web yok</span>';
+    }
+    if(L.social && L.social.has_instagram && L.social.instagram_url){
+      chips += '<a class="chip" href="'+esc(L.social.instagram_url)+'" target="_blank"><span class="fav" style="--fav:#ff6aa3"></span>@'+esc(L.social.instagram_username||'ig')+'<span class="ext">↗</span></a>';
+    } else {
+      chips += '<span class="chip empty"><span class="fav"></span>Instagram yok</span>';
+    }
+    if(L.maps_url) chips += '<a class="chip" href="'+esc(L.maps_url)+'" target="_blank"><span class="fav" style="--fav:#7ce2b5"></span>Maps<span class="ext">↗</span></a>';
+    if(L.phone) chips += '<a class="chip phone" href="tel:'+esc(L.phone.replace(/\s/g,''))+'"><span class="fav" style="--fav:#f7c560"></span>'+esc(L.phone)+'</a>';
+
+    // Instagram stats bar
+    var igHtml = '';
+    if(L.social && L.social.has_instagram){
+      var erClass = igStats.engagement_rate>=3?'good':igStats.engagement_rate>=1?'warn':'bad';
+      igHtml = '<div class="rc-ig-stats">'+
+        '<div class="rc-ig-stat"><div class="v">'+fmtNum(igStats.followers)+'</div><div class="l">Takipçi</div></div>'+
+        '<div class="rc-ig-stat"><div class="v">'+fmtNum(igStats.post_count)+'</div><div class="l">Gönderi</div></div>'+
+        '<div class="rc-ig-stat"><div class="v">'+fmtNum(igStats.avg_likes)+'</div><div class="l">Ort. Beğeni</div></div>'+
+        '<div class="rc-ig-stat"><div class="v '+(igStats.engagement_rate!=null?erClass:'')+'">'+(igStats.engagement_rate!=null?'%'+igStats.engagement_rate:'—')+'</div><div class="l">Etkileşim</div></div>'+
+      '</div>';
+    }
+
+    // Issue & opportunity pills
+    var issueHtml = (s.issues||[]).map(function(p){ return '<span class="tpill bad">'+esc(p)+'</span>'; }).join('') || '<span style="color:var(--text-4);font-size:12px">Sorun yok</span>';
+    var oppHtml   = (s.opportunities||[]).map(function(p){ return '<span class="tpill good">'+esc(p)+'</span>'; }).join('') || '<span style="color:var(--text-4);font-size:12px">Fırsat yok</span>';
+
+    // AI accordions
+    var reportText = L.ai_report
+      ? '<div class="rc-report-text">'+esc(L.ai_report)+'</div>'
+      : '<div class="rc-empty">Rapor henüz oluşturulmadı.</div>';
+    var mailText = L.ai_email
+      ? '<div class="rc-mail-block"><span class="rc-mail-from"><b>Konu:</b> '+esc(mp.subject)+'</span>'+
+        '<button class="rc-copy" onclick="copyMailRep(\''+esc(L.name)+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Kopyala</button>'+
+        esc(mp.body)+'</div>'
+      : '<div class="rc-empty">Mail taslağı henüz oluşturulmadı.</div>';
+
+    var num = String(idx+1).padStart(2,'0');
+
+    return '<div class="rc" data-grade="'+s.grade+'">' +
+      '<div class="rc-head">' +
+        '<div style="display:flex;align-items:flex-start;gap:16px;min-width:0">' +
+          '<div style="flex-shrink:0">'+ringHtml+'</div>'+
+          '<div style="min-width:0">' +
+            '<div class="rc-num">'+num+'</div>' +
+            '<div class="rc-name">'+esc(L.name)+'</div>' +
+            '<div class="rc-meta">' +
+              gbadge+
+              (L.city?'<span class="dot"></span><span>'+esc(L.city)+'</span>':'')+
+              '<span class="dot"></span>' +
+              '<span class="pill '+STATUS_CLASS[st]+'" onclick="changeStatus(\''+esc(L.name)+'\')">'+STATUS_LABEL[st]+'</span>'+
+              (L.last_analyzed?'<span class="dot"></span><span>'+esc(L.last_analyzed)+'</span>':'')+
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rc-chips" style="margin-top:14px">'+chips+'</div>' +
+      igHtml +
+      '<div class="rc-divider"></div>' +
+      '<div class="rc-tags">' +
+        '<div><div class="rc-tag-lbl p">Sorunlar <span class="ll"></span></div><div class="rc-pillset">'+issueHtml+'</div></div>'+
+        '<div><div class="rc-tag-lbl o">Fırsatlar <span class="ll"></span></div><div class="rc-pillset">'+oppHtml+'</div></div>'+
+      '</div>' +
+      '<div class="rc-accs">' +
+        '<div class="rc-acc" data-racc>' +
+          '<div class="rc-acc-head">' +
+            '<div class="rc-acc-title"><div class="rc-acc-icon rep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 9 9l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg></div>' +
+            '<span class="rc-acc-lbl">AI Raporu</span><span class="rc-acc-sub">'+esc(teaser(L.ai_report,65))+'</span></div>' +
+            '<svg class="rc-chev" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</div>' +
+          '<div class="rc-acc-body"><div class="rc-acc-inner">'+reportText+'</div></div>' +
+        '</div>' +
+        '<div class="rc-acc" data-racc>' +
+          '<div class="rc-acc-head">' +
+            '<div class="rc-acc-title"><div class="rc-acc-icon mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>' +
+            '<span class="rc-acc-lbl">Satış Maili</span><span class="rc-acc-sub">'+esc(mp.subject||teaser(L.ai_email,55))+'</span></div>' +
+            '<svg class="rc-chev" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</div>' +
+          '<div class="rc-acc-body"><div class="rc-acc-inner">'+mailText+'</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('rep-feed').innerHTML = html;
+
+  document.querySelectorAll('[data-racc]').forEach(function(acc){
+    acc.querySelector('.rc-acc-head').addEventListener('click', function(){ acc.classList.toggle('open'); });
+  });
+
+  requestAnimationFrame(function(){
+    document.querySelectorAll('.rc-ring').forEach(function(ring){
+      ring.querySelector('.prog').style.strokeDashoffset = 144.5*(1-(+ring.dataset.score)/100);
+    });
+  });
+}
+
+function repSort(btn, mode){
+  document.querySelectorAll('#rep-sort button').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  repSortMode = mode;
+  renderReports(mode);
+}
+
+function copyMailRep(name){
+  var L = leads.find(function(l){ return l.name===name; });
+  if(!L||!L.ai_email) return;
+  navigator.clipboard.writeText(L.ai_email).then(function(){
+    toast('Mail panoya kopyalandı','copy');
+  }).catch(function(){
+    toast('Kopyalama başarısız','error');
+  });
 }
 
 // ──────────────────────────────────────────────────────
