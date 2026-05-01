@@ -455,5 +455,281 @@
     "ai_report": "Dijital Varlık Analizi Raporu:\n\n* İnziva Restaurant'ın web sitesi SSL sertifikası bulunmuyor.\n* Instagram hesabı yok.\n* Web sitesine güncelleme yapılmıyor.\n* Fırsatlar:\n + SSL sertifikası kurulumu\n + Instagram hesabının açılması ve yönetimi\n* Web sitesi ve sosyal medya hesaplarının iyileştirilmesiyle daha fazla müşteri çekilebilir.",
     "ai_email": "Konu: İnziva Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nİnziva Restaurant'i incelerken SSL eksikligini ve Instagram hesabının olmadigini gorduk. Bu kucuk detay musteri guvenini etkiliyor.\nZeplin Media olarak SSL, hiz optimizasyonu ve sosyal medya yonetiminde uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 17:49"
+  },
+  {
+    "name": "The Market at Bosphorus - Best Restaurant & Breakfast in İstanbul",
+    "maps_url": "https://www.google.com/maps/place/The+Market+at+Bosphorus+-+Best+Restaurant+%26+Breakfast+in+%C4%B0stanbul/data=!4m7!3m6!1s0x14cab62d96867885:0x967657471081094e!8m2!3d41.055978!4d29.0346338!16s%2Fg%2F1ptvvhqjv!19sChIJhXiGli22yhQRTgmBEEdXdpY?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "sector": "restaurant",
+    "phone": "(0212) 257 41 11",
+    "address": "Kuruçeşme, Kuruçeşme Arena No:56, 34345 Beşiktaş/İstanbul",
+    "rating": null,
+    "review_count": null,
+    "category": "Restoran",
+    "website": {
+      "has_website": true,
+      "website_url": "https://themarketbosphorus.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 82,
+      "website_loads": true,
+      "has_schema": false,
+      "has_og": false,
+      "meta_description": null,
+      "has_robots": true,
+      "has_sitemap": true,
+      "has_email_capture": false,
+      "has_whatsapp": false,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/themarketbosphorus/",
+      "instagram_username": "themarketbosphorus",
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": 287,
+        "avg_comments": 8,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@themarket",
+        "tiktok_username": "themarket"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": false,
+      "yemeksepeti_url": null,
+      "has_getir": false,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 55,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Az takipçi (0)",
+        "Az Google yorumu (0)",
+        "Online sipariş platformu yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Takipçi büyüme kampanyası",
+        "Yorum artırma kampanyası",
+        "Yemeksepeti / Getir entegrasyonu"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
+        "price_min": 8000,
+        "price_max": 20000,
+        "monthly": true
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "price_min": 5000,
+        "price_max": 15000,
+        "monthly": true
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "price_min": 3000,
+        "price_max": 8000,
+        "monthly": true
+      },
+      {
+        "slug": "whatsapp_business",
+        "name": "WhatsApp Business Kurulumu",
+        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
+        "price_min": 2000,
+        "price_max": 5000,
+        "monthly": false
+      },
+      {
+        "slug": "email_marketing",
+        "name": "E-posta Pazarlama Kurulumu",
+        "desc": "E-posta listesi oluşturma, otomasyon, kampanya yönetimi",
+        "price_min": 4000,
+        "price_max": 10000,
+        "monthly": true
+      },
+      {
+        "slug": "delivery_setup",
+        "name": "Yemeksepeti / Getir Profil Yönetimi",
+        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
+        "price_min": 3000,
+        "price_max": 7000,
+        "monthly": false
+      },
+      {
+        "slug": "reservation_system",
+        "name": "Online Rezervasyon Sistemi",
+        "desc": "Restoran/salon için online randevu ve rezervasyon entegrasyonu",
+        "price_min": 4000,
+        "price_max": 10000,
+        "monthly": false
+      }
+    ],
+    "estimated_value_tl": 50790,
+    "ai_report": "Dijital varlık analizi sonuçları:\n- Schema.org ve Open Graph kullanımı yok.\n- Google yorumu ve takipçi sayısı az.\n- WhatsApp ve online sipariş platformu yok.\n Öneriler:\n- Google SEO yapılandırması\n- Sosyal paylaşım meta etiketleri\n- WhatsApp Business entegrasyonu\n- Takipçi büyüme ve yorum artırma kampanyaları \n- Yemeksepeti/Getir entegrasyonu için girişimlerde bulunun.",
+    "ai_email": "Konu: The Market at Bosphorus için Growth Fırsatı\n\nMerhaba,\n\nThe Market at Bosphorus'u incelerken birkaç eksiklik gördük. Schema.org, WhatsApp butonu, online sipariş platformu ve sosyal medya takipçileri konusunda iyileştirmeye ihtiyacınız var. Bu, müşteri deneyimini ve online görünürlüğü olumlu yönde etkileyebilir. \nZeplin Media olarak restoranınızın dijital varlığını güçlendirmek konusunda uzmanız. \n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 01:54"
+  },
+  {
+    "name": "jojo Ocakbaşı meze",
+    "maps_url": "https://www.google.com/maps/place/jojo+Ocakba%C5%9F%C4%B1+meze/data=!4m7!3m6!1s0x14cab7a23fbea15d:0xc42bafae0669be9d!8m2!3d41.0514995!4d28.9866657!16s%2Fg%2F1ygbbfscq!19sChIJXaG-P6K3yhQRnb5pBq6vK8Q?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "sector": "restaurant",
+    "phone": "0541 354 51 71",
+    "address": "Bozkurt, Eşref Efendi Sk. no:2–4, 34375 Şişli/İstanbul",
+    "rating": 4.7,
+    "review_count": null,
+    "category": "Kebap Restoranı",
+    "website": {
+      "has_website": true,
+      "website_url": "http://wa.me/905413545171",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 837,
+      "website_loads": true,
+      "has_schema": false,
+      "has_og": true,
+      "meta_description": "Business Account",
+      "has_robots": true,
+      "has_sitemap": false,
+      "has_email_capture": true,
+      "has_whatsapp": true,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/whatsapp/",
+      "instagram_username": "whatsapp",
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": 21969,
+        "avg_comments": 655,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@jojo",
+        "tiktok_username": "jojo"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": false,
+      "yemeksepeti_url": null,
+      "has_getir": false,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 65,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "SSL yok",
+        "Schema.org yok",
+        "Az takipçi (0)",
+        "Az Google yorumu (0)",
+        "Online sipariş platformu yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu",
+        "Google SEO yapılandırması",
+        "Takipçi büyüme kampanyası",
+        "Yorum artırma kampanyası",
+        "Yemeksepeti / Getir entegrasyonu"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      },
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
+        "price_min": 8000,
+        "price_max": 20000,
+        "monthly": true
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "price_min": 5000,
+        "price_max": 15000,
+        "monthly": true
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "price_min": 3000,
+        "price_max": 8000,
+        "monthly": true
+      },
+      {
+        "slug": "delivery_setup",
+        "name": "Yemeksepeti / Getir Profil Yönetimi",
+        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
+        "price_min": 3000,
+        "price_max": 7000,
+        "monthly": false
+      },
+      {
+        "slug": "reservation_system",
+        "name": "Online Rezervasyon Sistemi",
+        "desc": "Restoran/salon için online randevu ve rezervasyon entegrasyonu",
+        "price_min": 4000,
+        "price_max": 10000,
+        "monthly": false
+      }
+    ],
+    "estimated_value_tl": 43707,
+    "ai_report": "Dijital Varlık Raporu:\n\n* Zayıf yönler: SSL yok, Schema.org yok, az takipçi, az Google yorumu, online sipariş platformu yok.\n* Fırsatlar: SSL kurulumu, SEO yapılandırması, takipçi büyüme kampanyası, yorum artırma kampanyası, Yemeksepeti/Getir entegrasyonu.\n* Tavsiyeler: Restoranın dijital varlığını güçlendirmek için SSL kurulumu, SEO yapılandırması ve online sipariş platformlarına entegrasyon yapmak necesario.",
+    "ai_email": "Konu: Jojo Ocakbaşı Meze icin Bir Gozlem\n\nMerhaba,\n\nJojo Ocakbaşı Meze'yi incelerken SSL eksikligini ve online varliklarinizi gorduk. Musteri guvenini ve deneyimi artirmak icin Zeplin Media olarak yardimci olabiliriz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 01:54"
   }
 ]
