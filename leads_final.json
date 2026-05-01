@@ -28,9 +28,9 @@
         "SSL kurulumu"
       ]
     },
-    "ai_report": "Kanlıca Teras'ın dijital varlık analizi:\n- Web sitesi mevcut\n- Instagram hesabına sahip\n- SSL sertifikası eksik\nPuanı: 80/100",
-    "ai_email": "Konu: Kanlıca Teras için küçük bir gözlem 👀\n\nMerhaba,\n\nKanlıca Teras'ı incelerken Instagram hesabinizin olduğunu gorduk, ancak web sitenizde SSL sertifikası eksik. Bu küçük detay, müşteri güvenini doğrudan etkiliyor ve Google sıralamalarınızda sizi geri bırakıyor.\n\nZeplin Media olarak SSL kurulumu, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kısa bir görüşmede size ücretsiz bir analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media | zeplinmedia.com",
-    "last_analyzed": "2026-05-01 01:29"
+    "ai_report": "Kanlıca Teras'ın dijital varlığı:\n- Web sitesi vardır (kanlicateras.com)\n- Instagram hesabına sahiptir\n- SSL sertifikası eksik\nPuanı: 80/100\nGüvenlik ve güvenlik sertifikası eksikliği dikkat çekiyor.",
+    "ai_email": "Konu: Kanlıca Teras için küçük bir gözlem \n\nMerhaba,\n\nKanlıca Teras'ı incelerken Instagram hesabinizin olduğunu gördük, ancak web sitenizde SSL sertifikası eksik. Bu küçük detay, müşteri güvenini doğrudan etkiliyor ve Google sıralamalarınızda sizi geri bırakıyor.\n\nZeplin Media olarak SSL kurulumu, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kisa bir görüşmede size ücretsiz bir analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media | zeplinmedia.com",
+    "last_analyzed": "2026-05-01 13:49"
   },
   {
     "name": "İBB Beykoz Sahil Sosyal Tesisleri",
@@ -179,5 +179,164 @@
         "Instagram yönetimi + içerik üretimi"
       ]
     }
+  },
+  {
+    "name": "Balkan Lokantası",
+    "maps_url": "https://www.google.com/maps/place/Balkan+Lokantas%C4%B1/data=!4m7!3m6!1s0x14cab7a23d949653:0x2ef2617304fea963!8m2!3d41.0435687!4d29.0063479!16s%2Fg%2F11bxdt1lld!19sChIJU5aUPaK3yhQRY6n-BHNh8i4?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "website": {
+      "has_website": false,
+      "website_url": null,
+      "has_ssl": false,
+      "is_mobile_friendly": false,
+      "load_time_ms": null,
+      "website_loads": false
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null
+    },
+    "scoring": {
+      "score": 0,
+      "max_score": 100,
+      "grade": "D",
+      "issues": [
+        "Web sitesi yok",
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "Web sitesi tasarımı",
+        "Instagram yönetimi"
+      ]
+    },
+    "ai_report": "Balkan Lokantası'nın dijital varlığı yok. \n- Web sitesi bulunmuyor.\n- Instagram hesabı bulunmuyor.\nDijital olarak görünür değil.",
+    "ai_email": "Konu: Balkan Lokantası için kucuk bir gozlem\n\nMerhaba,\n\nBalkan Lokantası'nı incelerken web sitenizin ve Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklikler, musteri guvenini ve isletmenizin ऑनलayınını dogrudan etkiliyor.\n\nZeplin Media olarak web sitesi tasarımı, sosyal medya hesap yönetiminde uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-01 15:07"
+  },
+  {
+    "name": "Manzara Restaurant",
+    "maps_url": "https://www.google.com/maps/place/Manzara+Restaurant/data=!4m7!3m6!1s0x14cab7a49668d6db:0x7c711454519d114b!8m2!3d41.04688!4d29.009495!16s%2Fg%2F1tg3dx_f!19sChIJ29ZolqS3yhQRSxGdUVQUcXw?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "website": {
+      "has_website": true,
+      "website_url": "https://www.hilton.com/en/hotels/isthcci-conrad-istanbul-bosphorus/dining/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 320,
+      "website_loads": false
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null
+    },
+    "scoring": {
+      "score": 55,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "Instagram yönetimi"
+      ]
+    },
+    "ai_report": "Dijital Varlık Analiz Raporu:\n\n* Web sitesi: Mevcut\n* Puan: 55/100\n* Instagram: Yok\n* Eksikler: Instagram hesabının oluşturulmamış olması\n* Öneri: Instagram hesabını oluşturarak dijital varlıklarını güçlendirebilir.",
+    "ai_email": "Konu: Manzara Restaurant icin sosyal medya bakisi\n\nMerhaba,\n\nManzara Restaurant'i incelerken web sitenizin oldugunu gorduk, ancak Instagram hesabınızın olmadığını fark ettik. Bu kucuk eksiklik, musteri iletişiminizi ve marka bilinirliğinizi olumsuz etkileyebiliyor.\n\nZeplin Media olarak Instagram hesabı oluşturma, sosyal medya yönetimi ve içerik stratejisi konularında uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-01 15:07"
+  },
+  {
+    "name": "Nevale Mutfak",
+    "maps_url": "https://www.google.com/maps/place/Nevale+Mutfak/data=!4m7!3m6!1s0x14cab7b08392c597:0x9066b94d08b4bb83!8m2!3d41.0453453!4d29.003649!16s%2Fg%2F11ndw9hs4g!19sChIJl8WSg7C3yhQRg7u0CE25ZpA?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "website": {
+      "has_website": true,
+      "website_url": "https://nevalemutfak.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 1367,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null
+    },
+    "scoring": {
+      "score": 55,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "Instagram yönetimi"
+      ]
+    },
+    "ai_report": "Nevale Mutfak'ın dijital varlik analizinin sonuclari asagidadir:\n\n* Web sitesinde var\n* Puan: 55/100\n* Eksikler:\n + Instagram hesabi yok\nNevale Mutfak, Instagram'i kullanarak dijital varligini guclendirebilir.",
+    "ai_email": "Konu: Nevale Mutfak icin dikkatlice bakis\n\nMerhaba,\n\nNevale Mutfak'i incelerken Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklik, musteri etkilesimini ve marka gorunurlugunu dogrudan etkiliyor.\n\nZeplin Media olarak sosyal medya hesabi olusturma, sosyal medya yonetimi ve dijital pazarlamada uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-01 15:07"
+  },
+  {
+    "name": "Banyan Restaurant",
+    "maps_url": "https://www.google.com/maps/place/Banyan+Restaurant/data=!4m7!3m6!1s0x14cab7c85dbba967:0x594e21bc5a3e9713!8m2!3d41.0476552!4d29.025103!16s%2Fg%2F11r8c37v9!19sChIJZ6m7Xci3yhQRE5c-WrwhTlk?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "website": {
+      "has_website": true,
+      "website_url": "https://www.banyanrestaurant.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 983,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/banyan.istanbul/",
+      "instagram_username": "banyan.istanbul"
+    },
+    "scoring": {
+      "score": 90,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [],
+      "opportunities": []
+    },
+    "ai_report": "Banyan Restaurant'ın dijital varlığı şu şekildedir:\n* Web sitesi mevcuttur.\n* Instagram hesabında aktif paylaşımlar vardır.\n* Genel puanı 90/100'dür.\n* Eksiklikler bilinmemektedir.",
+    "ai_email": "Konu: Banyan Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nBanyan Restaurant'i incelerken Instagram hesabinizin oldugunu gorduk, ancak web sitenizin mobil uyumlu olmadigini ve SEO acliklari yasadiğini gorduk. Bu kucuk detaylar, musteri guvenini ve sirketinizin online varligini dogrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu web tasarimi, SEO optimizasyonu ve sosyal medya yonetiminde uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-01 15:07"
+  },
+  {
+    "name": "Shang Palace",
+    "maps_url": "https://www.google.com/maps/place/Shang+Palace/data=!4m7!3m6!1s0x14cab79f2ab3faad:0x49a109d012175387!8m2!3d41.0407933!4d29.0051176!16s%2Fg%2F12hkx4nbr!19sChIJrfqzKp-3yhQRh1MXEtAJoUk?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Besiktas",
+    "website": {
+      "has_website": true,
+      "website_url": "https://www.shangpalacebosphorus.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 680,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/shangrilaistanbul/",
+      "instagram_username": "shangrilaistanbul"
+    },
+    "scoring": {
+      "score": 90,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [],
+      "opportunities": []
+    },
+    "ai_report": "Shang Palace'in dijital varlığı şöyle:\n- Web sitesi mevcuttur: https://www.shangpalacebosphorus.com/\n- Instagram hesabı mevcuttur: https://www.instagram.com/shangrilaistanbul/\nDijital varlığı güçlü, ancak sosyal medya hesaplarının eksiksizliği cần daha fazla dikkat gerektiriyor.",
+    "ai_email": "Konu: Shang Palace icin kucuk bir gozlem\n\nMerhaba,\n\nShang Palace'i incelerken Instagram hesabınızın olduğunu gorduk, ancak web sitenizin mobil uyumlu tasarımı biraz eksik görünüyor. Bu küçük detay, müşterilerinizi sitenizde longer tutmanızı doğrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu tasarım, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kısa bir görüşmede size ücretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-01 15:07"
   }
 ]
