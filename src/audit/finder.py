@@ -8,9 +8,34 @@ from rich.console import Console
 
 console = Console()
 
+# ── Sektör tespiti ─────────────────────────────────────
+_SECTOR_MAP = {
+    "restaurant": ["restoran","restaurant","pizza","kebap","pide","döner","börek","ocakbaşı",
+                   "cafe","kafeterya","kahve","kafe","coffee","bistro","meyhane","balık",
+                   "çiğköfte","burger","sushi","waffle","pastane","fırın","bakery"],
+    "salon":      ["kuaför","güzellik","beauty","spa","nail","berber","brow","lash","wax",
+                   "estetik","pilates","yoga","masaj","massage"],
+    "auto":       ["oto","araba","araç","servis","kaporta","lastik","galeri","garaj","yedek"],
+    "retail":     ["butik","giyim","mağaza","market","shop","aksesuar","çiçek","florist",
+                   "kitap","optik","eczane","pharmacy","jewel","mücevher"],
+    "health":     ["hastane","klinik","doktor","diş","dental","poliklinik","eczane","optik"],
+}
+
+def detect_sector(category: str | None) -> str:
+    if not category:
+        return "default"
+    cat = category.lower()
+    for sector, kws in _SECTOR_MAP.items():
+        if any(k in cat for k in kws):
+            return sector
+    return "default"
+
 # ── Google Maps ────────────────────────────────────────
 async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict:
-    result = {"website_url": None, "phone": None, "address": None}
+    result = {
+        "website_url": None, "phone": None, "address": None,
+        "rating": None, "review_count": None, "category": None,
+    }
     try:
         await page.goto(maps_url, wait_until="domcontentloaded")
         await page.wait_for_timeout(3000)
@@ -28,26 +53,18 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
                     result["website_url"] = href
                     break
 
-        # Telefon — aria-label "Telefon: +90 xxx" formatında geliyor
-        for sel in [
-            'button[data-item-id*="phone:"]',
-            'button[data-item-id*="phone"]',
-        ]:
+        # Telefon
+        for sel in ['button[data-item-id*="phone:"]', 'button[data-item-id*="phone"]']:
             phone_el = await page.query_selector(sel)
             if phone_el:
                 label = await phone_el.get_attribute("aria-label") or ""
-                # "Telefon: +90 212 327 28 29" → "+90 212 327 28 29"
                 phone = re.sub(r'^[^:]+:\s*', '', label).strip()
                 if phone:
                     result["phone"] = phone
                 break
 
-        # Adres — aria-label "Adres: Beşiktaş, İstanbul" formatı
-        for sel in [
-            'button[data-item-id="address"]',
-            'button[aria-label*="Adres"]',
-            '[data-item-id="address"]',
-        ]:
+        # Adres
+        for sel in ['button[data-item-id="address"]', 'button[aria-label*="Adres"]', '[data-item-id="address"]']:
             addr_el = await page.query_selector(sel)
             if addr_el:
                 label = await addr_el.get_attribute("aria-label") or ""
@@ -56,12 +73,63 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
                     result["address"] = addr
                 break
 
-        # Fallback: adres metnini doğrudan içerikten çek
+        content = await page.content()
+
+        # Adres fallback
         if not result["address"]:
-            content = await page.content()
             m = re.search(r'"address"\s*:\s*"([^"]{10,100})"', content)
             if m:
                 result["address"] = m.group(1)
+
+        # Rating — aria-label "4,5 yıldız" veya "4.5 stars" formatı
+        for sel in ['span[aria-label*="yıldız"]', 'span[aria-label*="star"]', 'div[aria-label*="yıldız"]']:
+            el = await page.query_selector(sel)
+            if el:
+                label = await el.get_attribute("aria-label") or ""
+                m = re.search(r'([\d][,.][\d])', label)
+                if m:
+                    result["rating"] = float(m.group(1).replace(',', '.'))
+                    break
+
+        # Rating fallback — JSON embedded
+        if not result["rating"]:
+            m = re.search(r'"ratingValue"\s*:\s*"?([\d.]+)"?', content)
+            if not m:
+                m = re.search(r'"stars"\s*:\s*([\d.]+)', content)
+            if m:
+                result["rating"] = float(m.group(1))
+
+        # Review count — "(1.234 yorum)" veya "(1,234 reviews)"
+        for pattern in [
+            r'\(([\d\.]+)\s*yorum',
+            r'\(([\d,\.]+)\s*review',
+            r'"reviewCount"\s*:\s*"?(\d+)"?',
+            r'"userRatingCount"\s*:\s*(\d+)',
+        ]:
+            m = re.search(pattern, content, re.I)
+            if m:
+                raw = m.group(1).replace('.','').replace(',','')
+                try:
+                    result["review_count"] = int(raw)
+                    break
+                except:
+                    pass
+
+        # Kategori (business type)
+        for sel in ['button[jsaction*="category"]', 'span[jsaction*="category"]',
+                    'a[jsaction*="category"]', '[data-item-id*="category"]']:
+            el = await page.query_selector(sel)
+            if el:
+                txt = (await el.inner_text()).strip()
+                if txt and len(txt) < 60:
+                    result["category"] = txt
+                    break
+
+        # Kategori fallback — JSON
+        if not result["category"]:
+            m = re.search(r'"category"\s*:\s*"([^"]{3,50})"', content)
+            if m:
+                result["category"] = m.group(1)
 
     except Exception as e:
         console.print(f"[red]Maps hata: {e}[/red]")
@@ -70,24 +138,165 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
 
 # ── Web sitesi kontrol ─────────────────────────────────
 async def check_website(url: str) -> dict:
-    empty = {"has_website": False, "website_url": None, "has_ssl": False,
-             "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False}
+    empty = {
+        "has_website": False, "website_url": None, "has_ssl": False,
+        "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False,
+        "has_schema": False, "has_og": False, "meta_description": None,
+        "has_robots": False, "has_sitemap": False,
+        "has_email_capture": False, "has_whatsapp": False,
+        "tiktok_url": None,   # tiktok link website'te varsa
+    }
     if not url:
         return empty
-    r = {"has_website": True, "website_url": url, "has_ssl": url.startswith("https"),
-         "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False}
+
+    r = {
+        "has_website": True, "website_url": url, "has_ssl": url.startswith("https"),
+        "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False,
+        "has_schema": False, "has_og": False, "meta_description": None,
+        "has_robots": False, "has_sitemap": False,
+        "has_email_capture": False, "has_whatsapp": False,
+        "tiktok_url": None,
+    }
+
     try:
-        async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            # Ana sayfa
             t0 = time.time()
             resp = await client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
             })
             r["load_time_ms"] = int((time.time() - t0) * 1000)
             r["website_loads"] = resp.status_code == 200
-            r["is_mobile_friendly"] = "viewport" in resp.text.lower()
-    except:
+
+            html = resp.text
+            html_lower = html.lower()
+
+            r["is_mobile_friendly"] = "viewport" in html_lower
+
+            # Schema.org / JSON-LD
+            r["has_schema"] = 'application/ld+json' in html_lower
+
+            # Open Graph
+            r["has_og"] = bool(re.search(r'property=["\']og:', html, re.I))
+
+            # Meta description
+            m = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']{10,300})',
+                          html, re.I)
+            if not m:
+                m = re.search(r'<meta[^>]+content=["\']([^"\']{10,300})["\'][^>]+name=["\']description["\']',
+                              html, re.I)
+            if m:
+                r["meta_description"] = m.group(1).strip()[:200]
+
+            # E-posta formu / mailto
+            r["has_email_capture"] = bool(re.search(
+                r'mailto:|input[^>]+type=["\']email["\']|<form[^>]+action[^>]*mail|contact.*form',
+                html, re.I))
+
+            # WhatsApp Business
+            r["has_whatsapp"] = bool(re.search(
+                r'wa\.me/|api\.whatsapp\.com|whatsapp\.com/send|whatsapp-chat',
+                html, re.I))
+
+            # TikTok linki
+            m = re.search(r'tiktok\.com/@([a-zA-Z0-9_.]{2,30})', html)
+            if m:
+                r["tiktok_url"] = f"https://www.tiktok.com/@{m.group(1)}"
+
+            # robots.txt
+            try:
+                base = re.match(r'https?://[^/]+', url).group(0)
+                rb = await client.get(f"{base}/robots.txt", timeout=4)
+                r["has_robots"] = rb.status_code == 200 and len(rb.text) > 10
+            except:
+                pass
+
+            # sitemap.xml
+            try:
+                sm = await client.get(f"{base}/sitemap.xml", timeout=4)
+                r["has_sitemap"] = sm.status_code == 200 and 'xml' in sm.headers.get('content-type','')
+            except:
+                pass
+
+    except Exception:
         pass
+
     return r
+
+# ── TikTok bul ─────────────────────────────────────────
+async def find_tiktok(page, business_name: str, website_data: dict) -> dict:
+    result = {"has_tiktok": False, "tiktok_url": None, "tiktok_username": None}
+
+    # 1. Website'te link varsa al
+    if website_data.get("tiktok_url"):
+        m = re.search(r'tiktok\.com/@([a-zA-Z0-9_.]{2,30})', website_data["tiktok_url"])
+        if m:
+            result.update(has_tiktok=True, tiktok_url=website_data["tiktok_url"],
+                          tiktok_username=m.group(1))
+            console.print(f"    [green]✓ TikTok (site): @{m.group(1)}[/green]")
+            return result
+
+    # 2. Handle tahmin et
+    clean = re.sub(r'[^a-z0-9\s]', '',
+        business_name.lower()
+        .replace('ı','i').replace('ğ','g').replace('ü','u')
+        .replace('ş','s').replace('ö','o').replace('ç','c'))
+    words = clean.split()
+    candidates = [''.join(words), '_'.join(words), words[0] if words else '',
+                  ''.join(words[:2]) if len(words) >= 2 else '']
+    candidates = [c for c in set(candidates) if len(c) >= 3]
+
+    async with httpx.AsyncClient(timeout=6, follow_redirects=True) as client:
+        hdrs = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)"}
+        for u in candidates[:4]:
+            try:
+                resp = await client.get(f"https://www.tiktok.com/@{u}", headers=hdrs)
+                # 200 ve profil sayfası
+                if resp.status_code == 200 and '"uniqueId"' in resp.text:
+                    result.update(has_tiktok=True,
+                                  tiktok_url=f"https://www.tiktok.com/@{u}",
+                                  tiktok_username=u)
+                    console.print(f"    [green]✓ TikTok: @{u}[/green]")
+                    return result
+                await asyncio.sleep(0.3)
+            except:
+                continue
+
+    return result
+
+# ── Delivery platformları (restoran/cafe için) ─────────
+async def check_delivery(page, business_name: str, sector: str) -> dict:
+    result = {"has_yemeksepeti": False, "yemeksepeti_url": None,
+              "has_getir": False, "getir_url": None}
+    if sector not in ("restaurant", "cafe", "default"):
+        return result
+
+    q = business_name.replace(' ', '+')
+    try:
+        await page.goto(
+            f"https://www.google.com/search?q={q}+yemeksepeti+getir",
+            wait_until="domcontentloaded")
+        await page.wait_for_timeout(2000)
+        content = await page.content()
+
+        ys = re.findall(r'href="(https://www\.yemeksepeti\.com/[^"]+)"', content)
+        if ys:
+            result["has_yemeksepeti"] = True
+            result["yemeksepeti_url"] = ys[0]
+            console.print(f"    [green]✓ Yemeksepeti bulundu[/green]")
+
+        gt = re.findall(r'href="(https://getir\.com/[^"]+)"', content)
+        if not gt:
+            gt = re.findall(r'(https://getir\.com/yemek/[^\s"\'<]+)', content)
+        if gt:
+            result["has_getir"] = True
+            result["getir_url"] = gt[0]
+            console.print(f"    [green]✓ Getir bulundu[/green]")
+
+    except Exception as e:
+        console.print(f"[yellow]Delivery kontrol hata: {e}[/yellow]")
+
+    return result
 
 # ── Instagram bul ──────────────────────────────────────
 async def find_instagram(page, business_name: str, website_url: str = None) -> dict:
@@ -157,7 +366,6 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
 
 # ── Instagram istatistikleri ───────────────────────────
 def _parse_ig_num(s: str) -> int | None:
-    """'1,234' veya '12.5K' veya '1.2M' → int"""
     s = s.strip().replace(',', '').replace('.', '')
     try:
         if s.upper().endswith('M'):
@@ -169,25 +377,15 @@ def _parse_ig_num(s: str) -> int | None:
         return None
 
 async def get_instagram_stats(page, username: str) -> dict:
-    stats = {
-        "followers": None,
-        "following": None,
-        "post_count": None,
-        "avg_likes": None,
-        "avg_comments": None,
-        "engagement_rate": None,
-    }
+    stats = {"followers": None, "following": None, "post_count": None,
+             "avg_likes": None, "avg_comments": None, "engagement_rate": None}
     if not username:
         return stats
-
     try:
-        await page.goto(f"https://www.instagram.com/{username}/",
-                        wait_until="domcontentloaded")
+        await page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded")
         await page.wait_for_timeout(3500)
         content = await page.content()
 
-        # ── Takipçi / takip / post — meta description ──
-        # Format: "1,234 Followers, 567 Following, 89 Posts – ..."
         for pattern, key in [
             (r'([\d,\.]+[KkMm]?)\s+[Ff]ollowers?', "followers"),
             (r'([\d,\.]+[KkMm]?)\s+[Ff]ollowing', "following"),
@@ -197,8 +395,6 @@ async def get_instagram_stats(page, username: str) -> dict:
             if m:
                 stats[key] = _parse_ig_num(m.group(1))
 
-        # ── Beğeni / yorum — sayfa JSON'undan ──────────
-        # Instagram zaman zaman "like_count" veya "likes" embedliyor
         likes_raw = re.findall(r'"like_count"\s*:\s*(\d+)', content)
         if not likes_raw:
             likes_raw = re.findall(r'"likeCount"\s*:\s*(\d+)', content)
@@ -214,8 +410,6 @@ async def get_instagram_stats(page, username: str) -> dict:
         if comments:
             stats["avg_comments"] = round(sum(comments) / len(comments))
 
-        # ── Etkileşim oranı ────────────────────────────
-        # (avg_likes + avg_comments) / followers × 100
         followers = stats["followers"]
         if followers and followers > 0 and stats["avg_likes"] is not None:
             avg_l = stats["avg_likes"] or 0
@@ -227,53 +421,115 @@ async def get_instagram_stats(page, username: str) -> dict:
             f"ort. {stats['avg_likes'] or '?'} beğeni | "
             f"%{stats['engagement_rate'] or '?'} etkileşim"
         )
-
     except Exception as e:
         console.print(f"[red]Instagram stats hata: {e}[/red]")
 
     return stats
 
-# ── Skor ───────────────────────────────────────────────
-def compute_score(website, instagram, ig_stats=None):
+# ── Skor (genişletilmiş) ───────────────────────────────
+def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None, sector="default"):
     score, issues, opportunities = 0, [], []
 
+    # ── Web varlığı (maks 55) ──────────────────────────
     if website["has_website"]:
-        score += 30
+        score += 20
         if website["has_ssl"]:
-            score += 10
+            score += 8
         else:
-            issues.append("SSL yok"); opportunities.append("SSL kurulumu")
+            issues.append("SSL yok")
+            opportunities.append("SSL kurulumu")
         if website["is_mobile_friendly"]:
-            score += 10
+            score += 7
         else:
-            issues.append("Mobil uyumsuz"); opportunities.append("Mobil tasarım")
+            issues.append("Mobil uyumsuz")
+            opportunities.append("Mobil tasarım")
         if website.get("load_time_ms") and website["load_time_ms"] > 3000:
             issues.append(f"Site yavaş ({website['load_time_ms']}ms)")
             opportunities.append("Site hız optimizasyonu")
         else:
+            score += 4
+        if website.get("has_schema"):
+            score += 4
+        else:
+            issues.append("Schema.org yok")
+            opportunities.append("Google SEO yapılandırması")
+        if website.get("has_og"):
+            score += 3
+        else:
+            opportunities.append("Sosyal paylaşım meta etiketleri")
+        if website.get("has_email_capture"):
+            score += 4
+        else:
+            opportunities.append("E-posta toplama formu")
+        if website.get("has_whatsapp"):
             score += 5
+        else:
+            issues.append("WhatsApp butonu yok")
+            opportunities.append("WhatsApp Business entegrasyonu")
     else:
-        issues.append("Web sitesi yok"); opportunities.append("Web sitesi tasarımı")
+        issues.append("Web sitesi yok")
+        opportunities.append("Web sitesi tasarımı")
 
+    # ── Sosyal medya (maks 28) ─────────────────────────
     if instagram["has_instagram"]:
-        score += 25
+        score += 12
         if ig_stats:
             er = ig_stats.get("engagement_rate")
             followers = ig_stats.get("followers") or 0
             if er is not None:
                 if er >= 3:
-                    score += 10
+                    score += 8
                 elif er >= 1:
-                    score += 5
+                    score += 4
                 else:
                     issues.append(f"Düşük etkileşim (%{er})")
                     opportunities.append("İçerik stratejisi & etkileşim artırma")
-            if followers < 500:
+            if followers >= 500:
+                score += 4
+            else:
                 issues.append(f"Az takipçi ({followers})")
                 opportunities.append("Takipçi büyüme kampanyası")
     else:
-        issues.append("Instagram yok"); opportunities.append("Instagram yönetimi")
+        issues.append("Instagram yok")
+        opportunities.append("Instagram yönetimi")
 
+    if tiktok and tiktok.get("has_tiktok"):
+        score += 4
+    else:
+        opportunities.append("TikTok hesabı açılması")
+
+    # ── Yerel güven (maks 12) ──────────────────────────
+    if maps_data:
+        rating = maps_data.get("rating")
+        review_count = maps_data.get("review_count") or 0
+        if rating is not None:
+            if rating >= 4.0:
+                score += 6
+            elif rating >= 3.5:
+                score += 3
+            else:
+                issues.append(f"Google puanı düşük ({rating})")
+                opportunities.append("Google yorumları yönetimi")
+        if review_count >= 100:
+            score += 6
+        elif review_count >= 20:
+            score += 3
+        else:
+            issues.append(f"Az Google yorumu ({review_count})")
+            opportunities.append("Yorum artırma kampanyası")
+
+    # ── Delivery (restoran/cafe için maks 5) ───────────
+    if sector in ("restaurant", "cafe"):
+        delivery = maps_data.get("delivery") if maps_data else None
+        has_ys = delivery and delivery.get("has_yemeksepeti") if delivery else False
+        has_gt = delivery and delivery.get("has_getir") if delivery else False
+        if has_ys or has_gt:
+            score += 5
+        else:
+            issues.append("Online sipariş platformu yok")
+            opportunities.append("Yemeksepeti / Getir entegrasyonu")
+
+    score = min(score, 100)
     grade = "A" if score >= 80 else "B" if score >= 55 else "C" if score >= 35 else "D"
     return {"score": score, "max_score": 100, "grade": grade,
             "issues": issues, "opportunities": opportunities}
@@ -303,25 +559,44 @@ async def audit_all(leads_file="leads_raw.json"):
                 maps_data = await find_from_google_maps(page, lead["maps_url"], name)
                 console.print(f"     Web: {maps_data.get('website_url','—')}")
                 console.print(f"     Tel: {maps_data.get('phone','—')}")
-                console.print(f"     Adres: {maps_data.get('address','—')}")
+                console.print(f"     Puan: {maps_data.get('rating','—')} ({maps_data.get('review_count','?')} yorum)")
+                console.print(f"     Kategori: {maps_data.get('category','—')}")
 
+            sector = detect_sector(maps_data.get("category"))
             website = await check_website(maps_data.get("website_url"))
+
+            console.print(f"  🌐 Schema:{website['has_schema']} OG:{website['has_og']} WA:{website['has_whatsapp']}")
 
             console.print("  📸 Instagram...")
             instagram = await find_instagram(page, name, maps_data.get("website_url"))
 
             ig_stats = {}
-            if instagram["has_instagram"]:
+            if instagram["has_instagram"] and instagram.get("instagram_username"):
                 ig_stats = await get_instagram_stats(page, instagram["instagram_username"])
 
-            scoring = compute_score(website, instagram, ig_stats)
+            console.print("  🎵 TikTok...")
+            tiktok = await find_tiktok(page, name, website)
+
+            delivery = {}
+            if sector in ("restaurant", "cafe"):
+                console.print("  🛵 Delivery...")
+                delivery = await check_delivery(page, name, sector)
+
+            maps_data["delivery"] = delivery
+
+            scoring = compute_score(website, instagram, ig_stats, tiktok, maps_data, sector)
 
             results.append({
                 **lead,
-                "phone": maps_data.get("phone"),
+                "sector": sector,
+                "phone":   maps_data.get("phone"),
                 "address": maps_data.get("address"),
+                "rating":  maps_data.get("rating"),
+                "review_count": maps_data.get("review_count"),
+                "category": maps_data.get("category"),
                 "website": website,
-                "social": {**instagram, "stats": ig_stats},
+                "social":  {**instagram, "stats": ig_stats, "tiktok": tiktok},
+                "delivery": delivery,
                 "scoring": scoring,
             })
             await asyncio.sleep(1)

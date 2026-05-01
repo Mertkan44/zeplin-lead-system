@@ -1,6 +1,6 @@
 """
 Belirtilen ilçeden işletme tara, audit et, AI raporu üret, dashboard'a ekle.
-Kullanım: python3 besiktas.py  (veya query/city değiştir)
+Kullanım: python3 besiktas.py  (veya QUERY/CITY/MAX değiştir)
 """
 import asyncio, json, base64, os, subprocess
 from playwright.async_api import async_playwright
@@ -8,8 +8,9 @@ from groq import Groq
 from datetime import datetime
 
 from src.audit.finder import (
-    find_from_google_maps, check_website,
-    find_instagram, get_instagram_stats, compute_score
+    find_from_google_maps, check_website, detect_sector,
+    find_instagram, get_instagram_stats,
+    find_tiktok, check_delivery, compute_score
 )
 
 os.environ["GROQ_API_KEY"] = open('.env').read().split('=')[1].strip()
@@ -18,6 +19,31 @@ client = Groq(api_key=os.environ["GROQ_API_KEY"])
 QUERY = "restoran"
 CITY  = "Istanbul Besiktas"
 MAX   = 5
+
+# ── Sektör bazlı sistem sesi ───────────────────────────
+SECTOR_VOICE = {
+    "restaurant": (
+        "Restoran sahibine yaziyorsun. Musteri deneyimi, online siparis (Yemeksepeti/Getir), "
+        "rezervasyon sistemi ve Google yorumlari uzerinden analiz yap. "
+        "Rakiplerle karsilastirmali dusun."
+    ),
+    "salon": (
+        "Kuafor/guzellik salonu sahibine yaziyorsun. Online randevu, Instagram/TikTok icerigi, "
+        "musteri sadakati ve kampanya firsatlari uzerinden analiz yap."
+    ),
+    "auto": (
+        "Oto galeri veya servis sahibine yaziyorsun. Web sitesi guvenilirligi, Google Maps varligi, "
+        "ikinci el arac ilanlari ve musteri yorumlari uzerinden analiz yap."
+    ),
+    "retail": (
+        "Magaza/butik sahibine yaziyorsun. E-ticaret kanallari, sosyal medya vitrin kullanimi, "
+        "kampanya yurutme ve musteri bagliligi uzerinden analiz yap."
+    ),
+    "default": (
+        "Yerel isletme sahibine yaziyorsun. Genel dijital varlik, web sitesi kalitesi, "
+        "sosyal medya ve musteri yorumlari uzerinden analiz yap."
+    ),
+}
 
 # ── Scraper ────────────────────────────────────────────
 async def scrape(query, city, max_results):
@@ -46,20 +72,25 @@ async def scrape(query, city, max_results):
     return results[:max_results]
 
 # ── AI ─────────────────────────────────────────────────
-def ask(prompt):
+def ask(system_extra: str, prompt: str) -> str:
+    system = f"Sen Zeplin Media'dan Mertkan'sin. Sadece Turkce yaziyorsun. {system_extra}"
     return client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": "Sen Zeplin Media'dan Mertkan'sin. Sadece Turkce yaziyorsun."},
+            {"role": "system", "content": system},
             {"role": "user",   "content": prompt}
         ],
-        max_tokens=450
+        max_tokens=500
     ).choices[0].message.content
 
 def generate_report(lead):
-    s = lead["scoring"]
-    ig = lead["social"]
+    s     = lead["scoring"]
+    ig    = lead["social"]
     ig_stats = ig.get("stats", {})
+    tiktok = ig.get("tiktok", {}) or {}
+    delivery = lead.get("delivery", {}) or {}
+    sector = lead.get("sector", "default")
+
     followers = ig_stats.get("followers")
     er = ig_stats.get("engagement_rate")
     ig_line = f"Instagram: {ig.get('instagram_url','YOK')}"
@@ -67,34 +98,58 @@ def generate_report(lead):
     if er is not None: ig_line += f", %{er} etkileşim"
     if followers or er is not None: ig_line += ")"
 
+    tiktok_line = f"TikTok: {tiktok.get('tiktok_url','YOK')}"
+    delivery_line = ""
+    if sector in ("restaurant", "cafe"):
+        ys = "VAR" if delivery.get("has_yemeksepeti") else "YOK"
+        gt = "VAR" if delivery.get("has_getir") else "YOK"
+        delivery_line = f"Yemeksepeti: {ys} | Getir: {gt}\n"
+
+    extra_signals = (
+        f"Schema.org: {'VAR' if lead['website'].get('has_schema') else 'YOK'}\n"
+        f"Open Graph: {'VAR' if lead['website'].get('has_og') else 'YOK'}\n"
+        f"WhatsApp: {'VAR' if lead['website'].get('has_whatsapp') else 'YOK'}\n"
+        f"Google Puanı: {lead.get('rating','?')} ({lead.get('review_count','?')} yorum)\n"
+        f"{delivery_line}"
+    )
+
     return ask(
+        SECTOR_VOICE.get(sector, SECTOR_VOICE["default"]),
         f"Su isletmenin dijital varlik analizini yap.\n\n"
         f"Isletme: {lead['name']}\n"
+        f"Sektor: {sector}\n"
         f"Sehir: {lead.get('city','')}\n"
         f"Telefon: {lead.get('phone','YOK')}\n"
         f"Adres: {lead.get('address','YOK')}\n"
         f"Puan: {s['score']}/100 (Grade {s['grade']})\n"
         f"Web: {lead['website'].get('website_url','YOK')}\n"
         f"{ig_line}\n"
+        f"{tiktok_line}\n"
+        f"{extra_signals}"
         f"Sorunlar: {', '.join(s['issues']) or 'Yok'}\n"
         f"Firsatlar: {', '.join(s['opportunities']) or 'Yok'}\n\n"
-        f"Maddeler halinde, max 130 kelime Turkce rapor yaz."
+        f"Maddeler halinde, max 140 kelime Turkce rapor yaz. Sektore ozel tavsiyeler ver."
     )
 
 def generate_email(lead):
     s = lead["scoring"]
+    sector = lead.get("sector", "default")
+
     return ask(
+        SECTOR_VOICE.get(sector, SECTOR_VOICE["default"]),
         f"Sana bir ornek satis maili gosterecegim. Ayni tarz, bu isletmeye ozel yaz.\n\n"
         f"ORNEK:\nKonu: Shubra icin kucuk bir gozlem\n\nMerhaba,\n\n"
         f"Shubra'yi incelerken SSL eksikligini gorduk. Bu kucuk detay musteri guvenini etkiliyor.\n"
         f"Zeplin Media olarak SSL, hiz optimizasyonu ve sosyal medya yonetiminde uzmaniz.\n"
         f"15 dakikaniz var mi?\n\nMertkan | Zeplin Media\n\n"
         f"SIMDI BU ISLETME ICIN YAZ:\n"
-        f"Ad: {lead['name']}\nSehir: {lead.get('city','')}\n"
+        f"Ad: {lead['name']}\nSektor: {sector}\nSehir: {lead.get('city','')}\n"
+        f"Google Puanı: {lead.get('rating','?')} ({lead.get('review_count','?')} yorum)\n"
         f"Web: {lead['website'].get('website_url','YOK')}\n"
         f"Instagram: {lead['social'].get('instagram_url','YOK')}\n"
+        f"TikTok: {(lead['social'].get('tiktok') or {}).get('tiktok_url','YOK')}\n"
         f"Sorunlar: {', '.join(s['issues'])}\n\n"
-        f"Konu satirini mutlaka yaz. Ayni format, max 120 kelime."
+        f"Konu satirini mutlaka yaz. Sektore ozel, kisisel, max 120 kelime."
     )
 
 # ── Dashboard ──────────────────────────────────────────
@@ -121,7 +176,7 @@ async def main():
     print(f"\n📋 {len(raw)} işletme bulundu:")
     for r in raw: print(f"  • {r['name']}")
 
-    # 2. Audit (yeni finder ile)
+    # 2. Audit
     audited = []
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False, args=["--no-sandbox"])
@@ -140,33 +195,51 @@ async def main():
             print(f"  🌐 {maps_data.get('website_url') or '—'}")
             print(f"  📞 {maps_data.get('phone') or '—'}")
             print(f"  📍 {maps_data.get('address') or '—'}")
+            print(f"  ⭐ {maps_data.get('rating','—')} puan · {maps_data.get('review_count','?')} yorum")
+            print(f"  🏷️  {maps_data.get('category') or '—'}")
 
-            website  = await check_website(maps_data.get("website_url"))
+            sector  = detect_sector(maps_data.get("category"))
+            website = await check_website(maps_data.get("website_url"))
+            print(f"  📊 Schema:{website['has_schema']} | OG:{website['has_og']} | WA:{website['has_whatsapp']}")
+
             instagram = await find_instagram(page, name, maps_data.get("website_url"))
-
             ig_stats = {}
             if instagram["has_instagram"] and instagram.get("instagram_username"):
                 print(f"  📊 Instagram istatistikleri alınıyor...")
                 ig_stats = await get_instagram_stats(page, instagram["instagram_username"])
 
-            scoring = compute_score(website, instagram, ig_stats)
+            print(f"  🎵 TikTok kontrol ediliyor...")
+            tiktok = await find_tiktok(page, name, website)
+
+            delivery = {}
+            if sector in ("restaurant", "cafe", "default"):
+                print(f"  🛵 Delivery kontrol ediliyor...")
+                delivery = await check_delivery(page, name, sector)
+
+            maps_data["delivery"] = delivery
+            scoring = compute_score(website, instagram, ig_stats, tiktok, maps_data, sector)
 
             audited.append({
                 **lead,
-                "phone":   maps_data.get("phone"),
-                "address": maps_data.get("address"),
-                "website": website,
-                "social":  {**instagram, "stats": ig_stats},
-                "scoring": scoring,
+                "sector":       sector,
+                "phone":        maps_data.get("phone"),
+                "address":      maps_data.get("address"),
+                "rating":       maps_data.get("rating"),
+                "review_count": maps_data.get("review_count"),
+                "category":     maps_data.get("category"),
+                "website":      website,
+                "social":       {**instagram, "stats": ig_stats, "tiktok": tiktok},
+                "delivery":     delivery,
+                "scoring":      scoring,
             })
             await asyncio.sleep(1)
 
         await browser.close()
 
-    # 3. AI
+    # 3. AI raporlar
     print("\n🤖 AI raporlar üretiliyor...")
     for lead in audited:
-        print(f"  → {lead['name']}")
+        print(f"  → {lead['name']} [{lead['sector']}]")
         lead["ai_report"] = generate_report(lead)
         lead["ai_email"]  = generate_email(lead)
         lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
