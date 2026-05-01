@@ -431,6 +431,51 @@
 
   @media(max-width:760px){.rep-feed{padding:16px 16px 40px}.rc-tags{grid-template-columns:1fr}.rc-head{flex-wrap:wrap}.rep-hero{padding:20px 16px 0}}
 
+  /* ── OUTREACH TIMELINE ────────────────────────────── */
+  .timeline{margin-top:14px}
+  .timeline-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .timeline-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+  .act-add-btn{height:26px;padding:0 12px;border-radius:8px;background:rgba(149,128,255,.12);border:1px solid rgba(149,128,255,.25);color:var(--lila);font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+  .act-add-btn:hover{background:rgba(149,128,255,.2);color:var(--lila-2)}
+  .act-add-btn svg{width:11px;height:11px}
+  .timeline-empty{font-size:12px;color:var(--text-4);padding:10px 0}
+  .act-list{display:flex;flex-direction:column;gap:0;border:1px solid rgba(255,255,255,.05);border-radius:12px;overflow:hidden}
+  .act-item{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.01);transition:background .15s}
+  .act-item:last-child{border-bottom:0}
+  .act-item:hover{background:rgba(255,255,255,.03)}
+  .act-dot{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+  .act-dot.email{background:rgba(118,166,255,.12);border:1px solid rgba(118,166,255,.2)}
+  .act-dot.reply{background:rgba(124,226,181,.12);border:1px solid rgba(124,226,181,.2)}
+  .act-dot.call{background:rgba(247,197,96,.12);border:1px solid rgba(247,197,96,.2)}
+  .act-dot.meeting{background:rgba(149,128,255,.12);border:1px solid rgba(149,128,255,.2)}
+  .act-dot.note{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+  .act-dot.won{background:rgba(124,226,181,.18);border:1px solid rgba(124,226,181,.3)}
+  .act-dot.lost{background:rgba(255,103,112,.12);border:1px solid rgba(255,103,112,.2)}
+  .act-body{flex:1;min-width:0}
+  .act-label{font-size:12.5px;font-weight:600;color:var(--text-2);line-height:1.3}
+  .act-note{font-size:11.5px;color:var(--text-3);margin-top:2px;line-height:1.4}
+  .act-date{font-size:10.5px;color:var(--text-4);margin-top:3px}
+
+  /* Reminder badge */
+  .remind-badge{width:16px;height:16px;border-radius:50%;background:var(--amber-soft);border:1px solid var(--amber-line);display:grid;place-items:center;font-size:9px;flex-shrink:0}
+
+  /* Action modal */
+  .action-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center}
+  .action-overlay.open{display:flex}
+  .action-modal{background:linear-gradient(180deg,#1e1a2e 0%,#18152a 100%);border:1px solid rgba(149,128,255,.22);border-radius:20px;padding:26px;width:420px;max-width:calc(100vw - 32px);box-shadow:0 32px 64px rgba(0,0,0,.55)}
+  .action-modal-title{font-size:16px;font-weight:700;letter-spacing:-.015em;margin-bottom:18px}
+  .form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+  .form-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+  .form-select,.form-input,.form-textarea{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;width:100%;transition:border .15s}
+  .form-select:focus,.form-input:focus,.form-textarea:focus{border-color:rgba(149,128,255,.4)}
+  .form-select option{background:#1e1a2e;color:var(--text)}
+  .form-textarea{min-height:72px;resize:vertical}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .modal-cancel{height:36px;padding:0 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--text-3);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+  .modal-cancel:hover{background:rgba(255,255,255,.09);color:var(--text)}
+  .modal-submit{height:36px;padding:0 16px;border-radius:10px;background:linear-gradient(180deg,#a896ff,#7e66ff);border:0;color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px -8px rgba(149,128,255,.7);transition:filter .15s}
+  .modal-submit:hover{filter:brightness(1.1)}
+
   /* ── SERVICE MATCH ────────────────────────────────── */
   .svc-match{margin-top:14px;border:1px solid rgba(124,226,181,.18);border-radius:14px;overflow:hidden;background:rgba(124,226,181,.04)}
   .svc-match-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -456,6 +501,37 @@
 <body>
 
 <div id="toast-container"></div>
+
+<!-- Action Modal -->
+<div class="action-overlay" id="actionOverlay" onclick="closeActionModal(event)">
+  <div class="action-modal" onclick="event.stopPropagation()">
+    <div class="action-modal-title">Aksiyon Ekle</div>
+    <div class="form-row">
+      <label class="form-label">Aksiyon Tipi</label>
+      <select class="form-select" id="actionType">
+        <option value="email_sent">✉️ Mail Gönderildi</option>
+        <option value="reply_received">💬 Cevap Alındı</option>
+        <option value="call_made">📞 Arama Yapıldı</option>
+        <option value="meeting_scheduled">📅 Toplantı Planlandı</option>
+        <option value="note">📝 Not Eklendi</option>
+        <option value="deal_won">🎉 Anlaşma Yapıldı</option>
+        <option value="deal_lost">❌ Anlaşma Düştü</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Tarih & Saat</label>
+      <input class="form-input" type="datetime-local" id="actionDate"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Not (isteğe bağlı)</label>
+      <textarea class="form-textarea" id="actionNote" placeholder="Konuşma özeti, hatırlatma…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeActionModal()">İptal</button>
+      <button class="modal-submit" onclick="submitAction()">Kaydet</button>
+    </div>
+  </div>
+</div>
 
 <!-- Search Overlay -->
 <div class="search-overlay" id="searchOverlay" onclick="closeSearch(event)">
@@ -656,6 +732,87 @@ var STATUS_LABEL={yeni:'Yeni',contacted:'Contacted',converted:'Converted'};
 var STATUS_CLASS={yeni:'s-yeni',contacted:'s-contacted',converted:'s-converted'};
 
 // ──────────────────────────────────────────────────────
+// OUTREACH
+// ──────────────────────────────────────────────────────
+var OK='zeplin_outreach_v1';
+var ACTIONS={
+  email_sent:        {label:'Mail Gönderildi',      icon:'✉️', dot:'email',   status:'contacted'},
+  reply_received:    {label:'Cevap Alındı',          icon:'💬', dot:'reply',   status:'contacted'},
+  call_made:         {label:'Arama Yapıldı',         icon:'📞', dot:'call',    status:'contacted'},
+  meeting_scheduled: {label:'Toplantı Planlandı',    icon:'📅', dot:'meeting', status:'contacted'},
+  note:              {label:'Not Eklendi',            icon:'📝', dot:'note',    status:null},
+  deal_won:          {label:'Anlaşma Yapıldı 🎉',    icon:'🎉', dot:'won',     status:'converted'},
+  deal_lost:         {label:'Anlaşma Düştü',         icon:'❌', dot:'lost',    status:'yeni'},
+};
+var _actionTarget='';
+
+function getOutreach(){try{return JSON.parse(localStorage.getItem(OK)||'[]');}catch(e){return[];}}
+function saveOutreach(arr){localStorage.setItem(OK,JSON.stringify(arr));}
+function getLeadEvents(name){return getOutreach().filter(function(e){return e.lead===name;}).sort(function(a,b){return b.date.localeCompare(a.date);});}
+
+function addOutreach(name,action,date,note){
+  var arr=getOutreach();
+  arr.push({lead:name,action:action,date:date,note:note,ts:Date.now()});
+  saveOutreach(arr);
+  var act=ACTIONS[action];
+  if(act&&act.status){setStatus(name,act.status);}
+}
+
+function hasRecentEvent(name,days){
+  var evs=getLeadEvents(name);
+  if(!evs.length) return false;
+  var latest=new Date(evs[0].date);
+  return (Date.now()-latest.getTime()) < days*86400000;
+}
+
+function renderTimeline(name){
+  var evs=getLeadEvents(name);
+  if(!evs.length) return '<div class="timeline-empty">Henüz aksiyon yok — ilk adımı at.</div>';
+  return '<div class="act-list">'+evs.map(function(e){
+    var act=ACTIONS[e.action]||{label:e.action,icon:'•',dot:'note'};
+    var dt=e.date?e.date.replace('T',' ').slice(0,16):'';
+    return '<div class="act-item">'+
+      '<div class="act-dot '+act.dot+'">'+act.icon+'</div>'+
+      '<div class="act-body">'+
+        '<div class="act-label">'+esc(act.label)+'</div>'+
+        (e.note?'<div class="act-note">'+esc(e.note)+'</div>':'')+
+        '<div class="act-date">'+esc(dt)+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('')+'</div>';
+}
+
+function openActionModal(name){
+  _actionTarget=name;
+  var now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('actionDate').value=now.toISOString().slice(0,16);
+  document.getElementById('actionNote').value='';
+  document.getElementById('actionType').value='email_sent';
+  document.getElementById('actionOverlay').classList.add('open');
+}
+
+function closeActionModal(e){
+  if(!e||e.target===document.getElementById('actionOverlay')){
+    document.getElementById('actionOverlay').classList.remove('open');
+  }
+}
+
+function submitAction(){
+  var action=document.getElementById('actionType').value;
+  var date=document.getElementById('actionDate').value;
+  var note=document.getElementById('actionNote').value.trim();
+  if(!date){toast('Tarih seçmelisin','error');return;}
+  addOutreach(_actionTarget,action,date,note);
+  document.getElementById('actionOverlay').classList.remove('open');
+  var act=ACTIONS[action]||{};
+  toast((act.label||action)+' kaydedildi','success');
+  renderRail();
+  renderTabs();
+  renderDetail(_actionTarget);
+}
+
+// ──────────────────────────────────────────────────────
 // HELPERS
 // ──────────────────────────────────────────────────────
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -815,10 +972,11 @@ function renderRail(){
   }
   document.getElementById('rail-list').innerHTML=fl.map(function(l){
     var s=l.scoring; var st=getStatus(l.name);
+    var needsReminder = st==='contacted' && !hasRecentEvent(l.name, 3);
     return '<div class="lead-row'+(l.name===activeLeadName?' active':'')+'" onclick="selectLead(\''+esc(l.name)+'\')">'+
       '<div class="lead-ic '+gradeToIc(s.grade)+'">'+esc(initial(l.name))+'</div>'+
       '<div class="lead-info">'+
-        '<div class="lead-name">'+esc(l.name)+'</div>'+
+        '<div class="lead-name">'+esc(l.name)+(needsReminder?'<span class="remind-badge" title="3+ gün sessizlik — takip zamanı!">🔔</span>':'')+'</div>'+
         '<div class="lead-sub"><span class="miniring" style="--c:'+gradeToColor(s.grade)+';--p:'+s.score+'"></span>Skor '+s.score+' · '+s.grade+' · '+STATUS_LABEL[st]+'</div>'+
       '</div>'+
       '<svg class="lead-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>'+
@@ -961,6 +1119,16 @@ function renderDetail(name){
     '<div class="det-grid" style="margin-top:14px">'+
       '<div><div class="col-label problems">Sorunlar <span class="lbl-line"></span><span class="n">0'+(s.issues||[]).length+'</span></div><div class="pillset">'+probs+'</div></div>'+
       '<div><div class="col-label opps">Fırsatlar <span class="lbl-line"></span><span class="n">0'+(s.opportunities||[]).length+'</span></div><div class="pillset">'+opps+'</div></div>'+
+    '</div>'+
+    '<div class="timeline">'+
+      '<div class="timeline-head">'+
+        '<span class="timeline-lbl">Aktivite Geçmişi</span>'+
+        '<button class="act-add-btn" onclick="openActionModal(\''+esc(L.name)+'\')">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'+
+          'Aksiyon Ekle'+
+        '</button>'+
+      '</div>'+
+      renderTimeline(L.name)+
     '</div>'+
     '<div class="accs">'+
       '<div class="acc" data-acc>'+
