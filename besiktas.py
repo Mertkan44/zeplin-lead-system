@@ -12,6 +12,7 @@ from src.audit.finder import (
     find_instagram, get_instagram_stats,
     find_tiktok, check_delivery, compute_score
 )
+from src.services import match_services, estimate_value
 
 os.environ["GROQ_API_KEY"] = open('.env').read().split('=')[1].strip()
 client = Groq(api_key=os.environ["GROQ_API_KEY"])
@@ -219,7 +220,7 @@ async def main():
             maps_data["delivery"] = delivery
             scoring = compute_score(website, instagram, ig_stats, tiktok, maps_data, sector)
 
-            audited.append({
+            lead_obj = {
                 **lead,
                 "sector":       sector,
                 "phone":        maps_data.get("phone"),
@@ -231,7 +232,11 @@ async def main():
                 "social":       {**instagram, "stats": ig_stats, "tiktok": tiktok},
                 "delivery":     delivery,
                 "scoring":      scoring,
-            })
+            }
+            lead_obj["matched_services"]   = match_services(lead_obj)
+            lead_obj["estimated_value_tl"] = estimate_value(lead_obj)
+            print(f"  💰 Tahmini değer: {lead_obj['estimated_value_tl']:,} TL/ay · {len(lead_obj['matched_services'])} hizmet eşleşti")
+            audited.append(lead_obj)
             await asyncio.sleep(1)
 
         await browser.close()
@@ -258,4 +263,5 @@ async def main():
     git_push(f"add {len(new_ones)} {CITY} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"\n🎉 Tamamlandı!")
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

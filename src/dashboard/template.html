@@ -430,6 +430,27 @@
   .rc-empty{padding:10px 0;color:var(--text-4);font-size:12px}
 
   @media(max-width:760px){.rep-feed{padding:16px 16px 40px}.rc-tags{grid-template-columns:1fr}.rc-head{flex-wrap:wrap}.rep-hero{padding:20px 16px 0}}
+
+  /* ── SERVICE MATCH ────────────────────────────────── */
+  .svc-match{margin-top:14px;border:1px solid rgba(124,226,181,.18);border-radius:14px;overflow:hidden;background:rgba(124,226,181,.04)}
+  .svc-match-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .svc-match-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mint)}
+  .svc-match-val{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--mint)}
+  .svc-match-val small{font-size:11px;font-weight:400;color:var(--text-3);margin-left:3px}
+  .svc-list{display:flex;flex-direction:column;gap:0}
+  .svc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+  .svc-row:last-child{border-bottom:0}
+  .svc-row:hover{background:rgba(255,255,255,.03)}
+  .svc-name{font-size:12.5px;font-weight:600;color:var(--text-2)}
+  .svc-desc{font-size:11px;color:var(--text-4);margin-top:1px}
+  .svc-price{font-size:12px;font-weight:600;color:var(--text-3);white-space:nowrap;flex-shrink:0}
+  .svc-monthly{font-size:10px;color:var(--text-4);font-weight:400}
+  .svc-empty{padding:14px 16px;font-size:12px;color:var(--text-4)}
+
+  /* ── RC value row (reports) ────────────────────────── */
+  .rc-value-row{display:flex;align-items:center;gap:10px;padding:8px 24px 4px;flex-wrap:wrap}
+  .rc-value-badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:7px;background:rgba(124,226,181,.1);border:1px solid rgba(124,226,181,.2);font-size:12px;font-weight:700;color:var(--mint)}
+  .rc-svc-chip{height:22px;padding:0 9px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);font-size:11px;color:var(--text-3);display:inline-flex;align-items:center}
 </style>
 </head>
 <body>
@@ -591,6 +612,7 @@
                 CSV İndir
               </button>
               <div class="rep-seg" id="rep-sort">
+                <button onclick="repSort(this,'value')">Değer</button>
                 <button onclick="repSort(this,'opps')">Fırsat</button>
                 <button class="on" onclick="repSort(this,'score')">Skor</button>
                 <button onclick="repSort(this,'name')">İsim</button>
@@ -840,6 +862,14 @@ function renderDetail(name){
   if(L.maps_url){
     linkChips+='<a class="chip" href="'+esc(L.maps_url)+'" target="_blank"><span class="fav" style="--fav:#7ce2b5"></span>Google Maps<span class="ext">↗</span></a>';
   }
+  var tiktok=(L.social&&L.social.tiktok)||{};
+  if(tiktok.has_tiktok&&tiktok.tiktok_url){
+    linkChips+='<a class="chip" href="'+esc(tiktok.tiktok_url)+'" target="_blank"><span class="fav" style="--fav:#ff2d55"></span>@'+esc(tiktok.tiktok_username||'tiktok')+'<span class="ext">↗</span></a>';
+  }
+  if(L.rating){
+    var ratingColor=L.rating>=4?'#7ce2b5':L.rating>=3.5?'#f7c560':'#ff6770';
+    linkChips+='<span class="chip" style="cursor:default"><span class="fav" style="--fav:'+ratingColor+'"></span>'+L.rating+' ⭐ ('+( L.review_count||0)+' yorum)</span>';
+  }
 
   // ── Telefon & Adres chips ─────────────────────────────
   var contactChips='';
@@ -871,6 +901,27 @@ function renderDetail(name){
   var probs=(s.issues||[]).map(function(p){ return '<span class="tpill bad">'+esc(p)+'</span>'; }).join('')||'<span style="color:var(--text-4);font-size:12px">Sorun bulunamadı</span>';
   var opps=(s.opportunities||[]).map(function(p){ return '<span class="tpill good">'+esc(p)+'</span>'; }).join('')||'<span style="color:var(--text-4);font-size:12px">Fırsat bulunamadı</span>';
 
+  // ── Service Match paneli ──────────────────────────────
+  var svcs=L.matched_services||[];
+  var estVal=L.estimated_value_tl||0;
+  var svcMatchHtml='';
+  if(svcs.length>0){
+    var svcRows=svcs.map(function(svc){
+      var priceStr='₺'+Number(svc.price_min).toLocaleString('tr-TR')+' – ₺'+Number(svc.price_max).toLocaleString('tr-TR');
+      return '<div class="svc-row">'+
+        '<div><div class="svc-name">'+esc(svc.name)+'</div><div class="svc-desc">'+esc(svc.desc)+'</div></div>'+
+        '<div style="text-align:right"><div class="svc-price">'+priceStr+'</div><div class="svc-monthly">'+(svc.monthly?'aylık':'tek seferlik')+'</div></div>'+
+      '</div>';
+    }).join('');
+    svcMatchHtml='<div class="svc-match">'+
+      '<div class="svc-match-head">'+
+        '<span class="svc-match-lbl">✦ Zeplin Hizmet Eşleşmeleri ('+svcs.length+')</span>'+
+        '<span class="svc-match-val">~'+Number(estVal).toLocaleString('tr-TR')+' TL<small>/ay potansiyel</small></span>'+
+      '</div>'+
+      '<div class="svc-list">'+svcRows+'</div>'+
+    '</div>';
+  }
+
   var reportBlock=L.ai_report
     ? '<div class="report-text">'+esc(L.ai_report)+'</div>'
     : '<div class="empty-state"><b>Rapor henüz oluşturulmadı</b>main.py çalıştırıldığında otomatik üretilecek.</div>';
@@ -888,6 +939,7 @@ function renderDetail(name){
         '<h2 class="det-name">'+esc(L.name)+'</h2>'+
         '<div class="det-meta">'+
           '<span class="pill '+STATUS_CLASS[st]+'" onclick="changeStatus(\''+esc(L.name)+'\')" title="Durumu değiştir">'+STATUS_LABEL[st]+'</span>'+
+          (L.sector&&L.sector!=='default'?'<span class="dot"></span><span style="color:var(--lila);font-size:11px;font-weight:600;text-transform:capitalize">'+esc(L.sector)+'</span>':'')+
           '<span class="dot"></span><span>Son analiz</span>'+
           '<span style="color:var(--text-2);font-weight:500">'+esc(L.last_analyzed||'—')+'</span>'+
           (L.city?'<span class="dot"></span><span>'+esc(L.city)+'</span>':'')+
@@ -905,6 +957,7 @@ function renderDetail(name){
     '<div class="links">'+linkChips+'</div>'+
     contactRow+
     igStatsHtml+
+    svcMatchHtml+
     '<div class="det-grid" style="margin-top:14px">'+
       '<div><div class="col-label problems">Sorunlar <span class="lbl-line"></span><span class="n">0'+(s.issues||[]).length+'</span></div><div class="pillset">'+probs+'</div></div>'+
       '<div><div class="col-label opps">Fırsatlar <span class="lbl-line"></span><span class="n">0'+(s.opportunities||[]).length+'</span></div><div class="pillset">'+opps+'</div></div>'+
@@ -1015,7 +1068,8 @@ function fmtNum(n){
 function renderReports(sortBy){
   sortBy = sortBy || repSortMode;
   var sorted = leads.slice();
-  if(sortBy==='opps') sorted.sort(function(a,b){ return (b.scoring.opportunities||[]).length-(a.scoring.opportunities||[]).length; });
+  if(sortBy==='value') sorted.sort(function(a,b){ return (b.estimated_value_tl||0)-(a.estimated_value_tl||0); });
+  else if(sortBy==='opps') sorted.sort(function(a,b){ return (b.scoring.opportunities||[]).length-(a.scoring.opportunities||[]).length; });
   else if(sortBy==='score') sorted.sort(function(a,b){ return b.scoring.score - a.scoring.score; });
   else if(sortBy==='name') sorted.sort(function(a,b){ return a.name.localeCompare(b.name,'tr'); });
   else sorted.sort(function(a,b){
@@ -1023,7 +1077,7 @@ function renderReports(sortBy){
     return db.localeCompare(da);
   });
 
-  var sortLabel = sortBy==='opps'?'Fırsat sayısına göre':sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
+  var sortLabel = sortBy==='value'?'Tahmini değere göre':sortBy==='opps'?'Fırsat sayısına göre':sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
   document.getElementById('rep-sub').textContent = sorted.length+' lead · Sıralama: '+sortLabel;
 
   var html = sorted.map(function(L, idx){
@@ -1105,6 +1159,17 @@ function renderReports(sortBy){
         '</div>' +
       '</div>' +
       '<div class="rc-chips" style="margin-top:14px">'+chips+'</div>' +
+      (function(){
+        var svcs=L.matched_services||[];
+        var val=L.estimated_value_tl||0;
+        if(!svcs.length) return '';
+        var svcChips=svcs.slice(0,4).map(function(s){ return '<span class="rc-svc-chip">'+esc(s.name)+'</span>'; }).join('');
+        if(svcs.length>4) svcChips+='<span class="rc-svc-chip">+' +(svcs.length-4)+'</span>';
+        return '<div class="rc-value-row">'+
+          '<span class="rc-value-badge">~'+Number(val).toLocaleString('tr-TR')+' TL/ay</span>'+
+          svcChips+
+        '</div>';
+      })()+
       igHtml +
       '<div class="rc-divider"></div>' +
       '<div class="rc-tags">' +
