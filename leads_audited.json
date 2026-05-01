@@ -1,0 +1,180 @@
+[
+  {
+    "name": "Kanlıca Teras",
+    "maps_url": "https://www.google.com/maps/place/Kanl%C4%B1ca+Teras/data=!4m7!3m6!1s0x14caca6ad85a812f:0xbeb65be95673cc40!8m2!3d41.1006006!4d29.0667038!16s%2Fg%2F11g_w64_2!19sChIJL4Fa2GrKyhQRQMxzVulbtr4?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.kanlicateras.com/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 124,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/kanlicateras/",
+      "instagram_username": "kanlicateras"
+    },
+    "scoring": {
+      "score": 80,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [
+        "SSL yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu"
+      ]
+    }
+  },
+  {
+    "name": "İBB Beykoz Sahil Sosyal Tesisleri",
+    "maps_url": "https://www.google.com/maps/place/%C4%B0BB+Beykoz+Sahil+Sosyal+Tesisleri/data=!4m7!3m6!1s0x14caca5619a6a2c5:0x463ddadcfba10f6c!8m2!3d41.1133052!4d29.0864812!16s%2Fg%2F1vc8lp9m!19sChIJxaKmGVbKyhQRbA-h-9zaPUY?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": false,
+      "website_url": null,
+      "has_ssl": false,
+      "is_mobile_friendly": false,
+      "load_time_ms": null,
+      "website_loads": false
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null
+    },
+    "scoring": {
+      "score": 0,
+      "max_score": 100,
+      "grade": "D",
+      "issues": [
+        "Web sitesi yok",
+        "Instagram hesabı yok"
+      ],
+      "opportunities": [
+        "Web sitesi tasarımı — yüksek öncelik",
+        "Instagram yönetimi + içerik üretimi"
+      ]
+    }
+  },
+  {
+    "name": "Kanlıca Paysage Restaurant",
+    "maps_url": "https://www.google.com/maps/place/Kanl%C4%B1ca+Paysage+Restaurant/data=!4m7!3m6!1s0x14caca421543b493:0x8514f2acfb3e5aad!8m2!3d41.1043852!4d29.071201!16s%2Fg%2F1tgcvdbf!19sChIJk7RDFULKyhQRrVo--6zyFIU?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.paysagerestaurant.com/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 1135,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/themerex_net/",
+      "instagram_username": "themerex_net"
+    },
+    "scoring": {
+      "score": 80,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [
+        "SSL yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu"
+      ]
+    }
+  },
+  {
+    "name": "Uskumru Restaurant",
+    "maps_url": "https://www.google.com/maps/place/Uskumru+Restaurant/data=!4m7!3m6!1s0x14caca2016ef45a1:0x665a0f5a034b77a2!8m2!3d41.0908776!4d29.0665753!16s%2Fg%2F11j03byx75!19sChIJoUXvFiDKyhQRondLA1oPWmY?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": true,
+      "website_url": "http://uskumru.com.tr/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 1796,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/uskumrurestaurant/",
+      "instagram_username": "uskumrurestaurant"
+    },
+    "scoring": {
+      "score": 80,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [
+        "SSL yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu"
+      ]
+    }
+  },
+  {
+    "name": "Shubra",
+    "maps_url": "https://www.google.com/maps/place/Shubra/data=!4m7!3m6!1s0x14cacafe3c99c89b:0xa2ba5b1f8e4504b6!8m2!3d41.1143527!4d29.0915313!16s%2Fg%2F11c424bh3y!19sChIJm8iZPP7KyhQRtgRFjh9buqI?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": true,
+      "website_url": "https://www.shubracafe.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 433,
+      "website_loads": true
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/shubraturkey/",
+      "instagram_username": "shubraturkey"
+    },
+    "scoring": {
+      "score": 90,
+      "max_score": 100,
+      "grade": "A",
+      "issues": [],
+      "opportunities": []
+    }
+  },
+  {
+    "name": "Gümüşsuyu Restoran",
+    "maps_url": "https://www.google.com/maps/place/G%C3%BCm%C3%BC%C5%9Fsuyu+Restoran/data=!4m7!3m6!1s0x14cacb8d63213ab3:0x7c6b2753d34fbd9c!8m2!3d41.128281!4d29.095188!16s%2Fg%2F11k19wqg8b!19sChIJszohY43LyhQRnL1P01Mna3w?authuser=0&hl=tr&rclk=1",
+    "query": "restoran",
+    "city": "Istanbul Beykoz",
+    "website": {
+      "has_website": true,
+      "website_url": "https://beykoz.bel.tr/sayfa/95/180/gumussuyu-restoran",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 98,
+      "website_loads": false
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null
+    },
+    "scoring": {
+      "score": 55,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Instagram hesabı yok"
+      ],
+      "opportunities": [
+        "Instagram yönetimi + içerik üretimi"
+      ]
+    }
+  }
+]
