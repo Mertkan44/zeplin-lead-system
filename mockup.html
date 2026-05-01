@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zeplin Lead System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --card: #111111;
+    --card-hover: #141414;
+    --border: #1e1e1e;
+    --border-hover: #2a2a2a;
+    --accent: #FF2D78;
+    --accent-dim: rgba(255,45,120,0.12);
+    --text: #f0f0f0;
+    --text-muted: #555;
+    --text-sub: #888;
+    --grade-a: #22C55E;
+    --grade-b: #F59E0B;
+    --grade-c: #EF4444;
+    --issue-bg: rgba(239,68,68,0.08);
+    --issue-border: rgba(239,68,68,0.2);
+    --issue-text: #f87171;
+    --opp-bg: rgba(34,197,94,0.08);
+    --opp-border: rgba(34,197,94,0.2);
+    --opp-text: #4ade80;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Noise overlay ─────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── Layout ────────────────────────────────────── */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-mark svg { width: 14px; height: 14px; }
+
+  .logo-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .header-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  /* ── Stats ─────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    transition: border-color 200ms ease;
+  }
+
+  .stat-card:hover { border-color: var(--border-hover); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green { color: var(--grade-a); }
+
+  .stat-delta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* ── Section title ─────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .section-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* ── Lead Cards ────────────────────────────────── */
+  .leads { display: flex; flex-direction: column; gap: 12px; }
+
+  .lead-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    border-radius: 10px;
+    padding: 20px 22px;
+    transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lead-card:hover {
+    border-color: var(--border-hover);
+    background: var(--card-hover);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .lead-card.grade-a { border-left-color: var(--grade-a); }
+  .lead-card.grade-b { border-left-color: var(--grade-b); }
+  .lead-card.grade-c { border-left-color: var(--grade-c); }
+
+  .lead-card:hover.grade-a { border-color: rgba(34,197,94,0.35); border-left-color: var(--grade-a); }
+  .lead-card:hover.grade-b { border-color: rgba(245,158,11,0.35); border-left-color: var(--grade-b); }
+  .lead-card:hover.grade-c { border-color: rgba(239,68,68,0.35); border-left-color: var(--grade-c); }
+
+  /* ── Card Header ───────────────────────────────── */
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .card-left { flex: 1; min-width: 0; }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-yeni {
+    background: rgba(255,45,120,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(255,45,120,0.25);
+  }
+
+  .status-contacted {
+    background: rgba(245,158,11,0.1);
+    color: var(--grade-b);
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+
+  .status-converted {
+    background: rgba(34,197,94,0.1);
+    color: var(--grade-a);
+    border: 1px solid rgba(34,197,94,0.25);
+  }
+
+  .card-date {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .business-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Score Ring ────────────────────────────────── */
+  .score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .score-ring {
+    position: relative;
+    width: 56px;
+    height: 56px;
+  }
+
+  .score-ring svg {
+    transform: rotate(-90deg);
+    width: 56px;
+    height: 56px;
+  }
+
+  .score-ring circle {
+    fill: none;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+  }
+
+  .ring-bg { stroke: var(--border); }
+  .ring-fill { transition: stroke-dashoffset 800ms cubic-bezier(0.4,0,0.2,1); }
+
+  .score-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .score-num {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .score-denom {
+    font-size: 9px;
+    color: var(--text-muted);
+    line-height: 1;
+  }
+
+  .grade-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 5px;
+    letter-spacing: 0.02em;
+  }
+
+  .grade-a-pill { background: rgba(34,197,94,0.12); color: var(--grade-a); border: 1px solid rgba(34,197,94,0.25); }
+  .grade-b-pill { background: rgba(245,158,11,0.12); color: var(--grade-b); border: 1px solid rgba(245,158,11,0.25); }
+  .grade-c-pill { background: rgba(239,68,68,0.12); color: var(--grade-c); border: 1px solid rgba(239,68,68,0.25); }
+
+  /* ── Chips ─────────────────────────────────────── */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    white-space: nowrap;
+  }
+
+  .chip:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+
+  .chip.missing {
+    color: var(--text-muted);
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .chip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--grade-a);
+    flex-shrink: 0;
+  }
+
+  .chip-dot.red { background: var(--grade-c); }
+
+  /* ── Tags ──────────────────────────────────────── */
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+
+  .tag-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 5px;
+  }
+
+  .tag-issue {
+    background: var(--issue-bg);
+    border: 1px solid var(--issue-border);
+    color: var(--issue-text);
+  }
+
+  .tag-opp {
+    background: var(--opp-bg);
+    border: 1px solid var(--opp-border);
+    color: var(--opp-text);
+  }
+
+  /* ── Tags section ──────────────────────────────── */
+  .tags-section { margin-bottom: 16px; }
+
+  /* ── Accordion ─────────────────────────────────── */
+  .accordions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .accordion { flex: 1; min-width: 140px; }
+
+  .accordion-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text-sub);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    text-align: left;
+  }
+
+  .accordion-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+
+  .accordion-btn.active {
+    background: rgba(255,45,120,0.06);
+    border-color: rgba(255,45,120,0.2);
+    color: var(--accent);
+  }
+
+  .accordion-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 200ms ease;
+  }
+
+  .accordion-btn.active .accordion-icon { transform: rotate(180deg); }
+
+  .accordion-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 250ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease;
+    opacity: 0;
+  }
+
+  .accordion-body.open {
+    max-height: 400px;
+    opacity: 1;
+  }
+
+  .accordion-content {
+    margin-top: 8px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--text-sub);
+  }
+
+  .accordion-content strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .mail-header {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .mail-header span { color: var(--text-sub); }
+
+  /* ── Divider ───────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0;
+  }
+
+  /* ── Responsive ────────────────────────────────── */
+  @media (max-width: 640px) {
+    .wrapper { padding: 28px 16px 60px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .card-top { flex-direction: row; }
+    .business-name { font-size: 16px; }
+    .score-ring { width: 50px; height: 50px; }
+    .score-ring svg { width: 50px; height: 50px; }
+    .score-num { font-size: 13px; }
+    .accordions { flex-direction: column; }
+    .accordion { min-width: unset; }
+  }
+
+  @media (max-width: 400px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14" fill="none">
+          <path d="M2 7h10M7 2l5 5-5 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Zeplin Lead System</div>
+        <div class="logo-sub">Digital Audit Dashboard</div>
+      </div>
+    </div>
+    <div class="header-date">01 Mayıs 2026</div>
+  </div>
+
+  <!-- ── Stats ── -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Toplam Lead</div>
+      <div class="stat-value">12</div>
+      <div class="stat-delta">Tüm zamanlar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ort. Skor</div>
+      <div class="stat-value accent">71</div>
+      <div class="stat-delta">/ 100 puan</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Bu Hafta</div>
+      <div class="stat-value">3</div>
+      <div class="stat-delta">Yeni analiz</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Converted</div>
+      <div class="stat-value green">1</div>
+      <div class="stat-delta">Müşteri oldu</div>
+    </div>
+  </div>
+
+  <!-- ── Lead List ── -->
+  <div class="section-header">
+    <div class="section-title">Leads</div>
+    <div class="section-count">3 işletme</div>
+  </div>
+
+  <div class="leads">
+
+    <!-- ── Card 1: Kanlıca Teras (B) ── -->
+    <div class="lead-card grade-b">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="card-meta">
+            <span class="status-badge status-yeni">Yeni</span>
+            <span class="card-date">Son analiz: 01.05.2026 13:49</span>
+          </div>
+          <div class="business-name">Kanlıca Teras</div>
+        </div>
+        <div class="score-block">
+          <div class="score-ring">
+            <svg viewBox="0 0 56 56">
+              <circle class="ring-bg" cx="28" cy="28" r="23" />
+              <!-- circumference = 2π×23 ≈ 144.5 | offset = 144.5×(1-0.75)=36.1 -->
+              <circle class="ring-fill" cx="28" cy="28" r="23"
+                stroke="#F59E0B"
+                stroke-dasharray="144.5"
+                stroke-dashoffset="36.1" />
+            </svg>
+            <div class="score-inner">
+              <span class="score-num">75</span>
+              <span class="score-denom">/100</span>
+            </div>
+          </div>
+          <span class="grade-pill grade-b-pill">B</span>
+        </div>
+      </div>
+
+      <div class="chips">
+        <a class="chip" href="#"><span class="chip-dot"></span>kanlicateras.com</a>
+        <a class="chip" href="#"><span class="chip-dot"></span>@kanlicateras</a>
+        <a class="chip" href="#"><span class="chip-dot"></span>Google Maps</a>
+      </div>
+
+      <div class="tags-section">
+        <div class="tag-row">
+          <span class="tag-label">Sorunlar</span>
+          <span class="tag tag-issue">SSL yok</span>
+          <span class="tag tag-issue">Instagram düzensiz</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag-label">Fırsatlar</span>
+          <span class="tag tag-opp">SSL kurulumu</span>
+          <span class="tag tag-opp">İçerik takvimi</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="accordions">
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>AI Raporu</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <strong>Kanlıca Teras</strong> dijital varlık analizi tamamlandı. İşletmenin Google Maps profili aktif ve fotoğrafları güncel olmakla birlikte web sitesinde SSL sertifikası bulunmuyor; bu durum hem SEO performansını olumsuz etkiliyor hem de ziyaretçilerde güvensizlik yaratıyor. Instagram hesabı mevcut ancak son 6 haftada yalnızca 2 paylaşım yapılmış — bu oran sektör ortalamasının oldukça altında. İçerik takvimi ve SSL yatırımı kısa vadede dönüşüm oranını %20–35 artırabilir.
+            </div>
+          </div>
+        </div>
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>Satış Maili</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <div class="mail-header">
+                <span><strong>Konu:</strong> Kanlıca Teras için 3 dakikalık dijital analiz</span>
+                <span><strong>Alıcı:</strong> info@kanlicateras.com</span>
+              </div>
+              Merhaba,<br><br>
+              Kanlıca Teras'ı kısa süre önce inceledim ve web sitenizde hızlıca düzeltilebilecek birkaç nokta fark ettim — özellikle SSL eksikliği, Google'da sizi potansiyel müşterilere göstermesini zorlaştırıyor.<br><br>
+              10 dakikalık bir görüşmede somut önerilerimi paylaşabilirim, hiçbir taahhüt olmaksızın.<br><br>
+              Uygun bir zaman var mı?<br><br>
+              <strong>Zeplin Media</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 2: Bebek Balık (A) ── -->
+    <div class="lead-card grade-a">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="card-meta">
+            <span class="status-badge status-contacted">Contacted</span>
+            <span class="card-date">Son analiz: 30.04.2026 10:22</span>
+          </div>
+          <div class="business-name">Bebek Balık Restaurant</div>
+        </div>
+        <div class="score-block">
+          <div class="score-ring">
+            <svg viewBox="0 0 56 56">
+              <circle class="ring-bg" cx="28" cy="28" r="23" />
+              <!-- offset = 144.5×(1-0.88)=17.3 -->
+              <circle class="ring-fill" cx="28" cy="28" r="23"
+                stroke="#22C55E"
+                stroke-dasharray="144.5"
+                stroke-dashoffset="17.3" />
+            </svg>
+            <div class="score-inner">
+              <span class="score-num">88</span>
+              <span class="score-denom">/100</span>
+            </div>
+          </div>
+          <span class="grade-pill grade-a-pill">A</span>
+        </div>
+      </div>
+
+      <div class="chips">
+        <a class="chip" href="#"><span class="chip-dot"></span>bebekbalik.com</a>
+        <a class="chip" href="#"><span class="chip-dot"></span>@bebekbalik</a>
+        <a class="chip" href="#"><span class="chip-dot"></span>Google Maps</a>
+      </div>
+
+      <div class="tags-section">
+        <div class="tag-row">
+          <span class="tag-label">Sorunlar</span>
+          <span class="tag tag-issue">Sayfa hızı yavaş</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag-label">Fırsatlar</span>
+          <span class="tag tag-opp">Google Ads</span>
+          <span class="tag tag-opp">SEO optimizasyonu</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="accordions">
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>AI Raporu</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <strong>Bebek Balık Restaurant</strong> bölgenin dijital açıdan en güçlü işletmelerinden biri. SSL aktif, web sitesi mobil uyumlu ve Instagram hesabı düzenli içerikle yönetiliyor. Temel fırsat alanı Google Ads — mevcut SEO skoru iyi ancak ücretli arama ile kısa vadede görünürlük patlaması yaşanabilir. Sayfa yükleme süresi 3.4 saniye; Core Web Vitals iyileştirmesi dönüşüm oranını doğrudan etkiler.
+            </div>
+          </div>
+        </div>
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>Satış Maili</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <div class="mail-header">
+                <span><strong>Konu:</strong> Bebek Balık — Google Ads ile rezervasyon artışı</span>
+                <span><strong>Alıcı:</strong> info@bebekbalik.com</span>
+              </div>
+              Merhaba,<br><br>
+              Restoranınızı inceledim — dijital altyapınız bölgedeki rakiplerinizden çok daha iyi durumda. Bu temelin üzerine Google Ads kurarsak, hafta sonu rezervasyon doluluk oranınızı ciddi oranda artırabilirsiniz.<br><br>
+              Size özel bir strateji hazırladım, isterseniz paylaşayım.<br><br>
+              <strong>Zeplin Media</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 3: Üsküdar Pide (C) ── -->
+    <div class="lead-card grade-c">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="card-meta">
+            <span class="status-badge status-yeni">Yeni</span>
+            <span class="card-date">Son analiz: 01.05.2026 09:14</span>
+          </div>
+          <div class="business-name">Üsküdar Pide Salonu</div>
+        </div>
+        <div class="score-block">
+          <div class="score-ring">
+            <svg viewBox="0 0 56 56">
+              <circle class="ring-bg" cx="28" cy="28" r="23" />
+              <!-- offset = 144.5×(1-0.42)=83.8 -->
+              <circle class="ring-fill" cx="28" cy="28" r="23"
+                stroke="#EF4444"
+                stroke-dasharray="144.5"
+                stroke-dashoffset="83.8" />
+            </svg>
+            <div class="score-inner">
+              <span class="score-num">42</span>
+              <span class="score-denom">/100</span>
+            </div>
+          </div>
+          <span class="grade-pill grade-c-pill">C</span>
+        </div>
+      </div>
+
+      <div class="chips">
+        <span class="chip missing">Web sitesi yok</span>
+        <span class="chip missing">Instagram yok</span>
+        <a class="chip" href="#"><span class="chip-dot"></span>Google Maps</a>
+      </div>
+
+      <div class="tags-section">
+        <div class="tag-row">
+          <span class="tag-label">Sorunlar</span>
+          <span class="tag tag-issue">Web sitesi yok</span>
+          <span class="tag tag-issue">Sosyal medya yok</span>
+          <span class="tag tag-issue">Google profili eksik</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag-label">Fırsatlar</span>
+          <span class="tag tag-opp">Landing page</span>
+          <span class="tag tag-opp">Instagram kurulumu</span>
+          <span class="tag tag-opp">Google My Business</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="accordions">
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>AI Raporu</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <strong>Üsküdar Pide Salonu</strong> dijital varlık analizinde en düşük skorları alan işletmelerden biri. Web sitesi, Instagram veya herhangi bir sosyal medya profili bulunmuyor. Google My Business kaydı eksik ya da doğrulanmamış. Bu tablo aslında büyük bir fırsata işaret ediyor: sıfırdan inşa edecek olan ajans, müşteri üzerinde tam kontrol ve uzun vadeli bağlılık kurabilir. Tek bir landing page bile bu işletmenin dijital görünürlüğünü kökten değiştirir.
+            </div>
+          </div>
+        </div>
+        <div class="accordion">
+          <button class="accordion-btn" onclick="toggle(this)">
+            <span>Satış Maili</span>
+            <svg class="accordion-icon" viewBox="0 0 14 14" fill="none">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="accordion-body">
+            <div class="accordion-content">
+              <div class="mail-header">
+                <span><strong>Konu:</strong> Üsküdar Pide — Google'da görünmüyorsunuz</span>
+                <span><strong>Alıcı:</strong> —</span>
+              </div>
+              Merhaba,<br><br>
+              Pide salonunuzu ararken Google'da web sitenize veya sosyal medya hesabınıza ulaşamadım. Her gün onlarca kişi "Üsküdar pide" diye arama yapıyor — ama sizi bulamıyor.<br><br>
+              Bunu birlikte çözmek ister misiniz? Bir landing page ve Google profili ile bu durumu hızlıca tersine çevirebiliriz.<br><br>
+              <strong>Zeplin Media</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /leads -->
+
+</div><!-- /wrapper -->
+
+<script>
+  function toggle(btn) {
+    const body = btn.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    // close all in same card
+    const card = btn.closest('.lead-card');
+    card.querySelectorAll('.accordion-body').forEach(b => b.classList.remove('open'));
+    card.querySelectorAll('.accordion-btn').forEach(b => b.classList.remove('active'));
+    if (!isOpen) {
+      body.classList.add('open');
+      btn.classList.add('active');
+    }
+  }
+</script>
+
+</body>
+</html>
