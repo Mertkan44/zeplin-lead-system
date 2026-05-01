@@ -492,6 +492,43 @@
   .svc-monthly{font-size:10px;color:var(--text-4);font-weight:400}
   .svc-empty{padding:14px 16px;font-size:12px;color:var(--text-4)}
 
+  /* ── PIPELINE ─────────────────────────────────────── */
+  #view-pipeline{display:flex;flex-direction:column;flex:1;min-height:0}
+  .pipe-board{flex:1;overflow-x:auto;overflow-y:hidden;display:flex;gap:12px;padding:20px 28px 32px;align-items:flex-start}
+  .pipe-col{flex:0 0 220px;display:flex;flex-direction:column;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:16px;overflow:hidden;min-height:300px;max-height:calc(100vh - 260px)}
+  .pipe-col.drag-over{border-color:rgba(149,128,255,.4);background:rgba(149,128,255,.06)}
+  .pipe-col-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.05);position:sticky;top:0;background:rgba(20,18,30,.95);backdrop-filter:blur(8px)}
+  .pipe-col-title{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .pipe-col-dot{width:8px;height:8px;border-radius:50%}
+  .pipe-col-cnt{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--text-3)}
+  .pipe-cards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+  .pipe-card{background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:11px 13px;cursor:grab;transition:box-shadow .15s,border-color .15s;user-select:none}
+  .pipe-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.3);border-color:rgba(255,255,255,.1)}
+  .pipe-card.dragging{opacity:.4;cursor:grabbing}
+  .pipe-card-name{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:6px}
+  .pipe-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pipe-card-score{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .pipe-card-val{font-size:10px;color:var(--mint);font-weight:600}
+  .pipe-card-date{font-size:10px;color:var(--text-4)}
+  .pipe-empty{padding:20px 14px;font-size:12px;color:var(--text-4);text-align:center;line-height:1.6}
+
+  /* ── HİZMETLER ─────────────────────────────────────── */
+  #view-hizmetler{display:flex;flex-direction:column;flex:1}
+  .hiz-grid{padding:20px 28px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .hiz-card{background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:20px;transition:box-shadow .2s,border-color .2s;cursor:default}
+  .hiz-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.3);border-color:rgba(255,255,255,.1)}
+  .hiz-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .hiz-card-icon{width:40px;height:40px;border-radius:12px;background:rgba(149,128,255,.14);border:1px solid rgba(149,128,255,.25);display:grid;place-items:center;font-size:18px;flex-shrink:0}
+  .hiz-badge{padding:3px 9px;border-radius:999px;font-size:10px;font-weight:600}
+  .hiz-badge.monthly{background:var(--lila-soft);color:var(--lila);border:1px solid var(--lila-line)}
+  .hiz-badge.once{background:rgba(255,255,255,.06);color:var(--text-3);border:1px solid rgba(255,255,255,.08)}
+  .hiz-card-name{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:4px}
+  .hiz-card-desc{font-size:12px;color:var(--text-3);line-height:1.55;margin-bottom:14px}
+  .hiz-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05)}
+  .hiz-stat-val{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+  .hiz-stat-lbl{font-size:10px;font-weight:500;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+  .hiz-price{font-size:12px;font-weight:600;color:var(--text-2);margin-top:10px}
+
   /* ── RC value row (reports) ────────────────────────── */
   .rc-value-row{display:flex;align-items:center;gap:10px;padding:8px 24px 4px;flex-wrap:wrap}
   .rc-value-badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:7px;background:rgba(124,226,181,.1);border:1px solid rgba(124,226,181,.2);font-size:12px;font-weight:700;color:var(--mint)}
@@ -564,13 +601,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 14l3-3 3 3 4-5"/></svg>
         <span class="nav-tooltip">Raporlar</span>
       </div>
-      <div class="nav-icon" title="Inbox" onclick="navClick(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6L18.55 5.11A2 2 0 0 0 16.76 4H7.24A2 2 0 0 0 5.45 5.11Z"/></svg>
-        <span class="nav-tooltip">Gelen Kutusu</span>
+      <div class="nav-icon" title="Pipeline" onclick="navClick(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="12" rx="1"/><rect x="17" y="3" width="4" height="15" rx="1"/></svg>
+        <span class="nav-tooltip">Pipeline</span>
       </div>
-      <div class="nav-icon" title="Calendar" onclick="navClick(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        <span class="nav-tooltip">Takvim</span>
+      <div class="nav-icon" title="Hizmetler" onclick="navClick(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4M10 14h4"/></svg>
+        <span class="nav-tooltip">Hizmetler</span>
       </div>
       <div class="nav-spacer"></div>
       <div class="nav-icon" onclick="navClick(this)">
@@ -698,6 +735,32 @@
           </div>
         </div>
         <div class="rep-feed" id="rep-feed"></div>
+      </div>
+
+      <!-- ── VIEW: Pipeline ── -->
+      <div id="view-pipeline" style="display:none">
+        <div class="rep-hero">
+          <div class="rep-hero-inner">
+            <div>
+              <h2 class="rep-title">Pipeline</h2>
+              <p class="rep-sub" id="pipe-sub"></p>
+            </div>
+          </div>
+        </div>
+        <div class="pipe-board" id="pipe-board"></div>
+      </div>
+
+      <!-- ── VIEW: Hizmetler ── -->
+      <div id="view-hizmetler" style="display:none">
+        <div class="rep-hero">
+          <div class="rep-hero-inner">
+            <div>
+              <h2 class="rep-title">Zeplin Media Hizmetleri</h2>
+              <p class="rep-sub" id="hiz-sub"></p>
+            </div>
+          </div>
+        </div>
+        <div class="hiz-grid" id="hiz-grid"></div>
       </div>
 
     </section>
@@ -1207,19 +1270,177 @@ function newLeadClick(){
   toast('Yeni lead ekleme yakında! API entegrasyonu geliyor.','info');
 }
 
+// ──────────────────────────────────────────────────────
+// PIPELINE
+// ──────────────────────────────────────────────────────
+var PIPE_STAGES=[
+  {key:'new',      label:'Yeni',            color:'#534b6b', actions:[]},
+  {key:'emailed',  label:'Mail Atıldı',     color:'#76a6ff', actions:['email_sent']},
+  {key:'replied',  label:'Cevap Alındı',    color:'#f7c560', actions:['reply_received']},
+  {key:'called',   label:'Görüşüldü',       color:'#b9a8ff', actions:['call_made']},
+  {key:'meeting',  label:'Toplantı',        color:'#ff9f43', actions:['meeting_scheduled']},
+  {key:'won',      label:'Kazanıldı 🎉',   color:'#7ce2b5', actions:['deal_won']},
+  {key:'lost',     label:'Kaybedildi',      color:'#ff6770', actions:['deal_lost']},
+];
+
+function getPipelineStage(lead){
+  var st=getStatus(lead.name);
+  if(st==='converted') return 'won';
+  var evs=getLeadEvents(lead.name);
+  var last=evs.find(function(e){ return e.action!=='note'; });
+  if(!last) return st==='contacted'?'emailed':'new';
+  var map={email_sent:'emailed',reply_received:'replied',call_made:'called',
+           meeting_scheduled:'meeting',deal_won:'won',deal_lost:'lost'};
+  return map[last.action]||'emailed';
+}
+
+var _dragLead='';
+function renderPipeline(){
+  var byStage={};
+  PIPE_STAGES.forEach(function(s){ byStage[s.key]=[]; });
+  leads.forEach(function(l){ var stage=getPipelineStage(l); byStage[stage]=byStage[stage]||[]; byStage[stage].push(l); });
+
+  var total=leads.length;
+  var won=byStage['won'].length;
+  document.getElementById('pipe-sub').textContent=total+' lead · '+won+' kazanıldı · '+(byStage['emailed'].length+byStage['replied'].length+byStage['called'].length+byStage['meeting'].length)+' aktif';
+
+  document.getElementById('pipe-board').innerHTML=PIPE_STAGES.map(function(stage){
+    var cards=byStage[stage.key]||[];
+    var cardsHtml=cards.length?cards.map(function(l){
+      var evs=getLeadEvents(l.name);
+      var lastDate=evs.length?evs[0].date.slice(0,10):'';
+      var val=l.estimated_value_tl||0;
+      var gc=gradeToColor(l.scoring.grade);
+      return '<div class="pipe-card" draggable="true" data-lead="'+esc(l.name)+'" onclick="pipeCardClick(\''+esc(l.name)+'\')" ondragstart="pipeDragStart(event)">' +
+        '<div class="pipe-card-name">'+esc(l.name)+'</div>'+
+        '<div class="pipe-card-meta">'+
+          '<span class="pipe-card-score" style="background:'+gc+'22;color:'+gc+'">'+l.scoring.grade+' '+l.scoring.score+'</span>'+
+          (val?'<span class="pipe-card-val">~'+Number(val).toLocaleString('tr-TR')+'₺</span>':'')+
+          (lastDate?'<span class="pipe-card-date">'+lastDate+'</span>':'')+
+        '</div>'+
+      '</div>';
+    }).join(''):'<div class="pipe-empty">Buraya sürükle</div>';
+
+    return '<div class="pipe-col" data-stage="'+stage.key+'" ondragover="pipeDragOver(event)" ondrop="pipeDrop(event)">'+
+      '<div class="pipe-col-head">'+
+        '<span class="pipe-col-title"><span class="pipe-col-dot" style="background:'+stage.color+'"></span>'+esc(stage.label)+'</span>'+
+        '<span class="pipe-col-cnt">'+cards.length+'</span>'+
+      '</div>'+
+      '<div class="pipe-cards">'+cardsHtml+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function pipeCardClick(name){
+  navClick(document.querySelector('.nav-icon[title="Leads"]'));
+  setTimeout(function(){ selectLead(name); },50);
+}
+function pipeDragStart(e){
+  _dragLead=e.currentTarget.dataset.lead;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function pipeDragOver(e){
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function pipeDrop(e){
+  e.preventDefault();
+  document.querySelectorAll('.pipe-col').forEach(function(c){ c.classList.remove('drag-over'); });
+  var col=e.currentTarget.closest('.pipe-col');
+  if(!col||!_dragLead) return;
+  var stage=col.dataset.stage;
+  var stageObj=PIPE_STAGES.find(function(s){ return s.key===stage; });
+  if(!stageObj) return;
+  if(stageObj.actions.length){
+    addOutreach(_dragLead, stageObj.actions[0], new Date().toISOString().slice(0,16), '');
+  } else if(stage==='new'){
+    setStatus(_dragLead,'yeni');
+  }
+  renderPipeline();
+  _dragLead='';
+}
+document.addEventListener('dragend', function(){
+  document.querySelectorAll('.pipe-card').forEach(function(c){ c.classList.remove('dragging'); });
+  document.querySelectorAll('.pipe-col').forEach(function(c){ c.classList.remove('drag-over'); });
+});
+
+// ──────────────────────────────────────────────────────
+// HİZMETLER
+// ──────────────────────────────────────────────────────
+var HIZ_ICONS={
+  web_design:'🌐', ssl_security:'🔒', seo_schema:'🔍', social_management:'📸',
+  google_ads:'📢', reputation_management:'⭐', whatsapp_business:'💬',
+  email_marketing:'✉️', delivery_setup:'🛵', reservation_system:'📅',
+  content_creation:'🎬', tiktok_management:'🎵'
+};
+
+function renderHizmetler(){
+  var svcMap={};
+  leads.forEach(function(l){
+    (l.matched_services||[]).forEach(function(svc){
+      if(!svcMap[svc.slug]){
+        svcMap[svc.slug]={svc:svc,leads:[],totalVal:0};
+      }
+      svcMap[svc.slug].leads.push(l);
+      var mid=(svc.price_min+svc.price_max)/2;
+      svcMap[svc.slug].totalVal+=svc.monthly?mid:mid/12;
+    });
+  });
+
+  var entries=Object.values(svcMap).sort(function(a,b){ return b.leads.length-a.leads.length; });
+  document.getElementById('hiz-sub').textContent=entries.length+' aktif hizmet · '+
+    entries.reduce(function(a,e){ return a+e.leads.length; },0)+' toplam eşleşme';
+
+  var totalMonthly=Math.round(entries.reduce(function(a,e){ return a+e.totalVal; },0));
+
+  document.getElementById('hiz-grid').innerHTML=
+    '<div class="hiz-card" style="border-color:rgba(124,226,181,.25);grid-column:1/-1;background:linear-gradient(135deg,rgba(124,226,181,.08),rgba(0,0,0,0))">'+
+      '<div style="display:flex;align-items:center;gap:16px">'+
+        '<div class="hiz-card-icon" style="background:rgba(124,226,181,.14);border-color:rgba(124,226,181,.3)">💰</div>'+
+        '<div>'+
+          '<div style="font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--mint)">~'+Number(totalMonthly).toLocaleString('tr-TR')+' TL<span style="font-size:14px;font-weight:400;color:var(--text-3)">/ay</span></div>'+
+          '<div style="font-size:13px;color:var(--text-3);margin-top:3px">'+leads.length+' lead içindeki toplam tahmini aylık potansiyel</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    entries.map(function(entry){
+      var svc=entry.svc;
+      var icon=HIZ_ICONS[svc.slug]||'✦';
+      var monthly=svc.monthly;
+      return '<div class="hiz-card">'+
+        '<div class="hiz-card-top">'+
+          '<div class="hiz-card-icon">'+icon+'</div>'+
+          '<span class="hiz-badge '+(monthly?'monthly':'once')+'">'+(monthly?'Aylık':'Tek Seferlik')+'</span>'+
+        '</div>'+
+        '<div class="hiz-card-name">'+esc(svc.name)+'</div>'+
+        '<div class="hiz-card-desc">'+esc(svc.desc)+'</div>'+
+        '<div class="hiz-card-stats">'+
+          '<div><div class="hiz-stat-val">'+entry.leads.length+'</div><div class="hiz-stat-lbl">Eşleşen Lead</div></div>'+
+          '<div><div class="hiz-stat-val" style="color:var(--mint)">~'+Math.round(entry.totalVal).toLocaleString('tr-TR')+'₺</div><div class="hiz-stat-lbl">'+(monthly?'Aylık':'Yıllık')+'</div></div>'+
+        '</div>'+
+        '<div class="hiz-price">₺'+Number(svc.price_min).toLocaleString('tr-TR')+' – ₺'+Number(svc.price_max).toLocaleString('tr-TR')+'</div>'+
+      '</div>';
+    }).join('');
+}
+
 function navClick(el){
   document.querySelectorAll('.nav-icon').forEach(function(n){ n.classList.remove('active'); });
   el.classList.add('active');
   var title = el.getAttribute('title');
+  var views = ['view-dashboard','view-reports','view-pipeline','view-hizmetler'];
+  views.forEach(function(id){ var v=document.getElementById(id); if(v) v.style.display='none'; });
   if(title === 'Reports'){
-    document.getElementById('view-dashboard').style.display = 'none';
     document.getElementById('view-reports').style.display = 'flex';
     renderReports(repSortMode);
-  } else if(title === 'Leads'){
-    document.getElementById('view-dashboard').style.display = 'block';
-    document.getElementById('view-reports').style.display = 'none';
+  } else if(title === 'Pipeline'){
+    document.getElementById('view-pipeline').style.display = 'flex';
+    renderPipeline();
+  } else if(title === 'Hizmetler'){
+    document.getElementById('view-hizmetler').style.display = 'flex';
+    renderHizmetler();
   } else {
-    toast('Bu bölüm yakında açılacak!','info');
+    document.getElementById('view-dashboard').style.display = 'block';
   }
 }
 
