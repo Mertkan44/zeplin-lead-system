@@ -366,8 +366,8 @@
   .rc-ring[data-tone="g"]{--score-color:var(--mint)}
   .rc-ring[data-tone="y"]{--score-color:var(--amber)}
   .rc-ring[data-tone="r"]{--score-color:var(--red)}
-  .rc-ring .rnum{position:absolute;inset:0;display:grid;place-items:center;font-size:18px;font-weight:700;letter-spacing:-.02em}
-  .rc-ring .rnum small{font-size:9px;color:var(--text-3);font-weight:500;display:block;line-height:1;margin-top:1px}
+  .rc-ring .rnum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1;text-align:center}
+  .rc-ring .rnum small{font-size:9px;color:var(--text-3);font-weight:500;line-height:1;margin-top:2px}
   .rc-gbadge{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:15px;font-weight:700}
   .rc-gbadge[data-g="A"],.rc-gbadge[data-g="B"]{background:var(--mint-soft);color:var(--mint);border:1px solid var(--mint-line)}
   .rc-gbadge[data-g="C"]{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber-line)}
@@ -591,6 +591,7 @@
                 CSV İndir
               </button>
               <div class="rep-seg" id="rep-sort">
+                <button onclick="repSort(this,'opps')">Fırsat</button>
                 <button class="on" onclick="repSort(this,'score')">Skor</button>
                 <button onclick="repSort(this,'name')">İsim</button>
                 <button onclick="repSort(this,'date')">Tarih</button>
@@ -1014,14 +1015,15 @@ function fmtNum(n){
 function renderReports(sortBy){
   sortBy = sortBy || repSortMode;
   var sorted = leads.slice();
-  if(sortBy==='score') sorted.sort(function(a,b){ return b.scoring.score - a.scoring.score; });
+  if(sortBy==='opps') sorted.sort(function(a,b){ return (b.scoring.opportunities||[]).length-(a.scoring.opportunities||[]).length; });
+  else if(sortBy==='score') sorted.sort(function(a,b){ return b.scoring.score - a.scoring.score; });
   else if(sortBy==='name') sorted.sort(function(a,b){ return a.name.localeCompare(b.name,'tr'); });
   else sorted.sort(function(a,b){
     var da=a.last_analyzed||''; var db=b.last_analyzed||'';
     return db.localeCompare(da);
   });
 
-  var sortLabel = sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
+  var sortLabel = sortBy==='opps'?'Fırsat sayısına göre':sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
   document.getElementById('rep-sub').textContent = sorted.length+' lead · Sıralama: '+sortLabel;
 
   var html = sorted.map(function(L, idx){
@@ -1035,7 +1037,7 @@ function renderReports(sortBy){
     var ringHtml =
       '<div class="rc-ring" data-tone="'+tone+'" data-score="'+s.score+'">' +
         '<svg viewBox="0 0 56 56"><circle class="track" cx="28" cy="28" r="23"></circle><circle class="prog" cx="28" cy="28" r="23" stroke-dasharray="144.5" stroke-dashoffset="144.5"></circle></svg>' +
-        '<div class="rnum">'+s.score+'<small>/100</small></div>' +
+        '<div class="rnum"><span>'+s.score+'</span><small>/100</small></div>' +
       '</div>';
 
     // Grade badge
