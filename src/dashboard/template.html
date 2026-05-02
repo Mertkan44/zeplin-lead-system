@@ -455,8 +455,23 @@
   .rc-copy:hover{background:rgba(255,255,255,.1);color:var(--text)}
   .rc-copy svg{width:10px;height:10px}
   .rc-empty{padding:10px 0;color:var(--text-4);font-size:12px}
+  .team-strip{padding:18px 28px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .team-card{min-height:76px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);padding:13px 14px}
+  .team-card span{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+  .team-card strong{display:block;margin-top:7px;font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+  .team-card small{display:block;margin-top:5px;font-size:11px;color:var(--text-3);line-height:1.35}
+  .offer-brief{margin:14px 24px 0;border:1px solid rgba(149,128,255,.20);border-radius:14px;background:linear-gradient(135deg,rgba(149,128,255,.09),rgba(124,226,181,.035));padding:14px 16px}
+  .offer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+  .offer-kicker{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--lila)}
+  .offer-title{margin-top:5px;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+  .offer-summary{margin-top:4px;font-size:12px;line-height:1.45;color:var(--text-3)}
+  .offer-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .offer-pill{height:24px;padding:0 9px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:inline-flex;align-items:center;font-size:11px;font-weight:600;color:var(--text-2)}
+  .offer-pill.hot{background:var(--pink-soft);border-color:var(--pink-line);color:var(--pink-2)}
+  .evidence-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .evidence-chip{height:23px;padding:0 9px;border-radius:999px;background:rgba(124,226,181,.08);border:1px solid rgba(124,226,181,.16);display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;color:var(--mint)}
 
-  @media(max-width:760px){.rep-feed{padding:16px 16px 40px}.rc-tags{grid-template-columns:1fr}.rc-head{flex-wrap:wrap}.rep-hero{padding:20px 16px 0}}
+  @media(max-width:760px){.rep-feed{padding:16px 16px 40px}.rc-tags{grid-template-columns:1fr}.rc-head{flex-wrap:wrap}.rep-hero{padding:20px 16px 0}.team-strip{grid-template-columns:1fr;padding:14px 16px 0}.offer-head{flex-direction:column}.rep-hero-inner>div:last-child{flex-wrap:wrap}.rep-seg{max-width:100%;overflow-x:auto}}
 
   /* ── OUTREACH TIMELINE ────────────────────────────── */
   .timeline{margin-top:14px}
@@ -516,6 +531,8 @@
   .svc-row:hover{background:rgba(255,255,255,.03)}
   .svc-name{font-size:12.5px;font-weight:600;color:var(--text-2)}
   .svc-desc{font-size:11px;color:var(--text-4);margin-top:1px}
+  .svc-evidence{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+  .svc-mini{height:20px;padding:0 7px;border-radius:999px;background:rgba(124,226,181,.08);border:1px solid rgba(124,226,181,.16);display:inline-flex;align-items:center;font-size:9.5px;font-weight:600;color:var(--mint)}
   .svc-price{font-size:12px;font-weight:600;color:var(--text-3);white-space:nowrap;flex-shrink:0}
   .svc-monthly{font-size:10px;color:var(--text-4);font-weight:400}
   .svc-empty{padding:14px 16px;font-size:12px;color:var(--text-4)}
@@ -552,6 +569,9 @@
   .hiz-badge.once{background:rgba(255,255,255,.06);color:var(--text-3);border:1px solid rgba(255,255,255,.08)}
   .hiz-card-name{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--text);margin-bottom:4px}
   .hiz-card-desc{font-size:12px;color:var(--text-3);line-height:1.55;margin-bottom:14px}
+  .hiz-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .hiz-mini{height:22px;padding:0 8px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:inline-flex;align-items:center;font-size:10.5px;color:var(--text-3);font-weight:600}
+  .hiz-detects{font-size:11.5px;color:var(--text-3);line-height:1.55;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.045)}
   .hiz-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05)}
   .hiz-stat-val{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
   .hiz-stat-lbl{font-size:10px;font-weight:500;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
@@ -783,7 +803,7 @@
         <div class="rep-hero">
           <div class="rep-hero-inner">
             <div>
-              <h2 class="rep-title">Tüm Lead Raporları</h2>
+              <h2 class="rep-title">Ekip Lead Merkezi</h2>
               <p class="rep-sub" id="rep-sub"></p>
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0">
@@ -792,15 +812,17 @@
                 CSV İndir
               </button>
               <div class="rep-seg" id="rep-sort">
+                <button class="on" onclick="repSort(this,'priority')">Öncelik</button>
                 <button onclick="repSort(this,'value')">Değer</button>
                 <button onclick="repSort(this,'opps')">Fırsat</button>
-                <button class="on" onclick="repSort(this,'score')">Skor</button>
+                <button onclick="repSort(this,'score')">Skor</button>
                 <button onclick="repSort(this,'name')">İsim</button>
                 <button onclick="repSort(this,'date')">Tarih</button>
               </div>
             </div>
           </div>
         </div>
+        <div class="team-strip" id="team-strip"></div>
         <div class="rep-feed" id="rep-feed"></div>
       </div>
 
@@ -843,6 +865,7 @@
 // DATA
 // ──────────────────────────────────────────────────────
 var leads = JSON.parse(atob('__DATA__'));
+var SERVICE_CATALOG = JSON.parse(atob('__SERVICES__'));
 
 // ──────────────────────────────────────────────────────
 // STATE
@@ -851,7 +874,7 @@ var SK = 'zeplin_statuses_v1';
 var activeFilter = 'all';
 var activeLeadName = leads[0] ? leads[0].name : '';
 var searchSelIdx = 0;
-var repSortMode = 'score';
+var repSortMode = 'priority';
 
 function getStatuses(){ try{ return JSON.parse(localStorage.getItem(SK)||'{}'); }catch(e){ return {}; } }
 function getStatus(name){ return getStatuses()[name]||'yeni'; }
@@ -1023,6 +1046,40 @@ function topPriorityLeads(limit){
   return leads.slice().sort(function(a,b){
     return leadPriority(b)-leadPriority(a) || (b.estimated_value_tl||0)-(a.estimated_value_tl||0);
   }).slice(0,limit||3);
+}
+
+function leadPackage(lead){
+  var svcs=lead.matched_services||[];
+  if(lead.recommended_package) return lead.recommended_package;
+  if(!svcs.length){
+    return {name:'Veri tamamlama',summary:'Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.',owner:'Sales',stage:'Araştırma',confidence:0,evidence:[],included_services:[]};
+  }
+  var primary=svcs[0];
+  return {
+    name:primary.offer||primary.name,
+    summary:(primary.sales_angle||primary.desc||'İlk temas için hizmet eşleşmesi hazır.'),
+    owner:primary.owner||'Sales',
+    stage:primary.monthly?'Teklif':'Teknik çözüm',
+    confidence:primary.confidence||60,
+    evidence:primary.evidence||[],
+    primary_service:primary.name,
+    included_services:svcs.slice(0,4).map(function(s){ return s.name; })
+  };
+}
+
+function compactPills(items, cls, limit){
+  items=items||[];
+  limit=limit||3;
+  if(!items.length) return '<span style="color:var(--text-4);font-size:12px">Yok</span>';
+  var html=items.slice(0,limit).map(function(p){ return '<span class="tpill '+cls+'">'+esc(p)+'</span>'; }).join('');
+  if(items.length>limit) html+='<span class="tpill '+cls+'">+'+(items.length-limit)+'</span>';
+  return html;
+}
+
+function evidenceHtml(items, limit){
+  items=(items||[]).slice(0,limit||4);
+  if(!items.length) return '<span class="evidence-chip">Kanıt bekliyor</span>';
+  return items.map(function(e){ return '<span class="evidence-chip">'+esc(e)+'</span>'; }).join('');
 }
 
 // ──────────────────────────────────────────────────────
@@ -1287,14 +1344,16 @@ function renderDetail(name){
   if(svcs.length>0){
     var svcRows=svcs.map(function(svc){
       var priceStr='₺'+Number(svc.price_min).toLocaleString('tr-TR')+' – ₺'+Number(svc.price_max).toLocaleString('tr-TR');
+      var evidence=(svc.evidence||[]).slice(0,3).map(function(e){ return '<span class="svc-mini">'+esc(e)+'</span>'; }).join('');
       return '<div class="svc-row">'+
-        '<div><div class="svc-name">'+esc(svc.name)+'</div><div class="svc-desc">'+esc(svc.desc)+'</div></div>'+
-        '<div style="text-align:right"><div class="svc-price">'+priceStr+'</div><div class="svc-monthly">'+(svc.monthly?'aylık':'tek seferlik')+'</div></div>'+
+        '<div><div class="svc-name">'+esc(svc.name)+' <span style="color:var(--text-4);font-weight:500">· '+esc(svc.owner||'Sales')+'</span></div><div class="svc-desc">'+esc(svc.sales_angle||svc.desc)+'</div><div class="svc-evidence">'+evidence+'</div></div>'+
+        '<div style="text-align:right"><div class="svc-price">'+priceStr+'</div><div class="svc-monthly">'+(svc.monthly?'aylık':'tek seferlik')+' · %'+(svc.confidence||60)+' güven</div></div>'+
       '</div>';
     }).join('');
+    var pkg=leadPackage(L);
     svcMatchHtml='<div class="svc-match">'+
       '<div class="svc-match-head">'+
-        '<span class="svc-match-lbl">✦ Zeplin Hizmet Eşleşmeleri ('+svcs.length+')</span>'+
+        '<span class="svc-match-lbl">Önerilen Paket · '+esc(pkg.name)+'</span>'+
         '<span class="svc-match-val">~'+Number(estVal).toLocaleString('tr-TR')+' TL<small>/ay potansiyel</small></span>'+
       '</div>'+
       '<div class="svc-list">'+svcRows+'</div>'+
@@ -1404,12 +1463,17 @@ function copyMail(name){
 }
 
 function exportCSV(){
-  var rows=[['Ad','Şehir','Sektör','Skor','Grade','Satış Önceliği','Sonraki Aksiyon','Tahmini Aylık Değer','Web','Instagram','Telefon','Durum','Son Analiz','Sorunlar','Fırsatlar']];
+  var rows=[['Ad','Şehir','Sektör','Skor','Grade','Satış Önceliği','Önerilen Paket','Paket Sahibi','Güven','Kanıtlar','Sonraki Aksiyon','Tahmini Aylık Değer','Web','Instagram','Telefon','Durum','Son Analiz','Sorunlar','Fırsatlar']];
   leads.forEach(function(l){
+    var pkg=leadPackage(l);
     rows.push([
       l.name, l.city||'', l.sector||'',
       l.scoring.score, l.scoring.grade,
       leadPriority(l),
+      pkg.name||'',
+      pkg.owner||'',
+      pkg.confidence||0,
+      (pkg.evidence||[]).join('; '),
       l.next_action||'',
       l.estimated_value_tl||0,
       (l.website&&l.website.website_url)||'',
@@ -1562,9 +1626,15 @@ function renderHizmetler(){
     });
   });
 
-  var entries=Object.values(svcMap).sort(function(a,b){ return b.leads.length-a.leads.length; });
+  var entries=SERVICE_CATALOG.map(function(svc){
+    var active=svcMap[svc.slug]||{leads:[],totalVal:0};
+    return {svc:svc,leads:active.leads,totalVal:active.totalVal};
+  }).sort(function(a,b){
+    return b.leads.length-a.leads.length || String(a.svc.category||'').localeCompare(String(b.svc.category||''),'tr');
+  });
+  var categoryCount=Object.keys(entries.reduce(function(acc,e){ acc[e.svc.category||'Genel']=true; return acc; },{})).length;
   document.getElementById('hiz-sub').textContent=entries.length+' aktif hizmet · '+
-    entries.reduce(function(a,e){ return a+e.leads.length; },0)+' toplam eşleşme';
+    entries.reduce(function(a,e){ return a+e.leads.length; },0)+' aktif eşleşme · '+categoryCount+' kategori';
 
   var totalMonthly=Math.round(entries.reduce(function(a,e){ return a+e.totalVal; },0));
 
@@ -1589,6 +1659,12 @@ function renderHizmetler(){
         '</div>'+
         '<div class="hiz-card-name">'+esc(svc.name)+'</div>'+
         '<div class="hiz-card-desc">'+esc(svc.desc)+'</div>'+
+        '<div class="hiz-card-meta">'+
+          '<span class="hiz-mini">'+esc(svc.category||'Genel')+'</span>'+
+          '<span class="hiz-mini">'+esc(svc.owner||'Sales')+'</span>'+
+          '<span class="hiz-mini">%'+(svc.confidence||60)+' güven</span>'+
+        '</div>'+
+        '<div class="hiz-detects"><b style="color:var(--text-2);font-weight:700">Bot neyi tespit eder?</b><br>'+esc(svc.detects||'Bu hizmet için tanımlı sinyal yok.')+'</div>'+
         '<div class="hiz-card-stats">'+
           '<div><div class="hiz-stat-val">'+entry.leads.length+'</div><div class="hiz-stat-lbl">Eşleşen Lead</div></div>'+
           '<div><div class="hiz-stat-val" style="color:var(--mint)">~'+Math.round(entry.totalVal).toLocaleString('tr-TR')+'₺</div><div class="hiz-stat-lbl">'+(monthly?'Aylık':'Yıllık')+'</div></div>'+
@@ -1631,7 +1707,8 @@ function fmtNum(n){
 function renderReports(sortBy){
   sortBy = sortBy || repSortMode;
   var sorted = leads.slice();
-  if(sortBy==='value') sorted.sort(function(a,b){ return (b.estimated_value_tl||0)-(a.estimated_value_tl||0); });
+  if(sortBy==='priority') sorted.sort(function(a,b){ return leadPriority(b)-leadPriority(a) || (b.estimated_value_tl||0)-(a.estimated_value_tl||0); });
+  else if(sortBy==='value') sorted.sort(function(a,b){ return (b.estimated_value_tl||0)-(a.estimated_value_tl||0); });
   else if(sortBy==='opps') sorted.sort(function(a,b){ return (b.scoring.opportunities||[]).length-(a.scoring.opportunities||[]).length; });
   else if(sortBy==='score') sorted.sort(function(a,b){ return b.scoring.score - a.scoring.score; });
   else if(sortBy==='name') sorted.sort(function(a,b){ return a.name.localeCompare(b.name,'tr'); });
@@ -1640,8 +1717,16 @@ function renderReports(sortBy){
     return db.localeCompare(da);
   });
 
-  var sortLabel = sortBy==='value'?'Tahmini değere göre':sortBy==='opps'?'Fırsat sayısına göre':sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
-  document.getElementById('rep-sub').textContent = sorted.length+' lead · Sıralama: '+sortLabel;
+  var sortLabel = sortBy==='priority'?'Satış önceliğine göre':sortBy==='value'?'Tahmini değere göre':sortBy==='opps'?'Fırsat sayısına göre':sortBy==='score'?'Puana göre':sortBy==='name'?'İsme göre':'Tarihe göre';
+  var readyToContact=sorted.filter(function(l){ return l.phone||l.address; }).length;
+  var topPackage=sorted.map(leadPackage).filter(function(p){ return p.name!=='Veri tamamlama'; })[0] || {name:'Veri tamamlama'};
+  var totalPipeline=sorted.reduce(function(sum,l){ return sum+(l.estimated_value_tl||0); },0);
+  document.getElementById('rep-sub').textContent = sorted.length+' lead · Ekip görünümü · Sıralama: '+sortLabel;
+  document.getElementById('team-strip').innerHTML=
+    '<div class="team-card"><span>Bugünkü Odak</span><strong>'+esc(topPackage.name)+'</strong><small>En güçlü paket sinyaline göre ilk temas başlığı</small></div>'+
+    '<div class="team-card"><span>Ulaşılabilir Lead</span><strong>'+readyToContact+'/'+sorted.length+'</strong><small>Telefon veya adres bilgisi bulunan kayıtlar</small></div>'+
+    '<div class="team-card"><span>Pipeline Potansiyeli</span><strong>~'+Number(totalPipeline).toLocaleString('tr-TR')+' TL</strong><small>Aylık tahmini hizmet değeri</small></div>'+
+    '<div class="team-card"><span>Operasyon Notu</span><strong>Önce paket</strong><small>Kartlarda sorun listesi yerine teklif nedeni önde gösterilir</small></div>';
 
   var html = sorted.map(function(L, idx){
     var s = L.scoring;
@@ -1649,6 +1734,7 @@ function renderReports(sortBy){
     var igStats = (L.social && L.social.stats) || {};
     var st = getStatus(L.name);
     var mp = parseMail(L.ai_email);
+    var pkg = leadPackage(L);
 
     // Score ring
     var ringHtml =
@@ -1689,8 +1775,8 @@ function renderReports(sortBy){
     }
 
     // Issue & opportunity pills
-    var issueHtml = (s.issues||[]).map(function(p){ return '<span class="tpill bad">'+esc(p)+'</span>'; }).join('') || '<span style="color:var(--text-4);font-size:12px">Sorun yok</span>';
-    var oppHtml   = (s.opportunities||[]).map(function(p){ return '<span class="tpill good">'+esc(p)+'</span>'; }).join('') || '<span style="color:var(--text-4);font-size:12px">Fırsat yok</span>';
+    var issueHtml = compactPills(s.issues||[], 'bad', 3);
+    var oppHtml = compactPills(s.opportunities||[], 'good', 3);
 
     // AI accordions
     var reportText = L.ai_report
@@ -1726,13 +1812,28 @@ function renderReports(sortBy){
         var svcs=L.matched_services||[];
         var val=L.estimated_value_tl||0;
         if(!svcs.length) return '';
-        var svcChips=svcs.slice(0,4).map(function(s){ return '<span class="rc-svc-chip">'+esc(s.name)+'</span>'; }).join('');
+        var svcChips=(pkg.included_services||svcs.map(function(s){return s.name;})).slice(0,3).map(function(name){ return '<span class="rc-svc-chip">'+esc(name)+'</span>'; }).join('');
         if(svcs.length>4) svcChips+='<span class="rc-svc-chip">+' +(svcs.length-4)+'</span>';
         return '<div class="rc-value-row">'+
           '<span class="rc-value-badge">~'+Number(val).toLocaleString('tr-TR')+' TL/ay</span>'+
           svcChips+
         '</div>';
       })()+
+      '<div class="offer-brief">'+
+        '<div class="offer-head">'+
+          '<div>'+
+            '<div class="offer-kicker">Önerilen teklif paketi</div>'+
+            '<div class="offer-title">'+esc(pkg.name)+'</div>'+
+            '<div class="offer-summary">'+esc(pkg.summary||'İlk görüşme için teklif başlığı hazır.')+'</div>'+
+          '</div>'+
+          '<div class="offer-meta" style="justify-content:flex-end">'+
+            '<span class="offer-pill hot">Öncelik '+leadPriority(L)+'</span>'+
+            '<span class="offer-pill">'+esc(pkg.owner||'Sales')+'</span>'+
+            '<span class="offer-pill">%'+(pkg.confidence||0)+' güven</span>'+
+          '</div>'+
+        '</div>'+
+        '<div class="evidence-list">'+evidenceHtml(pkg.evidence,4)+'</div>'+
+      '</div>'+
       igHtml +
       '<div class="rc-divider"></div>' +
       '<div class="rc-tags">' +

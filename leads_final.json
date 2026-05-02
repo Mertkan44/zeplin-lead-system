@@ -18,6 +18,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -70,10 +71,22 @@
       {
         "slug": "ssl_security",
         "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
         "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
         "price_min": 1500,
         "price_max": 3500,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 208,
@@ -87,7 +100,24 @@
     },
     "sales_priority_score": 29,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Dijital Sağlık Onarımı",
+      "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "SSL & Güvenlik Kurulumu",
+      "included_services": [
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Web",
+      "stage": "Teknik çözüm",
+      "confidence": 70,
+      "evidence": [
+        "SSL yok"
+      ],
+      "categories": [
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "İBB Beykoz Sahil Sosyal Tesisleri",
@@ -108,6 +138,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -157,28 +188,66 @@
     },
     "matched_services": [
       {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
         "slug": "web_design",
         "name": "Web Sitesi Tasarımı",
+        "category": "Web & Teknik",
         "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
+        "offer": "Vitrin site yenileme paketi",
+        "owner": "Web",
+        "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
+        "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
         "price_min": 15000,
         "price_max": 35000,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_website",
+          "not_mobile"
+        ],
+        "evidence": [
+          "Web sitesi yok",
+          "Mobil uyum zayıf"
+        ],
+        "confidence": 85
       },
       {
         "slug": "ssl_security",
         "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
         "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
         "price_min": 1500,
         "price_max": 3500,
-        "monthly": false
-      },
-      {
-        "slug": "social_management",
-        "name": "Sosyal Medya Yönetimi",
-        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
-        "price_min": 8000,
-        "price_max": 18000,
-        "monthly": true
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 15291,
@@ -195,7 +264,30 @@
     },
     "sales_priority_score": 62,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi",
+        "Web Sitesi Tasarımı",
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 85,
+      "evidence": [
+        "Instagram yok",
+        "Web sitesi yok",
+        "Mobil uyum zayıf",
+        "SSL yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal",
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "Kanlıca Paysage Restaurant",
@@ -216,6 +308,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -265,10 +358,22 @@
       {
         "slug": "ssl_security",
         "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
         "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
         "price_min": 1500,
         "price_max": 3500,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 208,
@@ -285,7 +390,24 @@
     },
     "sales_priority_score": 29,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Dijital Sağlık Onarımı",
+      "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "SSL & Güvenlik Kurulumu",
+      "included_services": [
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Web",
+      "stage": "Teknik çözüm",
+      "confidence": 70,
+      "evidence": [
+        "SSL yok"
+      ],
+      "categories": [
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "Uskumru Restaurant",
@@ -306,6 +428,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -355,10 +478,22 @@
       {
         "slug": "ssl_security",
         "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
         "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
         "price_min": 1500,
         "price_max": 3500,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 208,
@@ -375,7 +510,24 @@
     },
     "sales_priority_score": 29,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Dijital Sağlık Onarımı",
+      "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "SSL & Güvenlik Kurulumu",
+      "included_services": [
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Web",
+      "stage": "Teknik çözüm",
+      "confidence": 70,
+      "evidence": [
+        "SSL yok"
+      ],
+      "categories": [
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "Shubra",
@@ -396,6 +548,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -452,7 +605,17 @@
     },
     "sales_priority_score": 18,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Veri tamamlama",
+      "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
+      "primary_service": null,
+      "included_services": [],
+      "owner": "Sales",
+      "stage": "Araştırma",
+      "confidence": 0,
+      "evidence": []
+    }
   },
   {
     "name": "Gümüşsuyu Restoran",
@@ -473,6 +636,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -522,10 +686,22 @@
       {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
         "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
         "price_min": 8000,
         "price_max": 18000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 13000,
@@ -542,7 +718,24 @@
     },
     "sales_priority_score": 42,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 70,
+      "evidence": [
+        "Instagram yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal"
+      ]
+    }
   },
   {
     "name": "Balkan Lokantası",
@@ -563,6 +756,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -615,28 +809,66 @@
     },
     "matched_services": [
       {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
         "slug": "web_design",
         "name": "Web Sitesi Tasarımı",
+        "category": "Web & Teknik",
         "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
+        "offer": "Vitrin site yenileme paketi",
+        "owner": "Web",
+        "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
+        "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
         "price_min": 15000,
         "price_max": 35000,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_website",
+          "not_mobile"
+        ],
+        "evidence": [
+          "Web sitesi yok",
+          "Mobil uyum zayıf"
+        ],
+        "confidence": 85
       },
       {
         "slug": "ssl_security",
         "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
         "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
         "price_min": 1500,
         "price_max": 3500,
-        "monthly": false
-      },
-      {
-        "slug": "social_management",
-        "name": "Sosyal Medya Yönetimi",
-        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
-        "price_min": 8000,
-        "price_max": 18000,
-        "monthly": true
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 15291,
@@ -650,7 +882,30 @@
     },
     "sales_priority_score": 62,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi",
+        "Web Sitesi Tasarımı",
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 85,
+      "evidence": [
+        "Instagram yok",
+        "Web sitesi yok",
+        "Mobil uyum zayıf",
+        "SSL yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal",
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "Manzara Restaurant",
@@ -671,6 +926,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -723,10 +979,22 @@
       {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
         "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
         "price_min": 8000,
         "price_max": 18000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 13000,
@@ -740,7 +1008,24 @@
     },
     "sales_priority_score": 42,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 70,
+      "evidence": [
+        "Instagram yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal"
+      ]
+    }
   },
   {
     "name": "Nevale Mutfak",
@@ -761,6 +1046,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -813,10 +1099,22 @@
       {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
         "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
         "price_min": 8000,
         "price_max": 18000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 13000,
@@ -830,7 +1128,24 @@
     },
     "sales_priority_score": 42,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 70,
+      "evidence": [
+        "Instagram yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal"
+      ]
+    }
   },
   {
     "name": "Banyan Restaurant",
@@ -851,6 +1166,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -907,7 +1223,17 @@
     },
     "sales_priority_score": 18,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Veri tamamlama",
+      "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
+      "primary_service": null,
+      "included_services": [],
+      "owner": "Sales",
+      "stage": "Araştırma",
+      "confidence": 0,
+      "evidence": []
+    }
   },
   {
     "name": "Shang Palace",
@@ -928,6 +1254,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -984,7 +1311,17 @@
     },
     "sales_priority_score": 18,
     "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "recommended_package": {
+      "name": "Veri tamamlama",
+      "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
+      "primary_service": null,
+      "included_services": [],
+      "owner": "Sales",
+      "stage": "Araştırma",
+      "confidence": 0,
+      "evidence": []
+    }
   },
   {
     "name": "The Hunger Beyoğlu Narmanlı Han",
@@ -1007,6 +1344,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -1065,7 +1403,17 @@
     },
     "sales_priority_score": 35,
     "next_action": "Derin audit yap",
-    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış."
+    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış.",
+    "recommended_package": {
+      "name": "Veri tamamlama",
+      "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
+      "primary_service": null,
+      "included_services": [],
+      "owner": "Sales",
+      "stage": "Araştırma",
+      "confidence": 0,
+      "evidence": []
+    }
   },
   {
     "name": "Seabreeze Lounge Rooftop Restaurant",
@@ -1088,6 +1436,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -1138,10 +1487,22 @@
       {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
         "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
         "price_min": 8000,
         "price_max": 18000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 13000,
@@ -1155,7 +1516,24 @@
     },
     "sales_priority_score": 56,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 70,
+      "evidence": [
+        "Instagram yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal"
+      ]
+    }
   },
   {
     "name": "İnziva Restaurant",
@@ -1178,6 +1556,7 @@
       "has_sitemap": null,
       "has_email_capture": null,
       "has_whatsapp": null,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -1228,20 +1607,44 @@
     },
     "matched_services": [
       {
-        "slug": "ssl_security",
-        "name": "SSL & Güvenlik Kurulumu",
-        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
-        "price_min": 1500,
-        "price_max": 3500,
-        "monthly": false
-      },
-      {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
         "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
         "price_min": 8000,
         "price_max": 18000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 13208,
@@ -1255,7 +1658,27 @@
     },
     "sales_priority_score": 67,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "recommended_package": {
+      "name": "İçerik Büyüme Paketi",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
+      "primary_service": "Sosyal Medya Yönetimi",
+      "included_services": [
+        "Sosyal Medya Yönetimi",
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Sosyal",
+      "stage": "İçerik planı",
+      "confidence": 70,
+      "evidence": [
+        "Instagram yok",
+        "SSL yok"
+      ],
+      "categories": [
+        "İçerik & Sosyal",
+        "Web & Teknik"
+      ]
+    }
   },
   {
     "name": "The Market at Bosphorus - Best Restaurant & Breakfast in İstanbul",
@@ -1282,6 +1705,7 @@
       "has_sitemap": true,
       "has_email_capture": false,
       "has_whatsapp": false,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -1335,53 +1759,147 @@
       {
         "slug": "seo_schema",
         "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
         "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
+        "offer": "Teknik SEO ve görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
         "price_min": 8000,
         "price_max": 20000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "ai_whatsapp_assistant",
+        "name": "AI WhatsApp Asistanı",
+        "category": "İletişim & CRM",
+        "desc": "Sık sorular, rezervasyon/sipariş yönlendirme ve otomatik karşılama",
+        "offer": "AI müşteri karşılama hattı",
+        "owner": "CRM",
+        "sales_angle": "Yoğun saatlerde kaçan soruları ve rezervasyon niyetini yakalar.",
+        "detects": "WhatsApp butonu veya hızlı iletişim akışı yoksa.",
+        "price_min": 7000,
+        "price_max": 18000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
       },
       {
         "slug": "google_ads",
         "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
         "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
         "price_min": 5000,
         "price_max": 15000,
-        "monthly": true
-      },
-      {
-        "slug": "whatsapp_business",
-        "name": "WhatsApp Business Kurulumu",
-        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
-        "price_min": 2000,
-        "price_max": 5000,
-        "monthly": false
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
       },
       {
         "slug": "email_marketing",
         "name": "E-posta Pazarlama Kurulumu",
+        "category": "İletişim & CRM",
         "desc": "E-posta listesi oluşturma, otomasyon, kampanya yönetimi",
+        "offer": "Müşteri listesi ve kampanya otomasyonu",
+        "owner": "CRM",
+        "sales_angle": "Ziyaretçiyi tek seferlik trafik olmaktan çıkarıp tekrar pazarlanabilir kitleye çevirir.",
+        "detects": "Web sitesinde e-posta toplama formu yok.",
         "price_min": 4000,
         "price_max": 10000,
-        "monthly": true
-      },
-      {
-        "slug": "delivery_setup",
-        "name": "Yemeksepeti / Getir Profil Yönetimi",
-        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
-        "price_min": 3000,
-        "price_max": 7000,
-        "monthly": false
+        "monthly": true,
+        "matched_triggers": [
+          "no_email_capture"
+        ],
+        "evidence": [
+          "E-posta formu yok"
+        ],
+        "confidence": 70
       },
       {
         "slug": "reservation_system",
         "name": "Online Rezervasyon Sistemi",
+        "category": "İletişim & CRM",
         "desc": "Restoran/salon için online randevu ve rezervasyon entegrasyonu",
+        "offer": "Rezervasyon ve randevu akışı",
+        "owner": "CRM",
+        "sales_angle": "Telefon trafiğini düzenler, masaya veya randevuya dönüşen talebi ölçülebilir yapar.",
+        "detects": "Restoran/salon için online sipariş/rezervasyon sinyali yok.",
         "price_min": 4000,
         "price_max": 10000,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "delivery_setup",
+        "name": "Yemeksepeti / Getir Profil Yönetimi",
+        "category": "Yerel Platformlar",
+        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
+        "offer": "Online sipariş kanal kurulumu",
+        "owner": "Operasyon",
+        "sales_angle": "Restoran için ek sipariş kanalı ve keşif yüzeyi açar.",
+        "detects": "Restoran/kafe için Yemeksepeti ve Getir sinyali yok.",
+        "price_min": 3000,
+        "price_max": 7000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "whatsapp_business",
+        "name": "WhatsApp Business Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
+        "offer": "WhatsApp dönüşüm hattı",
+        "owner": "CRM",
+        "sales_angle": "Siteden veya profilden gelen ilgiyi hızlı mesaja dönüştürür.",
+        "detects": "Web sitesinde WhatsApp veya hızlı iletişim butonu yok.",
+        "price_min": 2000,
+        "price_max": 5000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
       }
     ],
-    "estimated_value_tl": 32290,
+    "estimated_value_tl": 44790,
     "ai_report": "Dijital varlık analizi sonuçları:\n- Schema.org ve Open Graph kullanımı yok.\n- Google yorumu ve takipçi sayısı az.\n- WhatsApp ve online sipariş platformu yok.\n Öneriler:\n- Google SEO yapılandırması\n- Sosyal paylaşım meta etiketleri\n- WhatsApp Business entegrasyonu\n- Takipçi büyüme ve yorum artırma kampanyaları \n- Yemeksepeti/Getir entegrasyonu için girişimlerde bulunun.",
     "ai_email": "Konu: The Market at Bosphorus için Growth Fırsatı\n\nMerhaba,\n\nThe Market at Bosphorus'u incelerken birkaç eksiklik gördük. Schema.org, WhatsApp butonu, online sipariş platformu ve sosyal medya takipçileri konusunda iyileştirmeye ihtiyacınız var. Bu, müşteri deneyimini ve online görünürlüğü olumlu yönde etkileyebilir. \nZeplin Media olarak restoranınızın dijital varlığını güçlendirmek konusunda uzmanız. \n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 01:54",
@@ -1393,9 +1911,34 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 80,
+    "sales_priority_score": 85,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve görünürlük paketi ile başlanabilir; 7 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "AI WhatsApp Asistanı",
+        "Google Ads Yönetimi",
+        "E-posta Pazarlama Kurulumu"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 85,
+      "evidence": [
+        "Schema.org yok",
+        "Open Graph yok",
+        "WhatsApp butonu yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "İletişim & CRM",
+        "Büyüme & Reklam",
+        "Yerel Platformlar"
+      ]
+    }
   },
   {
     "name": "jojo Ocakbaşı meze",
@@ -1422,6 +1965,7 @@
       "has_sitemap": false,
       "has_email_capture": true,
       "has_whatsapp": true,
+      "has_analytics": null,
       "tiktok_url": null
     },
     "social": {
@@ -1471,44 +2015,104 @@
     },
     "matched_services": [
       {
-        "slug": "ssl_security",
-        "name": "SSL & Güvenlik Kurulumu",
-        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
-        "price_min": 1500,
-        "price_max": 3500,
-        "monthly": false
-      },
-      {
         "slug": "seo_schema",
         "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
         "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
+        "offer": "Teknik SEO ve görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
         "price_min": 8000,
         "price_max": 20000,
-        "monthly": true
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
       },
       {
         "slug": "google_ads",
         "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
         "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
         "price_min": 5000,
         "price_max": 15000,
-        "monthly": true
-      },
-      {
-        "slug": "delivery_setup",
-        "name": "Yemeksepeti / Getir Profil Yönetimi",
-        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
-        "price_min": 3000,
-        "price_max": 7000,
-        "monthly": false
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
       },
       {
         "slug": "reservation_system",
         "name": "Online Rezervasyon Sistemi",
+        "category": "İletişim & CRM",
         "desc": "Restoran/salon için online randevu ve rezervasyon entegrasyonu",
+        "offer": "Rezervasyon ve randevu akışı",
+        "owner": "CRM",
+        "sales_angle": "Telefon trafiğini düzenler, masaya veya randevuya dönüşen talebi ölçülebilir yapar.",
+        "detects": "Restoran/salon için online sipariş/rezervasyon sinyali yok.",
         "price_min": 4000,
         "price_max": 10000,
-        "monthly": false
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "delivery_setup",
+        "name": "Yemeksepeti / Getir Profil Yönetimi",
+        "category": "Yerel Platformlar",
+        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
+        "offer": "Online sipariş kanal kurulumu",
+        "owner": "Operasyon",
+        "sales_angle": "Restoran için ek sipariş kanalı ve keşif yüzeyi açar.",
+        "detects": "Restoran/kafe için Yemeksepeti ve Getir sinyali yok.",
+        "price_min": 3000,
+        "price_max": 7000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
       }
     ],
     "estimated_value_tl": 25207,
@@ -1525,6 +2129,30 @@
     },
     "sales_priority_score": 78,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve görünürlük paketi ile başlanabilir; 5 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "Google Ads Yönetimi",
+        "Online Rezervasyon Sistemi",
+        "Yemeksepeti / Getir Profil Yönetimi"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 70,
+      "evidence": [
+        "Schema.org yok",
+        "Online sipariş kanalı yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "Büyüme & Reklam",
+        "İletişim & CRM",
+        "Yerel Platformlar"
+      ]
+    }
   }
 ]

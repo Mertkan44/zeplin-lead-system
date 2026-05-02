@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.dashboard.build import build_dashboard
-from src.services import estimate_value, match_services
+from src.services import estimate_value, match_services, recommended_package
 
 
 WEBSITE_DEFAULTS = {
@@ -26,6 +26,7 @@ WEBSITE_DEFAULTS = {
     "has_sitemap": None,
     "has_email_capture": None,
     "has_whatsapp": None,
+    "has_analytics": None,
     "tiktok_url": None,
 }
 
@@ -179,6 +180,7 @@ def normalize_lead(lead: dict) -> dict:
     normalized["delivery"] = deep_merge(DELIVERY_DEFAULTS, normalized.get("delivery"))
     normalized["scoring"] = normalize_score(normalized.get("scoring") or {})
     normalized["matched_services"] = match_services(normalized)
+    normalized["recommended_package"] = recommended_package(normalized)
     normalized["estimated_value_tl"] = estimate_value(normalized)
     normalized["ai_report"] = normalized.get("ai_report") or fallback_report(normalized)
     normalized["ai_email"] = normalized.get("ai_email") or fallback_email(normalized)

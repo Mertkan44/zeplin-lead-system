@@ -2,6 +2,8 @@ import base64
 import json
 from pathlib import Path
 
+from src.services import ZEPLIN_SERVICES
+
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA = ROOT / "leads_final.json"
@@ -16,7 +18,14 @@ def build_dashboard(
 ) -> None:
     data = json.loads(data_path.read_text(encoding="utf-8"))
     payload = base64.b64encode(json.dumps(data, ensure_ascii=True).encode("utf-8")).decode("ascii")
-    html = template_path.read_text(encoding="utf-8").replace("__DATA__", payload)
+    services_payload = base64.b64encode(
+        json.dumps(ZEPLIN_SERVICES, ensure_ascii=True).encode("utf-8")
+    ).decode("ascii")
+    html = (
+        template_path.read_text(encoding="utf-8")
+        .replace("__DATA__", payload)
+        .replace("__SERVICES__", services_payload)
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
 

@@ -51,6 +51,8 @@ venv/bin/python -m http.server 8080 -d public
 
 Pipeline actions currently persist in browser `localStorage`; the dashboard can export that outreach state as JSON. The next production step is moving status and outreach events to SQLite or a hosted database.
 
+The services matrix lives in `src/services.py`. Each service has a category, owner, sales angle, detectable signals, pricing range, and trigger list. `scripts/migrate_leads.py` writes the matched services plus the recommended package into `leads_final.json`, then `src/dashboard/build.py` embeds both leads and the full service catalog into the static dashboard.
+
 ## Security Reminder
 
 Do not deploy or push new production changes until any API key that appeared in Git history has been rotated and `.env` has been purged from history. See `SECURITY.md`.
