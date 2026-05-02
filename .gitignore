@@ -4,3 +4,6 @@ __pycache__/
 .env
 leads_*.json
 src/dashboard/static/index.html
+.claude/
+*.log
+outreach_log.local.json

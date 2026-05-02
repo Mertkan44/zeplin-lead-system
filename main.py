@@ -1,11 +1,15 @@
-import os, json, base64, subprocess
-from groq import Groq
+import json, subprocess
 from datetime import datetime
 
-os.environ["GROQ_API_KEY"] = open('.env').read().split('=')[1].strip()
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
+from src.config import groq_client
+from src.dashboard.build import build_dashboard
+
+client = None
 
 def ask(prompt):
+    global client
+    if client is None:
+        client = groq_client()
     return client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
@@ -31,13 +35,9 @@ def generate_report(lead):
     return ask("Su isletmenin dijital varlik analizini yap.\n\nIsletme: " + name + "\nPuan: " + str(score) + "/100\nWeb: " + website + "\nInstagram: " + instagram + "\nEksikler: " + issues + "\n\nMaddeler halinde, max 100 kelime Turkce rapor yaz.")
 
 def update_dashboard(data):
-    json_bytes = json.dumps(data, ensure_ascii=True).encode('utf-8')
-    b64 = base64.b64encode(json_bytes).decode('ascii')
-    html = open('src/dashboard/template.html', encoding='utf-8').read()
-    html = html.replace('__DATA__', b64)
-    os.makedirs('public', exist_ok=True)
-    with open('public/index.html', 'w', encoding='utf-8') as f:
-        f.write(html)
+    with open('leads_final.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    build_dashboard()
     print('Dashboard guncellendi!')
 
 def git_push():
@@ -67,9 +67,6 @@ for lead in test_leads:
 
 for lead in leads[1:]:
     results.append(lead)
-
-with open('leads_final.json', 'w', encoding='utf-8') as f:
-    json.dump(results, f, ensure_ascii=False, indent=2)
 
 update_dashboard(results)
 git_push()

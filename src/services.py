@@ -137,36 +137,36 @@ def lead_triggers(lead: dict) -> set:
     sector = lead.get("sector", "default")
 
     # Web
-    if not w.get("has_website"):        triggers.add("no_website")
-    if not w.get("has_ssl"):            triggers.add("no_ssl")
-    if not w.get("is_mobile_friendly"): triggers.add("not_mobile")
+    if w.get("has_website") is False:   triggers.add("no_website")
+    if w.get("has_ssl") is False:       triggers.add("no_ssl")
+    if w.get("is_mobile_friendly") is False: triggers.add("not_mobile")
     if w.get("load_time_ms") and w["load_time_ms"] > 3000: triggers.add("slow_site")
-    if not w.get("has_schema"):         triggers.add("no_schema")
-    if not w.get("has_og"):             triggers.add("no_og")
-    if not w.get("has_email_capture"):  triggers.add("no_email_capture")
-    if not w.get("has_whatsapp"):       triggers.add("no_whatsapp")
+    if w.get("has_schema") is False:    triggers.add("no_schema")
+    if w.get("has_og") is False:        triggers.add("no_og")
+    if w.get("has_email_capture") is False: triggers.add("no_email_capture")
+    if w.get("has_whatsapp") is False:  triggers.add("no_whatsapp")
 
     # Instagram
-    if not ig.get("has_instagram"):
+    if ig.get("has_instagram") is False:
         triggers.add("no_instagram")
-    else:
+    elif ig.get("has_instagram") is True:
         er = ig_stats.get("engagement_rate")
-        followers = ig_stats.get("followers") or 0
+        followers = ig_stats.get("followers")
         if er is not None and er < 1:   triggers.add("low_engagement")
-        if followers < 500:             triggers.add("low_followers")
+        if followers is not None and followers < 500: triggers.add("low_followers")
 
     # TikTok
-    if not tiktok.get("has_tiktok"):    triggers.add("no_tiktok")
+    if tiktok.get("has_tiktok") is False: triggers.add("no_tiktok")
 
     # Maps
     rating = lead.get("rating")
-    review_count = lead.get("review_count") or 0
+    review_count = lead.get("review_count")
     if rating is not None and rating < 3.5: triggers.add("low_rating")
-    if review_count < 20:               triggers.add("low_reviews")
+    if review_count is not None and review_count < 20: triggers.add("low_reviews")
 
     # Delivery (restoran/cafe)
     if sector in ("restaurant", "cafe"):
-        if not delivery.get("has_yemeksepeti") and not delivery.get("has_getir"):
+        if delivery.get("has_yemeksepeti") is False and delivery.get("has_getir") is False:
             triggers.add("no_delivery")
 
     return triggers

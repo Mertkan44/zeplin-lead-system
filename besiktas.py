@@ -1,25 +1,27 @@
 """
 Belirtilen ilçeden işletme tara, audit et, AI raporu üret, dashboard'a ekle.
-Kullanım: python3 besiktas.py  (veya QUERY/CITY/MAX değiştir)
 """
-import asyncio, json, base64, os, subprocess
+import argparse
+import asyncio
+import json
+import subprocess
 from playwright.async_api import async_playwright
-from groq import Groq
 from datetime import datetime
 
+from src.config import groq_client
 from src.audit.finder import (
     find_from_google_maps, check_website, detect_sector,
     find_instagram, get_instagram_stats,
     find_tiktok, check_delivery, compute_score
 )
+from src.dashboard.build import build_dashboard
 from src.services import match_services, estimate_value
 
-os.environ["GROQ_API_KEY"] = open('.env').read().split('=')[1].strip()
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
+client = None
 
 QUERY = "restoran"
-CITY  = "Istanbul Besiktas"
-MAX   = 5
+CITY = "Istanbul Besiktas"
+MAX_RESULTS = 5
 
 # ── Sektör bazlı sistem sesi ───────────────────────────
 SECTOR_VOICE = {
@@ -74,6 +76,9 @@ async def scrape(query, city, max_results):
 
 # ── AI ─────────────────────────────────────────────────
 def ask(system_extra: str, prompt: str) -> str:
+    global client
+    if client is None:
+        client = groq_client()
     system = f"Sen Zeplin Media'dan Mertkan'sin. Sadece Turkce yaziyorsun. {system_extra}"
     return client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -155,10 +160,8 @@ def generate_email(lead):
 
 # ── Dashboard ──────────────────────────────────────────
 def update_dashboard(data):
-    b64 = base64.b64encode(json.dumps(data, ensure_ascii=True).encode()).decode('ascii')
-    html = open('src/dashboard/template.html', encoding='utf-8').read().replace('__DATA__', b64)
-    os.makedirs('public', exist_ok=True)
-    open('public/index.html', 'w', encoding='utf-8').write(html)
+    json.dump(data, open('leads_final.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+    build_dashboard()
     print("✅ Dashboard güncellendi!")
 
 def git_push(msg):
@@ -171,9 +174,9 @@ def git_push(msg):
         print(f"Push hatası: {e}")
 
 # ── ANA AKIŞ ───────────────────────────────────────────
-async def main():
+async def run(query: str, city: str, max_results: int, push: bool):
     # 1. Scrape
-    raw = await scrape(QUERY, CITY, MAX)
+    raw = await scrape(query, city, max_results)
     print(f"\n📋 {len(raw)} işletme bulundu:")
     for r in raw: print(f"  • {r['name']}")
 
@@ -256,12 +259,22 @@ async def main():
     merged = existing + new_ones
     print(f"\n📊 {len(existing)} mevcut + {len(new_ones)} yeni = {len(merged)} toplam")
 
-    json.dump(merged, open('leads_final.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)
-
     # 5. Dashboard & push
     update_dashboard(merged)
-    git_push(f"add {len(new_ones)} {CITY} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    if push:
+        git_push(f"add {len(new_ones)} {city} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    else:
+        print("ℹ️ Push atlanıldı. Commit/push için --push kullan.")
     print(f"\n🎉 Tamamlandı!")
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Scan, audit, and publish Zeplin leads.")
+    parser.add_argument("--query", default=QUERY)
+    parser.add_argument("--city", default=CITY)
+    parser.add_argument("--max", type=int, default=MAX_RESULTS, dest="max_results")
+    parser.add_argument("--push", action="store_true", help="Commit and push generated files.")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    args = parse_args()
+    asyncio.run(run(args.query, args.city, args.max_results, args.push))

@@ -10,12 +10,35 @@
       "has_ssl": false,
       "is_mobile_friendly": true,
       "load_time_ms": 124,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/kanlicateras/",
-      "instagram_username": "kanlicateras"
+      "instagram_username": "kanlicateras",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 80,
@@ -30,7 +53,41 @@
     },
     "ai_report": "Kanlıca Teras'ın dijital varlığı:\n- Web sitesi vardır (kanlicateras.com)\n- Instagram hesabına sahiptir\n- SSL sertifikası eksik\nPuanı: 80/100\nGüvenlik ve güvenlik sertifikası eksikliği dikkat çekiyor.",
     "ai_email": "Konu: Kanlıca Teras için küçük bir gözlem \n\nMerhaba,\n\nKanlıca Teras'ı incelerken Instagram hesabinizin olduğunu gördük, ancak web sitenizde SSL sertifikası eksik. Bu küçük detay, müşteri güvenini doğrudan etkiliyor ve Google sıralamalarınızda sizi geri bırakıyor.\n\nZeplin Media olarak SSL kurulumu, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kisa bir görüşmede size ücretsiz bir analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media | zeplinmedia.com",
-    "last_analyzed": "2026-05-01 13:49"
+    "last_analyzed": "2026-05-01 13:49",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      }
+    ],
+    "estimated_value_tl": 208,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 29,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "İBB Beykoz Sahil Sosyal Tesisleri",
@@ -43,12 +100,35 @@
       "has_ssl": false,
       "is_mobile_friendly": false,
       "load_time_ms": null,
-      "website_loads": false
+      "website_loads": false,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
-      "instagram_username": null
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 0,
@@ -62,7 +142,60 @@
         "Web sitesi tasarımı — yüksek öncelik",
         "Instagram yönetimi + içerik üretimi"
       ]
-    }
+    },
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "web_design",
+        "name": "Web Sitesi Tasarımı",
+        "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
+        "price_min": 15000,
+        "price_max": 35000,
+        "monthly": false
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 15291,
+    "ai_report": "İBB Beykoz Sahil Sosyal Tesisleri için dijital görünürlük skoru 0/100. Öne çıkan bulgular: Web sitesi yok, Instagram hesabı yok. Zeplin Media tarafında ilk fırsatlar: Web sitesi tasarımı — yüksek öncelik, Instagram yönetimi + içerik üretimi. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
+    "ai_email": "Konu: İBB Beykoz Sahil Sosyal Tesisleri için kısa bir dijital sağlık notu\n\nMerhaba,\n\nİBB Beykoz Sahil Sosyal Tesisleri için yaptığımız hızlı kontrolde özellikle \"Web sitesi yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 15:42",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 62,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Kanlıca Paysage Restaurant",
@@ -75,12 +208,35 @@
       "has_ssl": false,
       "is_mobile_friendly": true,
       "load_time_ms": 1135,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/themerex_net/",
-      "instagram_username": "themerex_net"
+      "instagram_username": "themerex_net",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 80,
@@ -92,7 +248,44 @@
       "opportunities": [
         "SSL kurulumu"
       ]
-    }
+    },
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      }
+    ],
+    "estimated_value_tl": 208,
+    "ai_report": "Kanlıca Paysage Restaurant için dijital görünürlük skoru 80/100. Öne çıkan bulgular: SSL yok. Zeplin Media tarafında ilk fırsatlar: SSL kurulumu. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
+    "ai_email": "Konu: Kanlıca Paysage Restaurant için kısa bir dijital sağlık notu\n\nMerhaba,\n\nKanlıca Paysage Restaurant için yaptığımız hızlı kontrolde özellikle \"SSL yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 15:42",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 29,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Uskumru Restaurant",
@@ -105,12 +298,35 @@
       "has_ssl": false,
       "is_mobile_friendly": true,
       "load_time_ms": 1796,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/uskumrurestaurant/",
-      "instagram_username": "uskumrurestaurant"
+      "instagram_username": "uskumrurestaurant",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 80,
@@ -122,7 +338,44 @@
       "opportunities": [
         "SSL kurulumu"
       ]
-    }
+    },
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      }
+    ],
+    "estimated_value_tl": 208,
+    "ai_report": "Uskumru Restaurant için dijital görünürlük skoru 80/100. Öne çıkan bulgular: SSL yok. Zeplin Media tarafında ilk fırsatlar: SSL kurulumu. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
+    "ai_email": "Konu: Uskumru Restaurant için kısa bir dijital sağlık notu\n\nMerhaba,\n\nUskumru Restaurant için yaptığımız hızlı kontrolde özellikle \"SSL yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 15:42",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 29,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Shubra",
@@ -135,12 +388,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 433,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/shubraturkey/",
-      "instagram_username": "shubraturkey"
+      "instagram_username": "shubraturkey",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 90,
@@ -148,7 +424,35 @@
       "grade": "A",
       "issues": [],
       "opportunities": []
-    }
+    },
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [],
+    "estimated_value_tl": 0,
+    "ai_report": "Shubra için dijital görünürlük skoru 90/100. Öne çıkan bulgular: kritik bir açık görünmüyor. Zeplin Media tarafında ilk fırsatlar: mevcut görünürlüğü koruma. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
+    "ai_email": "Konu: Shubra için kısa bir dijital sağlık notu\n\nMerhaba,\n\nShubra için yaptığımız hızlı kontrolde özellikle \"dijital görünürlüğünüzde geliştirilebilir noktalar\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 15:42",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": false,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 18,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Gümüşsuyu Restoran",
@@ -161,12 +465,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 98,
-      "website_loads": false
+      "website_loads": false,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
-      "instagram_username": null
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 55,
@@ -178,7 +505,44 @@
       "opportunities": [
         "Instagram yönetimi + içerik üretimi"
       ]
-    }
+    },
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 13000,
+    "ai_report": "Gümüşsuyu Restoran için dijital görünürlük skoru 55/100. Öne çıkan bulgular: Instagram hesabı yok. Zeplin Media tarafında ilk fırsatlar: Instagram yönetimi + içerik üretimi. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
+    "ai_email": "Konu: Gümüşsuyu Restoran için kısa bir dijital sağlık notu\n\nMerhaba,\n\nGümüşsuyu Restoran için yaptığımız hızlı kontrolde özellikle \"Instagram hesabı yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-05-02 15:42",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 42,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Balkan Lokantası",
@@ -191,12 +555,35 @@
       "has_ssl": false,
       "is_mobile_friendly": false,
       "load_time_ms": null,
-      "website_loads": false
+      "website_loads": false,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
-      "instagram_username": null
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 0,
@@ -213,7 +600,57 @@
     },
     "ai_report": "Balkan Lokantası'nın dijital varlığı yok. \n- Web sitesi bulunmuyor.\n- Instagram hesabı bulunmuyor.\nDijital olarak görünür değil.",
     "ai_email": "Konu: Balkan Lokantası için kucuk bir gozlem\n\nMerhaba,\n\nBalkan Lokantası'nı incelerken web sitenizin ve Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklikler, musteri guvenini ve isletmenizin ऑनलayınını dogrudan etkiliyor.\n\nZeplin Media olarak web sitesi tasarımı, sosyal medya hesap yönetiminde uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 15:07"
+    "last_analyzed": "2026-05-01 15:07",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "web_design",
+        "name": "Web Sitesi Tasarımı",
+        "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
+        "price_min": 15000,
+        "price_max": 35000,
+        "monthly": false
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 15291,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 62,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Manzara Restaurant",
@@ -226,12 +663,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 320,
-      "website_loads": false
+      "website_loads": false,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
-      "instagram_username": null
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 55,
@@ -246,7 +706,41 @@
     },
     "ai_report": "Dijital Varlık Analiz Raporu:\n\n* Web sitesi: Mevcut\n* Puan: 55/100\n* Instagram: Yok\n* Eksikler: Instagram hesabının oluşturulmamış olması\n* Öneri: Instagram hesabını oluşturarak dijital varlıklarını güçlendirebilir.",
     "ai_email": "Konu: Manzara Restaurant icin sosyal medya bakisi\n\nMerhaba,\n\nManzara Restaurant'i incelerken web sitenizin oldugunu gorduk, ancak Instagram hesabınızın olmadığını fark ettik. Bu kucuk eksiklik, musteri iletişiminizi ve marka bilinirliğinizi olumsuz etkileyebiliyor.\n\nZeplin Media olarak Instagram hesabı oluşturma, sosyal medya yönetimi ve içerik stratejisi konularında uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 15:07"
+    "last_analyzed": "2026-05-01 15:07",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 13000,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 42,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Nevale Mutfak",
@@ -259,12 +753,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 1367,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
-      "instagram_username": null
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 55,
@@ -279,7 +796,41 @@
     },
     "ai_report": "Nevale Mutfak'ın dijital varlik analizinin sonuclari asagidadir:\n\n* Web sitesinde var\n* Puan: 55/100\n* Eksikler:\n + Instagram hesabi yok\nNevale Mutfak, Instagram'i kullanarak dijital varligini guclendirebilir.",
     "ai_email": "Konu: Nevale Mutfak icin dikkatlice bakis\n\nMerhaba,\n\nNevale Mutfak'i incelerken Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklik, musteri etkilesimini ve marka gorunurlugunu dogrudan etkiliyor.\n\nZeplin Media olarak sosyal medya hesabi olusturma, sosyal medya yonetimi ve dijital pazarlamada uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 15:07"
+    "last_analyzed": "2026-05-01 15:07",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 13000,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 42,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Banyan Restaurant",
@@ -292,12 +843,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 983,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/banyan.istanbul/",
-      "instagram_username": "banyan.istanbul"
+      "instagram_username": "banyan.istanbul",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 90,
@@ -308,7 +882,32 @@
     },
     "ai_report": "Banyan Restaurant'ın dijital varlığı şu şekildedir:\n* Web sitesi mevcuttur.\n* Instagram hesabında aktif paylaşımlar vardır.\n* Genel puanı 90/100'dür.\n* Eksiklikler bilinmemektedir.",
     "ai_email": "Konu: Banyan Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nBanyan Restaurant'i incelerken Instagram hesabinizin oldugunu gorduk, ancak web sitenizin mobil uyumlu olmadigini ve SEO acliklari yasadiğini gorduk. Bu kucuk detaylar, musteri guvenini ve sirketinizin online varligini dogrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu web tasarimi, SEO optimizasyonu ve sosyal medya yonetiminde uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 15:07"
+    "last_analyzed": "2026-05-01 15:07",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [],
+    "estimated_value_tl": 0,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": false,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 18,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "Shang Palace",
@@ -321,12 +920,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 680,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/shangrilaistanbul/",
-      "instagram_username": "shangrilaistanbul"
+      "instagram_username": "shangrilaistanbul",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 90,
@@ -337,7 +959,32 @@
     },
     "ai_report": "Shang Palace'in dijital varlığı şöyle:\n- Web sitesi mevcuttur: https://www.shangpalacebosphorus.com/\n- Instagram hesabı mevcuttur: https://www.instagram.com/shangrilaistanbul/\nDijital varlığı güçlü, ancak sosyal medya hesaplarının eksiksizliği cần daha fazla dikkat gerektiriyor.",
     "ai_email": "Konu: Shang Palace icin kucuk bir gozlem\n\nMerhaba,\n\nShang Palace'i incelerken Instagram hesabınızın olduğunu gorduk, ancak web sitenizin mobil uyumlu tasarımı biraz eksik görünüyor. Bu küçük detay, müşterilerinizi sitenizde longer tutmanızı doğrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu tasarım, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kısa bir görüşmede size ücretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 15:07"
+    "last_analyzed": "2026-05-01 15:07",
+    "sector": "restaurant",
+    "phone": null,
+    "address": null,
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [],
+    "estimated_value_tl": 0,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": false,
+      "has_maps_rating": false,
+      "has_service_match": false,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 18,
+    "next_action": "Telefon/adres tamamla",
+    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
   },
   {
     "name": "The Hunger Beyoğlu Narmanlı Han",
@@ -352,12 +999,22 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 1491,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/thehunger/",
       "instagram_username": "thehunger",
+      "has_facebook": false,
+      "facebook_url": null,
       "stats": {
         "followers": null,
         "following": null,
@@ -365,6 +1022,11 @@
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
       }
     },
     "scoring": {
@@ -380,7 +1042,30 @@
     },
     "ai_report": "The Hunger Beyoğlu Narmanlı Han'ın dijital varlik analiz raporu:\n\n* Az takipçi sayısı (0) önemli bir sorun\n* Takipçi büyüme kampanyası önemli bir fırsat\n* Web sayfası ve Instagram hesabı mevcut\n* 80/100 puan ile yüksek bir dijital puanlama \n* Sosyal medya varlığı geliştirilmeli.",
     "ai_email": "Konu: The Hunger icin kucuk bir gozlem\n\nMerhaba,\n\nThe Hunger'i incelerken sosyal medya takipçi sayısında eksikligini gorduk. Bu kucuk detay musteri ilgini etkiliyor.\nZeplin Media olarak sosyal medya yonetiminde uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 17:49"
+    "last_analyzed": "2026-05-01 17:49",
+    "sector": "restaurant",
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [],
+    "estimated_value_tl": 0,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": false,
+      "has_service_match": false,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 35,
+    "next_action": "Derin audit yap",
+    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış."
   },
   {
     "name": "Seabreeze Lounge Rooftop Restaurant",
@@ -395,13 +1080,35 @@
       "has_ssl": true,
       "is_mobile_friendly": true,
       "load_time_ms": 446,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
       "instagram_username": null,
-      "stats": {}
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 55,
@@ -416,7 +1123,39 @@
     },
     "ai_report": "Dijital Varlık Analizi:\n- Web sitesi mevcuttur\n- Telefon ve adres bilgisi eksiksiz\n- Puan: 55/100 (Grade B)\n- Sorun: Instagram hesabı yok\n- Fırsat: Instagram hesabının oluşturulması ve yönetimi",
     "ai_email": "Konu: Seabreeze Lounge Rooftop Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nSeabreeze Lounge Rooftop Restaurant'i incelerken Instagram hesabınızın olmadığını gorduk. Bu eksiklik musteri etkilesimini azaltiyor.\nZeplin Media olarak sosyal medya yonetimi, hiz optimizasyonu ve dijital pazarlamada uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 17:49"
+    "last_analyzed": "2026-05-01 17:49",
+    "sector": "restaurant",
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 13000,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 56,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
   {
     "name": "İnziva Restaurant",
@@ -431,13 +1170,35 @@
       "has_ssl": false,
       "is_mobile_friendly": true,
       "load_time_ms": 89,
-      "website_loads": true
+      "website_loads": true,
+      "has_schema": null,
+      "has_og": null,
+      "meta_description": null,
+      "has_robots": null,
+      "has_sitemap": null,
+      "has_email_capture": null,
+      "has_whatsapp": null,
+      "tiktok_url": null
     },
     "social": {
       "has_instagram": false,
       "instagram_url": null,
       "instagram_username": null,
-      "stats": {}
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": null,
+        "tiktok_url": null,
+        "tiktok_username": null
+      }
     },
     "scoring": {
       "score": 45,
@@ -454,7 +1215,47 @@
     },
     "ai_report": "Dijital Varlık Analizi Raporu:\n\n* İnziva Restaurant'ın web sitesi SSL sertifikası bulunmuyor.\n* Instagram hesabı yok.\n* Web sitesine güncelleme yapılmıyor.\n* Fırsatlar:\n + SSL sertifikası kurulumu\n + Instagram hesabının açılması ve yönetimi\n* Web sitesi ve sosyal medya hesaplarının iyileştirilmesiyle daha fazla müşteri çekilebilir.",
     "ai_email": "Konu: İnziva Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nİnziva Restaurant'i incelerken SSL eksikligini ve Instagram hesabının olmadigini gorduk. Bu kucuk detay musteri guvenini etkiliyor.\nZeplin Media olarak SSL, hiz optimizasyonu ve sosyal medya yonetiminde uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-01 17:49"
+    "last_analyzed": "2026-05-01 17:49",
+    "sector": "restaurant",
+    "rating": null,
+    "review_count": null,
+    "category": null,
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "price_min": 1500,
+        "price_max": 3500,
+        "monthly": false
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "price_min": 8000,
+        "price_max": 18000,
+        "monthly": true
+      }
+    ],
+    "estimated_value_tl": 13208,
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": false
+    },
+    "sales_priority_score": 67,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
   },
   {
     "name": "The Market at Bosphorus - Best Restaurant & Breakfast in İstanbul",
@@ -487,6 +1288,8 @@
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/themarketbosphorus/",
       "instagram_username": "themarketbosphorus",
+      "has_facebook": false,
+      "facebook_url": null,
       "stats": {
         "followers": null,
         "following": null,
@@ -538,27 +1341,11 @@
         "monthly": true
       },
       {
-        "slug": "social_management",
-        "name": "Sosyal Medya Yönetimi",
-        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
-        "price_min": 8000,
-        "price_max": 18000,
-        "monthly": true
-      },
-      {
         "slug": "google_ads",
         "name": "Google Ads Yönetimi",
         "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
         "price_min": 5000,
         "price_max": 15000,
-        "monthly": true
-      },
-      {
-        "slug": "reputation_management",
-        "name": "Google Yorum & İtibar Yönetimi",
-        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
-        "price_min": 3000,
-        "price_max": 8000,
         "monthly": true
       },
       {
@@ -594,10 +1381,21 @@
         "monthly": false
       }
     ],
-    "estimated_value_tl": 50790,
+    "estimated_value_tl": 32290,
     "ai_report": "Dijital varlık analizi sonuçları:\n- Schema.org ve Open Graph kullanımı yok.\n- Google yorumu ve takipçi sayısı az.\n- WhatsApp ve online sipariş platformu yok.\n Öneriler:\n- Google SEO yapılandırması\n- Sosyal paylaşım meta etiketleri\n- WhatsApp Business entegrasyonu\n- Takipçi büyüme ve yorum artırma kampanyaları \n- Yemeksepeti/Getir entegrasyonu için girişimlerde bulunun.",
     "ai_email": "Konu: The Market at Bosphorus için Growth Fırsatı\n\nMerhaba,\n\nThe Market at Bosphorus'u incelerken birkaç eksiklik gördük. Schema.org, WhatsApp butonu, online sipariş platformu ve sosyal medya takipçileri konusunda iyileştirmeye ihtiyacınız var. Bu, müşteri deneyimini ve online görünürlüğü olumlu yönde etkileyebilir. \nZeplin Media olarak restoranınızın dijital varlığını güçlendirmek konusunda uzmanız. \n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-02 01:54"
+    "last_analyzed": "2026-05-02 01:54",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": false,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 80,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
   {
     "name": "jojo Ocakbaşı meze",
@@ -630,6 +1428,8 @@
       "has_instagram": true,
       "instagram_url": "https://www.instagram.com/whatsapp/",
       "instagram_username": "whatsapp",
+      "has_facebook": false,
+      "facebook_url": null,
       "stats": {
         "followers": null,
         "following": null,
@@ -687,27 +1487,11 @@
         "monthly": true
       },
       {
-        "slug": "social_management",
-        "name": "Sosyal Medya Yönetimi",
-        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
-        "price_min": 8000,
-        "price_max": 18000,
-        "monthly": true
-      },
-      {
         "slug": "google_ads",
         "name": "Google Ads Yönetimi",
         "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
         "price_min": 5000,
         "price_max": 15000,
-        "monthly": true
-      },
-      {
-        "slug": "reputation_management",
-        "name": "Google Yorum & İtibar Yönetimi",
-        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
-        "price_min": 3000,
-        "price_max": 8000,
         "monthly": true
       },
       {
@@ -727,9 +1511,20 @@
         "monthly": false
       }
     ],
-    "estimated_value_tl": 43707,
+    "estimated_value_tl": 25207,
     "ai_report": "Dijital Varlık Raporu:\n\n* Zayıf yönler: SSL yok, Schema.org yok, az takipçi, az Google yorumu, online sipariş platformu yok.\n* Fırsatlar: SSL kurulumu, SEO yapılandırması, takipçi büyüme kampanyası, yorum artırma kampanyası, Yemeksepeti/Getir entegrasyonu.\n* Tavsiyeler: Restoranın dijital varlığını güçlendirmek için SSL kurulumu, SEO yapılandırması ve online sipariş platformlarına entegrasyon yapmak necesario.",
     "ai_email": "Konu: Jojo Ocakbaşı Meze icin Bir Gozlem\n\nMerhaba,\n\nJojo Ocakbaşı Meze'yi incelerken SSL eksikligini ve online varliklarinizi gorduk. Musteri guvenini ve deneyimi artirmak icin Zeplin Media olarak yardimci olabiliriz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
-    "last_analyzed": "2026-05-02 01:54"
+    "last_analyzed": "2026-05-02 01:54",
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 78,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   }
 ]

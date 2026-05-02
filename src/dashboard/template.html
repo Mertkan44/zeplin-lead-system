@@ -25,7 +25,7 @@
     background:radial-gradient(1200px 600px at 20% -10%,#b8acdf 0%,transparent 60%),
       radial-gradient(900px 500px at 110% 110%,#9a8bcf 0%,transparent 60%),#a89cd9;
     color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;
-    font-feature-settings:"cv11","ss01";font-variant-numeric:tabular-nums;min-height:100vh;
+    font-feature-settings:"cv11","ss01";font-variant-numeric:tabular-nums;min-height:100vh;overflow-x:hidden;
   }
   a{color:inherit;text-decoration:none} button{font-family:inherit;cursor:pointer}
 
@@ -80,7 +80,7 @@
   .primary{height:40px;padding:0 16px;border-radius:11px;background:linear-gradient(180deg,#ff4a8c,#ff2d78);color:#fff;font-size:13px;font-weight:600;border:0;box-shadow:0 8px 22px -10px rgba(255,45,120,.7),0 1px 0 rgba(255,255,255,.18) inset;display:inline-flex;align-items:center;gap:8px;transition:filter .15s}
   .primary:hover{filter:brightness(1.1)}
   .tabs{margin-top:24px;display:flex;align-items:center;gap:22px;border-bottom:1px solid rgba(255,255,255,.06)}
-  .tab{padding:12px 0;font-size:13px;font-weight:500;color:var(--text-3);background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:8px;transition:.15s all}
+  .tab{padding:12px 0;font-size:13px;font-weight:500;color:var(--text-3);background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:8px;transition:.15s all;flex:0 0 auto}
   .tab .cnt{font-size:10.5px;color:var(--text-4);padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.04)}
   .tab:hover{color:var(--text-2)}
   .tab.active{color:var(--text);border-bottom-color:var(--lila)}
@@ -88,6 +88,15 @@
 
   /* ── CONTENT ──────────────────────────────────────── */
   .content{padding:24px 28px 28px;display:grid;grid-template-columns:1fr 320px;gap:20px}
+  .ops-strip{margin:18px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .ops-card{min-height:78px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);padding:13px 14px;display:flex;flex-direction:column;justify-content:space-between}
+  .ops-card strong{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--text)}
+  .ops-card span{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+  .ops-card small{display:block;margin-top:6px;font-size:11px;line-height:1.35;color:var(--text-3)}
+  .ops-card.warn{border-color:var(--amber-line);background:var(--amber-soft)}
+  .ops-card.good{border-color:var(--mint-line);background:var(--mint-soft)}
+  .ops-card.pink{border-color:var(--pink-line);background:var(--pink-soft)}
+  .ops-note{margin-top:10px;color:var(--text-3);font-size:11.5px;line-height:1.45}
   .metric-row{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:14px}
   .metric{background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:18px 18px 14px;position:relative;overflow:hidden}
   .m-head{display:flex;align-items:center;justify-content:space-between}
@@ -112,6 +121,20 @@
   .cta-title b{color:var(--lila);font-weight:600}
   .cta-btn{margin-top:14px;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:10px;border:0;background:linear-gradient(180deg,#a896ff,#7e66ff);color:#fff;font-weight:600;font-size:12.5px;box-shadow:0 8px 18px -8px rgba(149,128,255,.6),0 1px 0 rgba(255,255,255,.18) inset;transition:filter .15s}
   .cta-btn:hover{filter:brightness(1.1)}
+  .priority-card{margin-top:14px;border-radius:18px;background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.05);padding:18px 20px}
+  .priority-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+  .priority-title{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+  .priority-title .ti{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(255,45,120,.14);color:var(--pink)}
+  .priority-title svg{width:14px;height:14px}
+  .priority-sub{font-size:11px;color:var(--text-3)}
+  .priority-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .priority-item{border:1px solid rgba(255,255,255,.06);border-radius:13px;background:rgba(255,255,255,.025);padding:12px;cursor:pointer;transition:.15s all;min-width:0}
+  .priority-item:hover{border-color:rgba(149,128,255,.28);background:rgba(149,128,255,.06);transform:translateY(-1px)}
+  .priority-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .priority-name{font-size:12.5px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .priority-score{height:22px;padding:0 8px;border-radius:7px;background:var(--pink-soft);border:1px solid var(--pink-line);color:var(--pink-2);font-size:11px;font-weight:800;display:inline-flex;align-items:center;flex-shrink:0}
+  .priority-action{margin-top:8px;font-size:12px;color:var(--text-2);line-height:1.35}
+  .priority-meta{margin-top:7px;font-size:10.5px;color:var(--text-4)}
 
   /* ── CHART ────────────────────────────────────────── */
   .chart-card{margin-top:14px;background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:18px 20px 14px}
@@ -143,7 +166,7 @@
   /* ── DETAIL ───────────────────────────────────────── */
   .detail{margin-top:14px;background:linear-gradient(180deg,var(--panel) 0%,var(--app-2) 100%);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:20px 22px;scroll-margin-top:20px}
   .det-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
-  .det-name{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+  .det-name{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15;overflow-wrap:anywhere}
   .det-meta{margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-3)}
   .det-meta .dot{width:3px;height:3px;border-radius:50%;background:#3a3550}
   .pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1px solid transparent;line-height:1;transition:.15s all}
@@ -167,14 +190,18 @@
   .grade-badge[data-g="C"]{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber-line)}
   .grade-badge[data-g="D"]{background:var(--red-soft);color:var(--red);border:1px solid var(--red-line)}
   .det-divider{height:1px;background:rgba(255,255,255,.05);margin:18px 0 14px}
-  .links{display:flex;flex-wrap:wrap;gap:6px}
-  .chip{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 10px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:12px;color:var(--text-2);transition:.15s all}
+  .links{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 10px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:12px;color:var(--text-2);transition:.15s all;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip:hover{background:rgba(255,255,255,.08);color:var(--text)}
   .chip .fav{width:7px;height:7px;border-radius:2px;background:var(--fav,#666)}
   .chip.empty{color:var(--text-4);background:transparent;border-style:dashed;border-color:rgba(255,255,255,.07);cursor:default}
   .chip.empty:hover{background:transparent;color:var(--text-4)}
   .chip.empty .fav{background:#3a3550}
   .chip .ext{color:var(--text-3);font-size:10.5px;margin-left:1px}
+  .next-action{margin-top:14px;border-radius:13px;border:1px solid rgba(255,45,120,.22);background:linear-gradient(135deg,rgba(255,45,120,.09),rgba(149,128,255,.05));padding:14px 16px}
+  .next-action-label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--pink-2)}
+  .next-action-title{margin-top:6px;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+  .next-action-reason{margin-top:4px;font-size:12px;line-height:1.5;color:var(--text-3)}
   .det-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px}
   .col-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px 0;display:flex;align-items:center;gap:8px}
   .col-label .lbl-line{flex:1;height:1px;background:rgba(255,255,255,.05)}
@@ -212,7 +239,7 @@
   .empty-state b{color:var(--text-2);font-weight:600;display:block;margin-bottom:6px}
 
   /* ── Contact chips ────────────────────────────────── */
-  .contact-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .contact-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-width:0}
   .chip.phone{--fav:#f7c560}
   .chip.addr{--fav:#b9a8ff}
 
@@ -255,7 +282,7 @@
   .lead-ic.red{background:linear-gradient(135deg,#ff8e94,#ff5560);color:rgba(255,255,255,.95)}
   .lead-info{flex:1;min-width:0}
   .lead-name{font-size:13px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .lead-sub{font-size:11px;color:var(--text-3);margin-top:3px;display:flex;align-items:center;gap:6px}
+  .lead-sub{font-size:11px;color:var(--text-3);margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .miniring{width:14px;height:14px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.08) 0);display:inline-grid;place-items:center;position:relative}
   .miniring::after{content:"";position:absolute;inset:3px;background:#1a1428;border-radius:50%}
   .lead-arrow{color:var(--text-4);width:16px;height:16px;flex-shrink:0;transition:.15s}
@@ -308,8 +335,8 @@
   .icon-btn-wrap{position:relative}
 
   /* ── RESPONSIVE ───────────────────────────────────── */
-  @media(max-width:1100px){.content{grid-template-columns:1fr}.rail{flex-direction:row;flex-wrap:wrap}.rail-list{flex-direction:row;flex-wrap:wrap}.lead-row{flex:1 1 260px}}
-  @media(max-width:760px){.stage{padding:12px}.app{grid-template-columns:1fr;border-radius:20px}.sidebar{flex-direction:row;justify-content:flex-start;padding:10px;overflow-x:auto}.nav-spacer{display:none}.hero-title{font-size:26px}.metric-row{grid-template-columns:1fr}.det-grid{grid-template-columns:1fr}.search-modal{margin:0 12px}}
+  @media(max-width:1100px){.content{grid-template-columns:1fr}.rail{flex-direction:row;flex-wrap:wrap}.rail-list{flex-direction:row;flex-wrap:wrap}.lead-row{flex:1 1 260px}.ops-strip{grid-template-columns:repeat(2,1fr)}.priority-list{grid-template-columns:1fr}}
+  @media(max-width:760px){.stage{padding:12px}.app{grid-template-columns:1fr;border-radius:20px}.sidebar{flex-direction:row;justify-content:flex-start;padding:10px;overflow-x:auto}.nav-spacer{display:none}.topbar{align-items:flex-start;gap:14px;padding:18px}.brand{flex-wrap:wrap}.hero{padding:26px 18px 0}.hero-row{flex-direction:column}.hero-title{font-size:26px}.hero-cta{width:100%;justify-content:flex-start;flex-wrap:wrap}.tabs{overflow-x:auto;padding-bottom:1px;gap:18px}.content{padding:20px 18px 24px}.metric-row{grid-template-columns:1fr}.det-grid{grid-template-columns:1fr}.det-head{gap:14px}.det-score{flex-shrink:0}.detail{padding:18px}.rail{flex-direction:column}.rail-list{flex-direction:column}.lead-row{flex:0 0 auto;width:100%}.search-modal{margin:0 12px}.ops-strip{grid-template-columns:1fr}.priority-card{padding:16px}.priority-head{align-items:flex-start;flex-direction:column}.ig-stats{overflow-x:auto}.ig-stat{min-width:96px}.acc-sub{max-width:160px}.chart-head{align-items:flex-start;flex-direction:column}.chart{gap:6px}}
 
   /* ── REPORTS VIEW ─────────────────────────────────── */
   #view-reports{display:flex;flex-direction:column;min-height:0;flex:1}
@@ -470,6 +497,7 @@
   .form-select:focus,.form-input:focus,.form-textarea:focus{border-color:rgba(149,128,255,.4)}
   .form-select option{background:#1e1a2e;color:var(--text)}
   .form-textarea{min-height:72px;resize:vertical}
+  .command-box{margin-top:8px;border-radius:11px;border:1px solid rgba(124,226,181,.2);background:rgba(0,0,0,.28);padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.55;color:var(--mint);word-break:break-word}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
   .modal-cancel{height:36px;padding:0 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--text-3);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
   .modal-cancel:hover{background:rgba(255,255,255,.09);color:var(--text)}
@@ -566,6 +594,33 @@
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeActionModal()">İptal</button>
       <button class="modal-submit" onclick="submitAction()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Scan Modal -->
+<div class="action-overlay" id="scanOverlay" onclick="closeScanModal(event)">
+  <div class="action-modal" onclick="event.stopPropagation()">
+    <div class="action-modal-title">Yeni Lead Taraması</div>
+    <div class="form-row">
+      <label class="form-label">Sektör / Arama</label>
+      <input class="form-input" id="scanQuery" value="restoran" oninput="updateScanCommand()"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Bölge</label>
+      <input class="form-input" id="scanCity" value="Istanbul Besiktas" oninput="updateScanCommand()"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Maksimum Sonuç</label>
+      <input class="form-input" id="scanMax" type="number" min="1" max="50" value="10" oninput="updateScanCommand()"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Çalıştırılacak Komut</label>
+      <div class="command-box" id="scanCommand"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeScanModal()">İptal</button>
+      <button class="modal-submit" onclick="copyScanCommand()">Komutu Kopyala</button>
     </div>
   </div>
 </div>
@@ -672,11 +727,23 @@
           </div>
         </div>
         <div class="tabs" id="tabs"></div>
+        <div class="ops-strip" id="ops-strip"></div>
+        <div class="ops-note" id="ops-note"></div>
       </div>
 
       <div class="content">
         <div>
           <div class="metric-row" id="metrics"></div>
+          <div class="priority-card">
+            <div class="priority-head">
+              <div class="priority-title">
+                <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h8l-1 8 11-14h-8l1-6z"/></svg></div>
+                <span>Bugünkü Öncelikler</span>
+              </div>
+              <div class="priority-sub">Satış skoru, ulaşılabilirlik ve fırsat değerine göre</div>
+            </div>
+            <div class="priority-list" id="priority-list"></div>
+          </div>
           <div class="chart-card">
             <div class="chart-head">
               <div class="chart-title">
@@ -704,7 +771,7 @@
             <span class="new-tag">YENİ</span>
             <div class="rail-cta-title">Otomatik tarama açık</div>
             <div class="rail-cta-sub">İstanbul bölgesindeki işletmeler analiz kuyruğunda. Sonuçlar otomatik güncellenir.</div>
-            <button class="rail-cta-btn" onclick="toast('Kuyrukta 28 işletme. Analiz devam ediyor…','info')">Kuyruğu görüntüle</button>
+            <button class="rail-cta-btn" onclick="newLeadClick()">Yeni tarama planla</button>
           </div>
         </aside>
       </div>
@@ -745,6 +812,10 @@
               <h2 class="rep-title">Pipeline</h2>
               <p class="rep-sub" id="pipe-sub"></p>
             </div>
+            <button class="ghost" onclick="exportOutreach()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Pipeline Dışa Aktar
+            </button>
           </div>
         </div>
         <div class="pipe-board" id="pipe-board"></div>
@@ -875,6 +946,35 @@ function submitAction(){
   renderDetail(_actionTarget);
 }
 
+function closeScanModal(e){
+  if(!e||e.target===document.getElementById('scanOverlay')){
+    document.getElementById('scanOverlay').classList.remove('open');
+  }
+}
+
+function shellQuote(s){
+  return '"' + String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"';
+}
+
+function updateScanCommand(){
+  var q=document.getElementById('scanQuery').value.trim()||'restoran';
+  var city=document.getElementById('scanCity').value.trim()||'Istanbul Besiktas';
+  var max=document.getElementById('scanMax').value||'10';
+  document.getElementById('scanCommand').textContent=
+    'venv/bin/python besiktas.py --query '+shellQuote(q)+' --city '+shellQuote(city)+' --max '+max;
+}
+
+function copyScanCommand(){
+  updateScanCommand();
+  var cmd=document.getElementById('scanCommand').textContent;
+  navigator.clipboard.writeText(cmd).then(function(){
+    toast('Tarama komutu panoya kopyalandı','copy');
+    closeScanModal();
+  }).catch(function(){
+    toast('Komut kopyalanamadı','error');
+  });
+}
+
 // ──────────────────────────────────────────────────────
 // HELPERS
 // ──────────────────────────────────────────────────────
@@ -892,6 +992,37 @@ function parseMail(text){
   var bi=lines.findIndex(function(l){ return l.trim()===''; });
   var body=bi>=0?lines.slice(bi+1).join('\n').trim():text.trim();
   return {subject:subject,body:body};
+}
+
+function dataHealth(){
+  var total=leads.length||1;
+  var enriched=leads.filter(function(l){ return l.data_quality&&l.data_quality.has_audit_depth; }).length;
+  var aiReady=leads.filter(function(l){ return l.ai_report&&l.ai_email; }).length;
+  var serviceReady=leads.filter(function(l){ return (l.matched_services||[]).length>0; }).length;
+  var contactReady=leads.filter(function(l){ return l.phone||l.address; }).length;
+  var totalValue=leads.reduce(function(sum,l){ return sum+(l.estimated_value_tl||0); },0);
+  return {
+    total:total,
+    enriched:enriched,
+    aiReady:aiReady,
+    serviceReady:serviceReady,
+    contactReady:contactReady,
+    totalValue:totalValue,
+    enrichedPct:Math.round(enriched/total*100),
+    aiPct:Math.round(aiReady/total*100),
+    servicePct:Math.round(serviceReady/total*100),
+    contactPct:Math.round(contactReady/total*100)
+  };
+}
+
+function leadPriority(lead){
+  return lead.sales_priority_score || 0;
+}
+
+function topPriorityLeads(limit){
+  return leads.slice().sort(function(a,b){
+    return leadPriority(b)-leadPriority(a) || (b.estimated_value_tl||0)-(a.estimated_value_tl||0);
+  }).slice(0,limit||3);
 }
 
 // ──────────────────────────────────────────────────────
@@ -971,10 +1102,20 @@ function renderStats(){
   var total=leads.length;
   var avgScore=total?Math.round(leads.reduce(function(a,b){ return a+b.scoring.score; },0)/total):0;
   var criticals=leads.filter(function(l){ return l.scoring.score<40; }).length;
+  var h=dataHealth();
 
   document.getElementById('hero-sub').textContent=
-    total+' işletme tarandı, '+criticals+' tanede kritik açık var. Son güncelleme: '+
-    new Date().toLocaleDateString('tr-TR');
+    total+' işletme tarandı, '+criticals+' tanede kritik açık var. Veri güveni: %'+h.enrichedPct+
+    ' zengin şema. Son güncelleme: '+new Date().toLocaleDateString('tr-TR');
+
+  document.getElementById('ops-strip').innerHTML=
+    '<div class="ops-card '+(h.enrichedPct>=90?'good':'warn')+'"><span>Audit Derinliği</span><strong>%'+h.enrichedPct+'</strong><small>'+h.enriched+'/'+h.total+' lead teknik sinyalli</small></div>'+
+    '<div class="ops-card '+(h.aiPct>=90?'good':'warn')+'"><span>AI Hazırlık</span><strong>%'+h.aiPct+'</strong><small>'+h.aiReady+'/'+h.total+' rapor ve mail hazır</small></div>'+
+    '<div class="ops-card '+(h.servicePct>=70?'good':'pink')+'"><span>Satış Fırsatı</span><strong>~'+Number(h.totalValue).toLocaleString('tr-TR')+' TL</strong><small>Aylık tahmini potansiyel</small></div>'+
+    '<div class="ops-card '+(h.contactPct>=70?'good':'warn')+'"><span>Ulaşılabilirlik</span><strong>%'+h.contactPct+'</strong><small>'+h.contactReady+'/'+h.total+' lead telefon/adres içeriyor</small></div>';
+
+  document.getElementById('ops-note').textContent=
+    'Not: Pipeline aksiyonları şu an bu tarayıcıda saklanır. Takım kullanımı için kalıcı backend/SQLite aşaması sıradaki üretim adımıdır.';
 
   document.getElementById('metrics').innerHTML=
     '<div class="metric">'+
@@ -992,6 +1133,17 @@ function renderStats(){
       '<div class="cta-title">'+criticals+' işletmede <b>kritik açık</b> — bugün ulaş.</div>'+
       '<button class="cta-btn" onclick="event.stopPropagation();scrollToDetail()">Detayları gör <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>'+
     '</div>';
+
+  document.getElementById('priority-list').innerHTML=topPriorityLeads(3).map(function(l){
+    return '<div class="priority-item" onclick="selectLead(\''+esc(l.name)+'\')">'+
+      '<div class="priority-top">'+
+        '<div class="priority-name">'+esc(l.name)+'</div>'+
+        '<div class="priority-score">'+leadPriority(l)+'</div>'+
+      '</div>'+
+      '<div class="priority-action">'+esc(l.next_action||'İlk teması planla')+'</div>'+
+      '<div class="priority-meta">'+esc(l.priority_reason||'Satış potansiyeline göre seçildi.')+'</div>'+
+    '</div>';
+  }).join('');
 }
 
 // ──────────────────────────────────────────────────────
@@ -1040,7 +1192,7 @@ function renderRail(){
       '<div class="lead-ic '+gradeToIc(s.grade)+'">'+esc(initial(l.name))+'</div>'+
       '<div class="lead-info">'+
         '<div class="lead-name">'+esc(l.name)+(needsReminder?'<span class="remind-badge" title="3+ gün sessizlik — takip zamanı!">🔔</span>':'')+'</div>'+
-        '<div class="lead-sub"><span class="miniring" style="--c:'+gradeToColor(s.grade)+';--p:'+s.score+'"></span>Skor '+s.score+' · '+s.grade+' · '+STATUS_LABEL[st]+'</div>'+
+        '<div class="lead-sub"><span class="miniring" style="--c:'+gradeToColor(s.grade)+';--p:'+s.score+'"></span>Skor '+s.score+' · Öncelik '+leadPriority(l)+' · '+STATUS_LABEL[st]+'</div>'+
       '</div>'+
       '<svg class="lead-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>'+
     '</div>';
@@ -1103,6 +1255,12 @@ function renderDetail(name){
   var contactRow = contactChips
     ? '<div class="contact-row">'+contactChips+'</div>'
     : '';
+  var nextActionHtml=
+    '<div class="next-action">'+
+      '<div class="next-action-label">Sonraki En İyi Aksiyon · Öncelik '+leadPriority(L)+'</div>'+
+      '<div class="next-action-title">'+esc(L.next_action||'İlk teması planla')+'</div>'+
+      '<div class="next-action-reason">'+esc(L.priority_reason||'Lead satış fırsatına göre sıraya alındı.')+'</div>'+
+    '</div>';
 
   // ── Instagram istatistikleri ──────────────────────────
   var igStatsHtml='';
@@ -1177,6 +1335,7 @@ function renderDetail(name){
     '<div class="det-divider"></div>'+
     '<div class="links">'+linkChips+'</div>'+
     contactRow+
+    nextActionHtml+
     igStatsHtml+
     svcMatchHtml+
     '<div class="det-grid" style="margin-top:14px">'+
@@ -1245,13 +1404,17 @@ function copyMail(name){
 }
 
 function exportCSV(){
-  var rows=[['Ad','Şehir','Skor','Grade','Web','Instagram','Durum','Son Analiz','Sorunlar','Fırsatlar']];
+  var rows=[['Ad','Şehir','Sektör','Skor','Grade','Satış Önceliği','Sonraki Aksiyon','Tahmini Aylık Değer','Web','Instagram','Telefon','Durum','Son Analiz','Sorunlar','Fırsatlar']];
   leads.forEach(function(l){
     rows.push([
-      l.name, l.city||'',
+      l.name, l.city||'', l.sector||'',
       l.scoring.score, l.scoring.grade,
+      leadPriority(l),
+      l.next_action||'',
+      l.estimated_value_tl||0,
       (l.website&&l.website.website_url)||'',
       (l.social&&l.social.instagram_url)||'',
+      l.phone||'',
       STATUS_LABEL[getStatus(l.name)],
       l.last_analyzed||'',
       (l.scoring.issues||[]).join('; '),
@@ -1267,7 +1430,18 @@ function exportCSV(){
 }
 
 function newLeadClick(){
-  toast('Yeni lead ekleme yakında! API entegrasyonu geliyor.','info');
+  document.getElementById('scanOverlay').classList.add('open');
+  updateScanCommand();
+  setTimeout(function(){ document.getElementById('scanCity').focus(); },80);
+}
+
+function exportOutreach(){
+  var payload={statuses:getStatuses(), outreach:getOutreach(), exported_at:new Date().toISOString()};
+  var a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(payload,null,2));
+  a.download='zeplin_outreach_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Pipeline dışa aktarıldı','success');
 }
 
 // ──────────────────────────────────────────────────────
