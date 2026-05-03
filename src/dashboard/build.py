@@ -1,11 +1,14 @@
 import base64
 import json
+import sys
 from pathlib import Path
-
-from src.services import ZEPLIN_SERVICES
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from src.services import ZEPLIN_SERVICES
+
 DEFAULT_DATA = ROOT / "leads_final.json"
 DEFAULT_TEMPLATE = ROOT / "src" / "dashboard" / "template.html"
 DEFAULT_OUTPUT = ROOT / "public" / "index.html"

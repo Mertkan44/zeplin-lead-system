@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Zeplin Media · Lead Intelligence</title>
+<link rel="icon" type="image/png" href="/logo-mark.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Satisfy&display=swap" rel="stylesheet">
@@ -40,7 +41,8 @@
 
   /* ── SIDEBAR ──────────────────────────────────────── */
   .sidebar{background:#0a0911;border-right:1px solid rgba(255,255,255,.04);padding:18px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
-  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#ff5a96 0%,#ff2d78 50%,#c91560 100%);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;letter-spacing:-.02em;box-shadow:0 6px 18px -6px rgba(255,45,120,.55),0 0 0 1px rgba(255,255,255,.06) inset;margin-bottom:8px}
+  .logo{width:46px;height:38px;border-radius:12px;background:radial-gradient(circle at 55% 30%,rgba(255,106,163,.20),rgba(255,45,120,.08) 48%,rgba(149,128,255,.08));display:grid;place-items:center;box-shadow:0 10px 24px -12px rgba(255,45,120,.9),0 0 0 1px rgba(255,255,255,.06) inset;margin-bottom:8px;overflow:hidden}
+  .logo img{width:54px;height:48px;object-fit:contain;display:block;transform:scale(1.85) translateY(1px);filter:drop-shadow(0 8px 12px rgba(255,45,120,.34))}
   .nav-icon{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--text-3);transition:.15s all;background:transparent;border:1px solid transparent;position:relative}
   .nav-icon:hover{color:var(--text-2);background:rgba(255,255,255,.03)}
   .nav-icon.active{color:var(--text);background:rgba(149,128,255,.14);border-color:rgba(149,128,255,.25)}
@@ -53,6 +55,8 @@
   .main{display:flex;flex-direction:column;min-width:0}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid rgba(255,255,255,.04)}
   .brand{display:flex;align-items:center;gap:10px}
+  .brand-logo{width:38px;height:28px;border-radius:9px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;background:rgba(255,45,120,.05)}
+  .brand-logo img{width:46px;height:42px;object-fit:contain;display:block;transform:scale(1.75) translateY(1px);filter:drop-shadow(0 7px 10px rgba(255,45,120,.28))}
   .brand-name{font-weight:700;font-size:15px;letter-spacing:-.01em}
   .brand-sub{color:var(--text-3);font-size:12px;margin-left:6px}
   .top-actions{display:flex;align-items:center;gap:10px}
@@ -336,7 +340,7 @@
 
   /* ── RESPONSIVE ───────────────────────────────────── */
   @media(max-width:1100px){.content{grid-template-columns:1fr}.rail{flex-direction:row;flex-wrap:wrap}.rail-list{flex-direction:row;flex-wrap:wrap}.lead-row{flex:1 1 260px}.ops-strip{grid-template-columns:repeat(2,1fr)}.priority-list{grid-template-columns:1fr}}
-  @media(max-width:760px){.stage{padding:12px}.app{grid-template-columns:1fr;border-radius:20px}.sidebar{flex-direction:row;justify-content:flex-start;padding:10px;overflow-x:auto}.nav-spacer{display:none}.topbar{align-items:flex-start;gap:14px;padding:18px}.brand{flex-wrap:wrap}.hero{padding:26px 18px 0}.hero-row{flex-direction:column}.hero-title{font-size:26px}.hero-cta{width:100%;justify-content:flex-start;flex-wrap:wrap}.tabs{overflow-x:auto;padding-bottom:1px;gap:18px}.content{padding:20px 18px 24px}.metric-row{grid-template-columns:1fr}.det-grid{grid-template-columns:1fr}.det-head{gap:14px}.det-score{flex-shrink:0}.detail{padding:18px}.rail{flex-direction:column}.rail-list{flex-direction:column}.lead-row{flex:0 0 auto;width:100%}.search-modal{margin:0 12px}.ops-strip{grid-template-columns:1fr}.priority-card{padding:16px}.priority-head{align-items:flex-start;flex-direction:column}.ig-stats{overflow-x:auto}.ig-stat{min-width:96px}.acc-sub{max-width:160px}.chart-head{align-items:flex-start;flex-direction:column}.chart{gap:6px}}
+  @media(max-width:760px){.stage{padding:12px}.app{grid-template-columns:1fr;border-radius:20px}.sidebar{flex-direction:row;justify-content:flex-start;padding:10px;overflow-x:auto}.logo{margin-bottom:0;flex:0 0 auto}.nav-spacer{display:none}.topbar{align-items:flex-start;gap:14px;padding:18px}.brand{flex-wrap:wrap}.hero{padding:26px 18px 0}.hero-row{flex-direction:column}.hero-title{font-size:26px}.hero-cta{width:100%;justify-content:flex-start;flex-wrap:wrap}.tabs{overflow-x:auto;padding-bottom:1px;gap:18px}.content{padding:20px 18px 24px}.metric-row{grid-template-columns:1fr}.det-grid{grid-template-columns:1fr}.det-head{gap:14px}.det-score{flex-shrink:0}.detail{padding:18px}.rail{flex-direction:column}.rail-list{flex-direction:column}.lead-row{flex:0 0 auto;width:100%}.search-modal{margin:0 12px}.ops-strip{grid-template-columns:1fr}.priority-card{padding:16px}.priority-head{align-items:flex-start;flex-direction:column}.ig-stats{overflow-x:auto}.ig-stat{min-width:96px}.acc-sub{max-width:160px}.chart-head{align-items:flex-start;flex-direction:column}.chart{gap:6px}}
 
   /* ── REPORTS VIEW ─────────────────────────────────── */
   #view-reports{display:flex;flex-direction:column;min-height:0;flex:1}
@@ -581,6 +585,120 @@
   .rc-value-row{display:flex;align-items:center;gap:10px;padding:8px 24px 4px;flex-wrap:wrap}
   .rc-value-badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:7px;background:rgba(124,226,181,.1);border:1px solid rgba(124,226,181,.2);font-size:12px;font-weight:700;color:var(--mint)}
   .rc-svc-chip{height:22px;padding:0 9px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);font-size:11px;color:var(--text-3);display:inline-flex;align-items:center}
+
+  /* ── WARM EDITORIAL REDESIGN ──────────────────────── */
+  :root{
+    --app:#f6efe5;--app-2:#fff9ef;--panel:#fffaf3;--panel-2:#f8efe3;
+    --line:#eadfce;--line-strong:#dccab4;
+    --text:#171411;--text-2:#4c443b;--text-3:#82776b;--text-4:#b2a79a;
+    --lila:#786cf2;--lila-2:#6457df;--lila-soft:rgba(120,108,242,.10);--lila-line:rgba(120,108,242,.22);
+    --pink:#ff4f2e;--pink-2:#ff7246;--pink-soft:rgba(255,79,46,.10);--pink-line:rgba(255,79,46,.22);
+    --mint:#25a96b;--mint-soft:rgba(37,169,107,.10);--mint-line:rgba(37,169,107,.20);
+    --amber:#f59e0b;--amber-soft:rgba(245,158,11,.12);--amber-line:rgba(245,158,11,.24);
+    --red:#e84f4f;--red-soft:rgba(232,79,79,.10);--red-line:rgba(232,79,79,.22);
+    --blue:#4788d8;--blue-soft:rgba(71,136,216,.10);--blue-line:rgba(71,136,216,.22);
+  }
+  html,body{
+    background:
+      linear-gradient(135deg,rgba(255,116,45,.50),rgba(137,45,17,.92) 42%,rgba(22,17,14,.96)),
+      #923818;
+  }
+  .stage{max-width:1500px;padding:34px}
+  .app{
+    grid-template-columns:246px 1fr;
+    background:var(--app);
+    border-radius:26px;
+    border-color:rgba(255,255,255,.32);
+    box-shadow:0 45px 110px -40px rgba(42,18,6,.70),0 0 0 1px rgba(255,255,255,.24) inset;
+  }
+  .sidebar{
+    align-items:stretch;
+    padding:24px 16px;
+    background:linear-gradient(180deg,#151815 0%,#0e1110 100%);
+    border-right:1px solid rgba(255,255,255,.08);
+  }
+  .logo{
+    width:100%;height:54px;margin:0 0 22px;padding:0 12px;border-radius:16px;
+    display:flex;align-items:center;justify-content:flex-start;gap:12px;
+    background:transparent;box-shadow:none;overflow:visible;
+  }
+  .logo::after{content:"Zeplin Media";color:#fff;font-size:15px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+  .logo img{width:42px;height:30px;transform:none;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(255,79,46,.36))}
+  .sidebar .nav-icon{
+    width:100%;height:44px;border-radius:13px;padding:0 12px;display:flex;align-items:center;justify-content:flex-start;gap:12px;
+    color:rgba(255,255,255,.62);background:transparent;border:1px solid transparent;
+  }
+  .sidebar .nav-icon:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sidebar .nav-icon.active{background:linear-gradient(135deg,#ff4f2e,#ff9f2f);border-color:rgba(255,255,255,.18);color:#fff;box-shadow:0 12px 26px -16px rgba(255,79,46,.9)}
+  .sidebar .nav-tooltip{
+    position:static;opacity:1;transform:none;background:transparent;border:0;padding:0;color:currentColor;font-size:13px;font-weight:650;pointer-events:none;
+  }
+  .main{background:linear-gradient(180deg,#fffaf3 0%,#f3eadf 100%);color:var(--text)}
+  .topbar{padding:22px 28px;border-bottom:1px solid rgba(70,51,35,.08);gap:18px}
+  .brand-logo{width:42px;height:30px;background:rgba(255,79,46,.08)}
+  .brand-logo img{width:42px;height:30px;transform:none;object-fit:contain}
+  .brand-sub{color:var(--text-3)}
+  .top-search{
+    flex:1;max-width:560px;height:44px;border:1px solid rgba(36,28,20,.10);border-radius:14px;
+    background:#fffdfa;color:var(--text-3);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:13px;
+    box-shadow:0 16px 34px -28px rgba(53,35,18,.30);
+  }
+  .top-search svg{width:16px;height:16px;color:var(--text-4)}
+  .icon-btn,.me,.ghost{background:#fffaf3;border-color:rgba(36,28,20,.10);color:var(--text-2)}
+  .primary{background:linear-gradient(135deg,#ff4f2e,#ff9f2f);box-shadow:0 18px 34px -20px rgba(255,79,46,.9)}
+  .hero{
+    margin:18px 28px 0;padding:28px;border-radius:24px;
+    background:linear-gradient(135deg,#fff8ef 0%,#fff3e3 54%,#ffe1c7 100%);
+    border:1px solid rgba(36,28,20,.08);
+    box-shadow:0 18px 50px -42px rgba(77,45,20,.55);
+  }
+  .hero-title{font-size:32px;color:var(--text);max-width:560px}
+  .hero-sub{color:var(--text-3)}
+  .em-bubble{background:#151815;border-color:rgba(255,255,255,.12);color:#ff9f2f}
+  .hero-cta{
+    min-width:340px;align-self:stretch;align-items:flex-start;justify-content:space-between;padding:22px;border-radius:22px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#ff4f2e 0%,#ff7a2f 48%,#ffbf45 100%);
+    border:1px solid rgba(255,255,255,.30);
+    box-shadow:0 20px 48px -32px rgba(255,79,46,.9);
+  }
+  .hero-cta-copy{max-width:190px;color:#fff;position:relative;z-index:1}
+  .hero-cta-kicker{font-size:11px;font-weight:750;letter-spacing:.11em;text-transform:uppercase;opacity:.78}
+  .hero-cta-title{margin-top:8px;font-size:18px;font-weight:850;letter-spacing:-.02em;line-height:1.1}
+  .hero-cta-sub{margin-top:8px;font-size:12px;line-height:1.45;opacity:.82}
+  .hero-cta-actions{display:flex;gap:8px;position:relative;z-index:2;margin-top:auto}
+  .hero-zeppelin{position:absolute;right:16px;bottom:12px;width:132px;height:auto;filter:drop-shadow(0 22px 22px rgba(89,26,10,.25));transform:rotate(-4deg)}
+  .hero-cta .ghost{background:rgba(255,255,255,.88);border-color:rgba(255,255,255,.35);color:#3b2b1e}
+  .hero-cta .primary{background:#151815;color:#fff;box-shadow:none}
+  .tabs{border-bottom-color:rgba(36,28,20,.08);gap:26px}
+  .tab{color:var(--text-3)}
+  .tab.active{color:var(--text);border-bottom-color:#ff4f2e}
+  .content{padding:18px 28px 30px}
+  .ops-card,.metric,.priority-card,.chart-card,.detail,.lead-row,.rail-cta,.rc,.hiz-card,.pipe-col,.pipe-card,.action-modal,.search-modal{
+    background:linear-gradient(180deg,#fffdf8 0%,#f9f0e4 100%);
+    border-color:rgba(36,28,20,.09);
+    box-shadow:0 20px 46px -38px rgba(60,39,20,.38);
+  }
+  .metric.cta,.rail-cta{
+    background:linear-gradient(135deg,#1b1d1b 0%,#242019 54%,#3a2115 100%);
+    color:#fff;border-color:rgba(255,255,255,.10);
+  }
+  .metric.cta .cta-title,.rail-cta-title{color:#fff}
+  .cta-tag{background:rgba(255,159,47,.13);border-color:rgba(255,159,47,.28);color:#ffbf45}
+  .cta-btn,.modal-submit{background:linear-gradient(135deg,#ff4f2e,#ff9f2f);box-shadow:0 14px 26px -18px rgba(255,79,46,.8)}
+  .priority-item,.acc,.rc-acc,.offer-brief,.svc-match{background:rgba(255,255,255,.58);border-color:rgba(36,28,20,.08)}
+  .ig-stats,.rc-ig-stats{background:rgba(255,79,46,.055);border-color:rgba(255,79,46,.14)}
+  .lead-row.active{background:linear-gradient(180deg,#fff7e8 0%,#fff1dc 100%);border-color:rgba(255,79,46,.28)}
+  .lead-row.active::before{background:linear-gradient(180deg,#ff4f2e,#ff9f2f)}
+  .chart-legend,.day,.rail-title .more,.svc-desc,.hiz-card-desc,.pipe-card-date{color:var(--text-3)}
+  .mail-block,.rc-mail-block,.command-box{background:rgba(32,24,18,.06);border-color:rgba(36,28,20,.08);color:var(--text-2)}
+  .search-overlay,.action-overlay{background:rgba(30,22,15,.52)}
+  .rep-hero{background:linear-gradient(135deg,#fff8ef 0%,#f7ecde 100%);border-bottom-color:rgba(36,28,20,.08)}
+  .team-card{background:#fffaf3;border-color:rgba(36,28,20,.08);box-shadow:0 18px 40px -36px rgba(60,39,20,.42)}
+  .pipe-col-head{background:rgba(255,250,243,.88)}
+  .m-icon.lila{background:linear-gradient(135deg,#161816,#3b332c)}
+  .m-icon.pink{background:linear-gradient(135deg,#ff4f2e,#ff9f2f)}
+  @media(max-width:1100px){.app{grid-template-columns:1fr}.sidebar{flex-direction:row;overflow-x:auto;padding:12px}.logo{width:auto;margin:0}.logo::after{display:none}.sidebar .nav-icon{width:44px;justify-content:center;padding:0}.sidebar .nav-tooltip{display:none}.hero{margin:14px 18px 0}.hero-cta{min-width:0;width:100%}.top-search{order:3;max-width:none;flex-basis:100%}}
+  @media(max-width:760px){.stage{padding:12px}.hero{padding:22px}.hero-cta{padding:16px;min-height:190px}.hero-zeppelin{width:116px}.content{padding:16px 18px 24px}.topbar{flex-wrap:wrap}.brand-logo{display:none}}
 </style>
 </head>
 <body>
@@ -667,7 +785,7 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="logo">Z</div>
+      <div class="logo"><img src="/logo-mark.png" alt="Zeplin Media" /></div>
       <div class="nav-icon active" title="Leads" onclick="navClick(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-tooltip">Leads</span>
@@ -696,9 +814,14 @@
 
       <div class="topbar">
         <div class="brand">
+          <span class="brand-logo"><img src="/logo-mark.png" alt="" aria-hidden="true" /></span>
           <span class="brand-name">Zeplin Media</span>
           <span class="brand-sub">· Lead Intelligence</span>
         </div>
+        <button class="top-search" onclick="openSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Lead, firma veya hizmet ara...
+        </button>
         <div class="top-actions">
           <button class="icon-btn" onclick="openSearch()" title="Ara (⌘K)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -736,14 +859,22 @@
             <p class="hero-sub" id="hero-sub">Yükleniyor…</p>
           </div>
           <div class="hero-cta">
-            <button class="ghost" onclick="exportCSV()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              Dışa aktar
-            </button>
-            <button class="primary" onclick="newLeadClick()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Yeni Lead
-            </button>
+            <div class="hero-cta-copy">
+              <div class="hero-cta-kicker">Yeni tarama</div>
+              <div class="hero-cta-title">Fırsatı kaçırmadan sıradaki lead’i bul.</div>
+              <div class="hero-cta-sub">Bot, dijital açıkları paket önerisine çevirir.</div>
+            </div>
+            <img class="hero-zeppelin" src="/logo-mark.png" alt="" aria-hidden="true" />
+            <div class="hero-cta-actions">
+              <button class="ghost" onclick="exportCSV()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Dışa aktar
+              </button>
+              <button class="primary" onclick="newLeadClick()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Yeni Lead
+              </button>
+            </div>
           </div>
         </div>
         <div class="tabs" id="tabs"></div>
