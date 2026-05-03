@@ -697,8 +697,205 @@
   .pipe-col-head{background:rgba(255,250,243,.88)}
   .m-icon.lila{background:linear-gradient(135deg,#161816,#3b332c)}
   .m-icon.pink{background:linear-gradient(135deg,#ff4f2e,#ff9f2f)}
-  @media(max-width:1100px){.app{grid-template-columns:1fr}.sidebar{flex-direction:row;overflow-x:auto;padding:12px}.logo{width:auto;margin:0}.logo::after{display:none}.sidebar .nav-icon{width:44px;justify-content:center;padding:0}.sidebar .nav-tooltip{display:none}.hero{margin:14px 18px 0}.hero-cta{min-width:0;width:100%}.top-search{order:3;max-width:none;flex-basis:100%}}
-  @media(max-width:760px){.stage{padding:12px}.hero{padding:22px}.hero-cta{padding:16px;min-height:190px}.hero-zeppelin{width:116px}.content{padding:16px 18px 24px}.topbar{flex-wrap:wrap}.brand-logo{display:none}}
+  /* ── COMMAND CENTER REDESIGN ─────────────────────── */
+  .command-hero{
+    margin:20px 28px 0;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 420px;
+    gap:18px;
+    align-items:stretch;
+  }
+  .command-copy{
+    min-height:300px;
+    border-radius:28px;
+    padding:34px;
+    background:
+      radial-gradient(520px 260px at 88% 14%,rgba(255,172,72,.24) 0%,transparent 60%),
+      linear-gradient(135deg,#fffaf2 0%,#f4e7d7 100%);
+    border:1px solid rgba(36,28,20,.08);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    overflow:hidden;
+  }
+  .command-kicker,.section-kicker{
+    color:#ff5a2f;
+    font-size:11px;
+    font-weight:850;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+  }
+  .command-title{
+    max-width:720px;
+    margin:14px 0 14px;
+    color:#161411;
+    font-size:clamp(42px,5.5vw,76px);
+    line-height:.92;
+    font-weight:900;
+  }
+  .command-copy .hero-sub{max-width:640px;font-size:15px;line-height:1.65;color:#6f6255}
+  .command-copy .tabs{margin-top:auto;padding-top:28px;border:0;gap:10px;flex-wrap:wrap}
+  .command-copy .tab{
+    height:38px;padding:0 14px;border:1px solid rgba(36,28,20,.08);border-radius:999px;
+    background:rgba(255,255,255,.58);display:inline-flex;align-items:center;gap:8px;
+  }
+  .command-copy .tab.active{background:#151815;color:#fff;border-color:#151815}
+  .command-copy .tab.active .cnt{background:rgba(255,255,255,.14);color:#fff}
+  .mission-card{
+    min-height:300px;
+    border-radius:28px;
+    padding:24px;
+    position:relative;
+    overflow:hidden;
+    background:
+      radial-gradient(280px 220px at 86% 30%,rgba(255,191,69,.70) 0%,transparent 64%),
+      linear-gradient(135deg,#ff4f2e 0%,#fa742a 54%,#ffb43f 100%);
+    border:1px solid rgba(255,255,255,.28);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    box-shadow:0 30px 70px -44px rgba(255,79,46,.9);
+  }
+  .mission-glow{position:absolute;inset:auto -70px -90px auto;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.22);filter:blur(12px)}
+  .mission-copy{position:relative;z-index:1;max-width:270px}
+  .mission-label{display:block;font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;opacity:.78}
+  .mission-copy strong{display:block;margin-top:10px;font-size:28px;line-height:1.03;letter-spacing:-.04em}
+  .mission-copy p{margin-top:12px;font-size:13px;line-height:1.55;opacity:.82}
+  .mission-zeppelin{position:absolute;right:14px;bottom:72px;width:178px;filter:drop-shadow(0 26px 28px rgba(80,25,8,.24));transform:rotate(-5deg)}
+  .mission-actions{position:relative;z-index:2;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .mission-actions .ghost{background:rgba(255,255,255,.88);border-color:rgba(255,255,255,.34);color:#35261a}
+  .mission-actions .primary{background:#151815;color:#fff;box-shadow:none}
+  .ops-board{padding:16px 28px 0}
+  .ops-strip{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .ops-card{
+    min-height:92px;
+    border-radius:20px;
+    background:rgba(255,255,255,.54);
+  }
+  .ops-note{
+    margin-top:10px;
+    border-radius:16px;
+    padding:10px 14px;
+    background:rgba(21,24,21,.05);
+    color:#73675b;
+    font-size:12.5px;
+  }
+  .command-content{
+    padding:20px 28px 32px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 392px;
+    gap:20px;
+    align-items:start;
+  }
+  .command-main,.command-aside{display:flex;flex-direction:column;gap:18px;min-width:0}
+  .metric-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .metric{
+    min-height:150px;
+    border-radius:22px;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .metric .m-num .v{font-size:38px}
+  .metric .m-label{font-size:11px;letter-spacing:.10em}
+  .workbench-card,.detail-lab,.package-spotlight,.team-rhythm-card,.pipeline-snapshot,.tempo-card,.lead-dock{
+    background:linear-gradient(180deg,#fffdf8 0%,#f8efe3 100%);
+    border:1px solid rgba(36,28,20,.09);
+    border-radius:24px;
+    box-shadow:0 22px 52px -44px rgba(60,39,20,.42);
+  }
+  .workbench-card,.detail-lab{padding:20px}
+  .section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+  .section-head h2{margin:4px 0 0;font-size:23px;line-height:1.1;letter-spacing:-.035em;color:#171411}
+  .section-head.mini{margin-bottom:12px}
+  .section-head.mini h2{font-size:18px}
+  .section-link{
+    height:36px;padding:0 12px;border-radius:999px;border:1px solid rgba(36,28,20,.10);
+    background:#fffaf3;color:#4c443b;font-size:12px;font-weight:750;white-space:nowrap;
+  }
+  .focus-list{display:flex;flex-direction:column;gap:10px}
+  .focus-row{
+    display:grid;
+    grid-template-columns:74px minmax(0,1fr) 200px;
+    gap:16px;
+    align-items:center;
+    min-height:116px;
+    padding:16px;
+    border-radius:20px;
+    border:1px solid rgba(36,28,20,.08);
+    background:#fffaf3;
+    cursor:pointer;
+    transition:transform .16s,box-shadow .16s,border-color .16s;
+  }
+  .focus-row:hover{transform:translateY(-1px);box-shadow:0 18px 34px -30px rgba(60,39,20,.46);border-color:rgba(255,79,46,.22)}
+  .focus-row.active{background:linear-gradient(135deg,#fff7e8 0%,#fff1dc 100%);border-color:rgba(255,79,46,.28)}
+  .focus-rank{height:74px;border-radius:18px;background:#171a17;color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+  .focus-rank strong{font-size:24px;letter-spacing:-.04em}
+  .focus-rank span{font-size:10px;color:rgba(255,255,255,.62);font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+  .focus-title{font-size:20px;font-weight:850;letter-spacing:-.03em;color:#191613;line-height:1.15}
+  .focus-meta{margin-top:8px;display:flex;flex-wrap:wrap;gap:7px;color:#7f7366;font-size:12px}
+  .focus-package{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .service-chip,.evidence-chip{
+    display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;
+    font-size:12px;font-weight:700;background:rgba(37,169,107,.09);border:1px solid rgba(37,169,107,.18);color:#317256;
+  }
+  .evidence-chip{background:rgba(71,136,216,.08);border-color:rgba(71,136,216,.18);color:#426f9d}
+  .focus-action{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+  .focus-action strong{font-size:12px;color:#5d5248;line-height:1.4}
+  .focus-action button{
+    height:38px;border-radius:12px;border:0;background:#171a17;color:#fff;font-size:12px;font-weight:800;
+  }
+  .package-spotlight{padding:22px;color:#fff;background:linear-gradient(145deg,#171a17 0%,#28241e 58%,#492a19 100%);border-color:rgba(255,255,255,.10);overflow:hidden;position:relative}
+  .package-spotlight::after{content:"";position:absolute;right:-38px;top:-42px;width:150px;height:150px;border-radius:50%;background:rgba(255,113,45,.24);filter:blur(4px)}
+  .pkg-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .pkg-kicker{font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:#ffbf45}
+  .pkg-name{margin-top:8px;font-size:27px;line-height:1.02;font-weight:900;letter-spacing:-.04em}
+  .pkg-score{min-width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12)}
+  .pkg-score strong{font-size:24px}
+  .pkg-score span{font-size:10px;color:rgba(255,255,255,.62);font-weight:750;text-transform:uppercase}
+  .pkg-summary{position:relative;z-index:1;margin-top:14px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.76)}
+  .pkg-services{position:relative;z-index:1;margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+  .pkg-services span{border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.12);padding:7px 10px;font-size:12px;color:rgba(255,255,255,.82)}
+  .team-rhythm-card,.pipeline-snapshot,.tempo-card,.lead-dock{padding:18px}
+  .team-rhythm{display:flex;flex-direction:column;gap:9px}
+  .team-row{display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:15px;background:rgba(255,255,255,.55);border:1px solid rgba(36,28,20,.07)}
+  .team-ic{height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:850}
+  .team-ic.sales{background:#171a17}.team-ic.seo{background:#4788d8}.team-ic.creative{background:#ff4f2e}.team-ic.ops{background:#25a96b}
+  .team-name{font-weight:850;color:#201b17}
+  .team-sub{font-size:12px;color:#82776b;margin-top:2px}
+  .team-count{font-size:22px;font-weight:900;letter-spacing:-.04em;color:#211b16}
+  .pipeline-list{display:flex;flex-direction:column;gap:10px}
+  .pipe-snap-row{display:grid;grid-template-columns:84px 1fr 36px;gap:10px;align-items:center}
+  .pipe-snap-label{font-size:12px;font-weight:800;color:#5a5047}
+  .pipe-snap-track{height:9px;border-radius:999px;background:rgba(36,28,20,.08);overflow:hidden}
+  .pipe-snap-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ff4f2e,#ffb43f)}
+  .pipe-snap-count{text-align:right;font-weight:900;color:#181512}
+  .tempo-card .chart-head{margin-bottom:10px}
+  .tempo-card .chart.compact{height:172px;padding:4px 0 0;gap:7px}
+  .tempo-card .bar.lila{background:linear-gradient(180deg,#4788d8,#786cf2)}
+  .tempo-card .bar.pink{background:linear-gradient(180deg,#ffb43f,#ff4f2e)}
+  .lead-dock .rail-list{max-height:520px;overflow:auto;padding-right:2px}
+  .lead-dock .lead-row{background:rgba(255,255,255,.58)}
+  .lead-dock .lead-row.active{background:linear-gradient(180deg,#fff7e8 0%,#fff1dc 100%)}
+  @media(max-width:1220px){
+    .command-hero,.command-content{grid-template-columns:1fr}
+    .command-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .lead-dock{grid-column:1/-1}
+  }
+  @media(max-width:1100px){
+    .app{grid-template-columns:1fr}.sidebar{flex-direction:row;overflow-x:auto;padding:12px}.logo{width:auto;margin:0}.logo::after{display:none}.sidebar .nav-icon{width:44px;justify-content:center;padding:0}.sidebar .nav-tooltip{display:none}.top-search{order:3;max-width:none;flex-basis:100%}
+    .command-hero{margin:14px 18px 0}.ops-board{padding:14px 18px 0}.command-content{padding:16px 18px 24px}.metric-row,.ops-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:760px){
+    .stage{padding:12px}.topbar{flex-wrap:wrap}.brand-logo{display:none}
+    .command-hero{gap:12px}.command-copy,.mission-card{min-height:auto;padding:22px;border-radius:22px}.command-title{font-size:40px;line-height:.98}.command-copy .tabs{padding-top:20px;overflow-x:auto;flex-wrap:nowrap}
+    .mission-zeppelin{width:126px;right:10px;bottom:74px}.mission-copy{max-width:230px}
+    .metric-row,.ops-strip,.command-aside{grid-template-columns:1fr}
+    .focus-row{grid-template-columns:1fr;gap:12px}.focus-rank{width:74px}.focus-action{align-items:stretch}
+    .workbench-card,.detail-lab,.package-spotlight,.team-rhythm-card,.pipeline-snapshot,.tempo-card,.lead-dock{border-radius:20px}
+  }
 </style>
 </head>
 <body>
@@ -849,83 +1046,102 @@
 
       <!-- ── VIEW: Dashboard ── -->
       <div id="view-dashboard">
-      <div class="hero">
-        <div class="hero-row">
-          <div>
-            <h1 class="hero-title">
-              <span class="em">Potansiyel müşterilerin <span class="em-bubble">✦</span></span><br/>
-              dijital sağlığını izle.
-            </h1>
+        <section class="command-hero">
+          <div class="command-copy">
+            <div class="command-kicker">Lead Intelligence OS</div>
+            <h1 class="command-title">Satış ekibinin bugünkü işi burada başlar.</h1>
             <p class="hero-sub" id="hero-sub">Yükleniyor…</p>
+            <div class="tabs" id="tabs"></div>
           </div>
-          <div class="hero-cta">
-            <div class="hero-cta-copy">
-              <div class="hero-cta-kicker">Yeni tarama</div>
-              <div class="hero-cta-title">Fırsatı kaçırmadan sıradaki lead’i bul.</div>
-              <div class="hero-cta-sub">Bot, dijital açıkları paket önerisine çevirir.</div>
+
+          <div class="mission-card">
+            <div class="mission-glow"></div>
+            <div class="mission-copy">
+              <span class="mission-label">Bugünün odağı</span>
+              <strong id="mission-title">En sıcak fırsatı seçiyoruz</strong>
+              <p id="mission-sub">Botun tespit ettiği açıklar hizmet paketine dönüştürülüyor.</p>
             </div>
-            <img class="hero-zeppelin" src="/logo-mark.png" alt="" aria-hidden="true" />
-            <div class="hero-cta-actions">
+            <img class="mission-zeppelin" src="/logo-mark.png" alt="" aria-hidden="true" />
+            <div class="mission-actions">
               <button class="ghost" onclick="exportCSV()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                Dışa aktar
+                CSV
               </button>
               <button class="primary" onclick="newLeadClick()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                Yeni Lead
+                Yeni Tarama
               </button>
             </div>
           </div>
-        </div>
-        <div class="tabs" id="tabs"></div>
-        <div class="ops-strip" id="ops-strip"></div>
-        <div class="ops-note" id="ops-note"></div>
-      </div>
+        </section>
 
-      <div class="content">
-        <div>
-          <div class="metric-row" id="metrics"></div>
-          <div class="priority-card">
-            <div class="priority-head">
-              <div class="priority-title">
-                <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h8l-1 8 11-14h-8l1-6z"/></svg></div>
-                <span>Bugünkü Öncelikler</span>
+        <section class="ops-board">
+          <div class="ops-strip" id="ops-strip"></div>
+          <div class="ops-note" id="ops-note"></div>
+        </section>
+
+        <div class="command-content">
+          <main class="command-main">
+            <div class="metric-row" id="metrics"></div>
+
+            <section class="workbench-card">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">Focus Queue</span>
+                  <h2>Öncelik masası</h2>
+                </div>
+                <button class="section-link" onclick="showView('reports')">Tüm raporlar</button>
               </div>
-              <div class="priority-sub">Satış skoru, ulaşılabilirlik ve fırsat değerine göre</div>
-            </div>
-            <div class="priority-list" id="priority-list"></div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-head">
-              <div class="chart-title">
-                <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>
-                <span class="lbl">Haftalık Denetim Skorları</span>
+              <div class="focus-list" id="focus-list"></div>
+            </section>
+
+            <section class="detail-lab">
+              <div class="section-head">
+                <div>
+                  <span class="section-kicker">AI Dossier</span>
+                  <h2>Seçili lead çalışma dosyası</h2>
+                </div>
+                <button class="section-link" onclick="openActionModal(activeLeadName)">Aksiyon ekle</button>
               </div>
-              <div class="chart-legend">
-                <span class="lg"><span class="sw lila"></span>Tamamlanan</span>
-                <span class="lg"><span class="sw pink"></span>Kritik bulgu</span>
+              <div class="detail" id="detail"></div>
+            </section>
+          </main>
+
+          <aside class="command-aside">
+            <section class="package-spotlight" id="package-spotlight"></section>
+
+            <section class="team-rhythm-card">
+              <div class="section-head mini">
+                <div>
+                  <span class="section-kicker">Team Flow</span>
+                  <h2>Ekip ritmi</h2>
+                </div>
+              </div>
+              <div class="team-rhythm" id="team-rhythm"></div>
+            </section>
+
+            <section class="pipeline-snapshot" id="pipeline-snapshot"></section>
+
+            <section class="tempo-card">
+              <div class="chart-head">
+                <div class="chart-title">
+                  <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>
+                  <span class="lbl">Haftalık tempo</span>
+                </div>
                 <div class="seg" id="chartSeg">
                   <button class="on" onclick="chartToggle(this,'week')">Hafta</button>
                   <button onclick="chartToggle(this,'month')">Ay</button>
                 </div>
               </div>
-            </div>
-            <div class="chart" id="chartBars"></div>
-          </div>
-          <div class="detail" id="detail"></div>
-        </div>
+              <div class="chart compact" id="chartBars"></div>
+            </section>
 
-        <aside class="rail">
-          <div class="rail-title">Aktif Leadler <span class="more" onclick="toast('Tüm lead listesi yakında!','info')">Tümünü gör →</span></div>
-          <div class="rail-list" id="rail-list"></div>
-          <div class="rail-cta">
-            <span class="new-tag">YENİ</span>
-            <div class="rail-cta-title">Otomatik tarama açık</div>
-            <div class="rail-cta-sub">İstanbul bölgesindeki işletmeler analiz kuyruğunda. Sonuçlar otomatik güncellenir.</div>
-            <button class="rail-cta-btn" onclick="newLeadClick()">Yeni tarama planla</button>
-          </div>
-        </aside>
-      </div>
+            <section class="lead-dock">
+              <div class="rail-title">Lead kuyruğu <span class="more" onclick="showView('reports')">Tümünü gör →</span></div>
+              <div class="rail-list" id="rail-list"></div>
+            </section>
+          </aside>
+        </div>
 
       </div><!-- /view-dashboard -->
 
@@ -1095,6 +1311,7 @@ function submitAction(){
   document.getElementById('actionOverlay').classList.remove('open');
   var act=ACTIONS[action]||{};
   toast((act.label||action)+' kaydedildi','success');
+  renderStats();
   renderRail();
   renderTabs();
   renderDetail(_actionTarget);
@@ -1213,6 +1430,52 @@ function evidenceHtml(items, limit){
   return items.map(function(e){ return '<span class="evidence-chip">'+esc(e)+'</span>'; }).join('');
 }
 
+function jsArg(s){
+  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n]+/g,' ');
+}
+
+function money(n){
+  return '~'+Number(n||0).toLocaleString('tr-TR')+' TL';
+}
+
+function priorityPool(limit){
+  var pool=filteredLeads();
+  if(!pool.length) pool=leads;
+  return pool.slice().sort(function(a,b){
+    return leadPriority(b)-leadPriority(a) || (b.estimated_value_tl||0)-(a.estimated_value_tl||0);
+  }).slice(0,limit||5);
+}
+
+function primaryFocusLead(){
+  var active=leads.find(function(l){ return l.name===activeLeadName; });
+  return active || priorityPool(1)[0] || leads[0];
+}
+
+function leadEvidence(lead,pkg,limit){
+  var bits=[];
+  (pkg.evidence||[]).forEach(function(x){ bits.push(x); });
+  (lead.scoring&&lead.scoring.issues||[]).forEach(function(x){ bits.push(x); });
+  return bits.filter(Boolean).slice(0,limit||3);
+}
+
+function ownerBuckets(){
+  var defs=[
+    {key:'sales', label:'Sales', sub:'Teklif ve ilk temas', owners:['Sales'], ic:'S'},
+    {key:'seo', label:'SEO / Web', sub:'Teknik açık ve görünürlük', owners:['SEO','Web'], ic:'G'},
+    {key:'creative', label:'Creative', sub:'İçerik ve sosyal kanıt', owners:['Content','Creative'], ic:'C'},
+    {key:'ops', label:'CRM / AI', sub:'Otomasyon ve takip', owners:['CRM','AI','Performance'], ic:'O'}
+  ];
+  return defs.map(function(d){
+    var count=leads.filter(function(l){
+      var pkg=leadPackage(l);
+      var owners=(l.matched_services||[]).map(function(s){ return s.owner; });
+      owners.push(pkg.owner);
+      return owners.some(function(o){ return d.owners.indexOf(o)>=0; });
+    }).length;
+    return Object.assign({},d,{count:count});
+  });
+}
+
 // ──────────────────────────────────────────────────────
 // TOAST
 // ──────────────────────────────────────────────────────
@@ -1291,19 +1554,29 @@ function renderStats(){
   var avgScore=total?Math.round(leads.reduce(function(a,b){ return a+b.scoring.score; },0)/total):0;
   var criticals=leads.filter(function(l){ return l.scoring.score<40; }).length;
   var h=dataHealth();
+  var focus=priorityPool(5);
+  var mission=focus[0] || leads[0];
+  var missionPkg=mission ? leadPackage(mission) : null;
+  var readyPackages=leads.filter(function(l){ return (leadPackage(l).included_services||[]).length>0; }).length;
 
   document.getElementById('hero-sub').textContent=
-    total+' işletme tarandı, '+criticals+' tanede kritik açık var. Veri güveni: %'+h.enrichedPct+
-    ' zengin şema. Son güncelleme: '+new Date().toLocaleDateString('tr-TR');
+    total+' işletme tarandı. Bot '+readyPackages+' lead için satılabilir hizmet paketi çıkardı; '+
+    criticals+' işletmede kritik açık var. Son güncelleme: '+new Date().toLocaleDateString('tr-TR')+'.';
+
+  if(mission){
+    document.getElementById('mission-title').textContent=mission.name;
+    document.getElementById('mission-sub').textContent=(missionPkg.name||'Satış paketi')+
+      ' · '+money(mission.estimated_value_tl)+' · '+(mission.next_action||'İlk teması planla');
+  }
 
   document.getElementById('ops-strip').innerHTML=
-    '<div class="ops-card '+(h.enrichedPct>=90?'good':'warn')+'"><span>Audit Derinliği</span><strong>%'+h.enrichedPct+'</strong><small>'+h.enriched+'/'+h.total+' lead teknik sinyalli</small></div>'+
-    '<div class="ops-card '+(h.aiPct>=90?'good':'warn')+'"><span>AI Hazırlık</span><strong>%'+h.aiPct+'</strong><small>'+h.aiReady+'/'+h.total+' rapor ve mail hazır</small></div>'+
-    '<div class="ops-card '+(h.servicePct>=70?'good':'pink')+'"><span>Satış Fırsatı</span><strong>~'+Number(h.totalValue).toLocaleString('tr-TR')+' TL</strong><small>Aylık tahmini potansiyel</small></div>'+
-    '<div class="ops-card '+(h.contactPct>=70?'good':'warn')+'"><span>Ulaşılabilirlik</span><strong>%'+h.contactPct+'</strong><small>'+h.contactReady+'/'+h.total+' lead telefon/adres içeriyor</small></div>';
+    '<div class="ops-card '+(h.servicePct>=70?'good':'pink')+'"><span>Paketleşen Fırsat</span><strong>%'+h.servicePct+'</strong><small>'+h.serviceReady+'/'+h.total+' lead hizmete bağlandı</small></div>'+
+    '<div class="ops-card '+(h.contactPct>=70?'good':'warn')+'"><span>Temas Hazırlığı</span><strong>%'+h.contactPct+'</strong><small>'+h.contactReady+'/'+h.total+' lead telefon/adres içeriyor</small></div>'+
+    '<div class="ops-card '+(h.aiPct>=90?'good':'warn')+'"><span>AI Dosyası</span><strong>%'+h.aiPct+'</strong><small>'+h.aiReady+'/'+h.total+' rapor ve mail hazır</small></div>'+
+    '<div class="ops-card '+(h.enrichedPct>=90?'good':'warn')+'"><span>Audit Derinliği</span><strong>%'+h.enrichedPct+'</strong><small>'+h.enriched+'/'+h.total+' lead teknik sinyalli</small></div>';
 
   document.getElementById('ops-note').textContent=
-    'Not: Pipeline aksiyonları şu an bu tarayıcıda saklanır. Takım kullanımı için kalıcı backend/SQLite aşaması sıradaki üretim adımıdır.';
+    'Güvenlik notu: Takım kullanımı için sıradaki aşama kullanıcı yetkileri, kalıcı veritabanı ve audit log. Şu an pipeline aksiyonları bu tarayıcıda saklanır.';
 
   document.getElementById('metrics').innerHTML=
     '<div class="metric">'+
@@ -1316,22 +1589,74 @@ function renderStats(){
       '<div class="m-num"><span class="v">'+avgScore+'</span><span class="u">/100 puan</span></div>'+
       '<div class="m-foot"><span class="m-trend'+(avgScore<50?' down':'')+'">'+avgScore+'% genel sağlık</span><div class="spark"><span style="height:60%"></span><span style="height:70%"></span><span style="height:55%" class="pk"></span><span style="height:48%" class="pk"></span><span style="height:52%"></span><span style="height:42%"></span><span style="height:38%"></span></div></div>'+
     '</div>'+
+    '<div class="metric">'+
+      '<div class="m-head"><div class="m-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg></div><span class="m-label">Aylık Potansiyel</span></div>'+
+      '<div class="m-num"><span class="v">'+Math.round(h.totalValue/1000)+'</span><span class="u">bin TL</span></div>'+
+      '<div class="m-foot"><span class="m-trend">Paketlerden hesaplandı</span><div class="spark"><span style="height:44%"></span><span style="height:56%" class="hi"></span><span style="height:78%" class="hi"></span><span style="height:62%"></span></div></div>'+
+    '</div>'+
     '<div class="metric cta" onclick="scrollToDetail()" style="cursor:pointer">'+
-      '<span class="cta-tag">✦ AI Insights</span>'+
-      '<div class="cta-title">'+criticals+' işletmede <b>kritik açık</b> — bugün ulaş.</div>'+
-      '<button class="cta-btn" onclick="event.stopPropagation();scrollToDetail()">Detayları gör <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>'+
+      '<span class="cta-tag">AI Triage</span>'+
+      '<div class="cta-title">'+readyPackages+' lead için <b>satış paketi</b> hazır.</div>'+
+      '<button class="cta-btn" onclick="event.stopPropagation();showView(\'hizmetler\')">Hizmet haritası <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>'+
     '</div>';
 
-  document.getElementById('priority-list').innerHTML=topPriorityLeads(3).map(function(l){
-    return '<div class="priority-item" onclick="selectLead(\''+esc(l.name)+'\')">'+
-      '<div class="priority-top">'+
-        '<div class="priority-name">'+esc(l.name)+'</div>'+
-        '<div class="priority-score">'+leadPriority(l)+'</div>'+
+  document.getElementById('focus-list').innerHTML=focus.map(function(l,idx){
+    var pkg=leadPackage(l);
+    var ev=leadEvidence(l,pkg,2);
+    var active=l.name===activeLeadName;
+    return '<article class="focus-row'+(active?' active':'')+'" onclick="selectLead(\''+jsArg(l.name)+'\')">'+
+      '<div class="focus-rank"><strong>'+String(idx+1).padStart(2,'0')+'</strong><span>'+leadPriority(l)+'/100</span></div>'+
+      '<div>'+
+        '<div class="focus-title">'+esc(l.name)+'</div>'+
+        '<div class="focus-meta"><span>'+esc(l.city||'İstanbul')+'</span><span>'+esc(l.scoring.grade)+' sınıf</span><span>'+money(l.estimated_value_tl)+'</span></div>'+
+        '<div class="focus-package">'+
+          '<span class="service-chip">'+esc(pkg.name||'Paket önerisi')+'</span>'+
+          evidenceHtml(ev,2)+
+        '</div>'+
       '</div>'+
-      '<div class="priority-action">'+esc(l.next_action||'İlk teması planla')+'</div>'+
-      '<div class="priority-meta">'+esc(l.priority_reason||'Satış potansiyeline göre seçildi.')+'</div>'+
+      '<div class="focus-action">'+
+        '<strong>'+esc(l.next_action||pkg.summary||'İlk teması planla')+'</strong>'+
+        '<button onclick="event.stopPropagation();openActionModal(\''+jsArg(l.name)+'\')">Aksiyon kaydet</button>'+
+      '</div>'+
+    '</article>';
+  }).join('');
+
+  var current=primaryFocusLead();
+  if(current){
+    var cp=leadPackage(current);
+    document.getElementById('package-spotlight').innerHTML=
+      '<div class="pkg-top">'+
+        '<div><div class="pkg-kicker">Önerilen Paket</div><div class="pkg-name">'+esc(cp.name||'Growth Sprint')+'</div></div>'+
+        '<div class="pkg-score"><strong>'+Math.round(cp.confidence||leadPriority(current))+'</strong><span>güven</span></div>'+
+      '</div>'+
+      '<div class="pkg-summary">'+esc(cp.summary||current.priority_reason||'Botun bulduğu dijital açıklar satış konuşmasına çevrildi.')+'</div>'+
+      '<div class="pkg-services">'+(cp.included_services||[]).slice(0,5).map(function(s){ return '<span>'+esc(s)+'</span>'; }).join('')+'</div>';
+  }
+
+  document.getElementById('team-rhythm').innerHTML=ownerBuckets().map(function(t){
+    return '<div class="team-row">'+
+      '<div class="team-ic '+t.key+'">'+t.ic+'</div>'+
+      '<div><div class="team-name">'+esc(t.label)+'</div><div class="team-sub">'+esc(t.sub)+'</div></div>'+
+      '<div class="team-count">'+t.count+'</div>'+
     '</div>';
   }).join('');
+
+  var statuses=[
+    {key:'yeni',label:'Yeni'},
+    {key:'contacted',label:'Temasta'},
+    {key:'converted',label:'Kazanıldı'}
+  ];
+  document.getElementById('pipeline-snapshot').innerHTML=
+    '<div class="section-head mini"><div><span class="section-kicker">Pipeline</span><h2>Satış sağlığı</h2></div></div>'+
+    '<div class="pipeline-list">'+statuses.map(function(s){
+      var c=countFor(s.key);
+      var pct=total?Math.max(5,Math.round(c/total*100)):0;
+      return '<div class="pipe-snap-row">'+
+        '<div class="pipe-snap-label">'+esc(s.label)+'</div>'+
+        '<div class="pipe-snap-track"><div class="pipe-snap-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="pipe-snap-count">'+c+'</div>'+
+      '</div>';
+    }).join('')+'</div>';
 }
 
 // ──────────────────────────────────────────────────────
@@ -1362,6 +1687,7 @@ function setFilter(f){
       renderDetail(activeLeadName);
     }
   }
+  renderStats();
 }
 
 // ──────────────────────────────────────────────────────
@@ -1376,7 +1702,7 @@ function renderRail(){
   document.getElementById('rail-list').innerHTML=fl.map(function(l){
     var s=l.scoring; var st=getStatus(l.name);
     var needsReminder = st==='contacted' && !hasRecentEvent(l.name, 3);
-    return '<div class="lead-row'+(l.name===activeLeadName?' active':'')+'" onclick="selectLead(\''+esc(l.name)+'\')">'+
+    return '<div class="lead-row'+(l.name===activeLeadName?' active':'')+'" onclick="selectLead(\''+jsArg(l.name)+'\')">'+
       '<div class="lead-ic '+gradeToIc(s.grade)+'">'+esc(initial(l.name))+'</div>'+
       '<div class="lead-info">'+
         '<div class="lead-name">'+esc(l.name)+(needsReminder?'<span class="remind-badge" title="3+ gün sessizlik — takip zamanı!">🔔</span>':'')+'</div>'+
@@ -1389,6 +1715,7 @@ function renderRail(){
 
 function selectLead(name){
   activeLeadName=name;
+  renderStats();
   renderRail();
   renderDetail(name);
   scrollToDetail();
@@ -1823,6 +2150,13 @@ function navClick(el){
   } else {
     document.getElementById('view-dashboard').style.display = 'block';
   }
+}
+
+function showView(key){
+  var map={dashboard:'Leads',reports:'Reports',pipeline:'Pipeline',hizmetler:'Hizmetler'};
+  var title=map[key]||'Leads';
+  var nav=document.querySelector('.nav-icon[title="'+title+'"]');
+  if(nav) navClick(nav);
 }
 
 // ──────────────────────────────────────────────────────
