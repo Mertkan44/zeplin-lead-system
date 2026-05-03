@@ -77,8 +77,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -89,7 +89,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 208,
+    "estimated_value_tl": 520,
     "schema_version": 2,
     "data_quality": {
       "has_contact": false,
@@ -196,8 +196,48 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_website"
+        ],
+        "evidence": [
+          "Web sitesi yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -211,13 +251,13 @@
         "slug": "web_design",
         "name": "Web Sitesi Tasarımı",
         "category": "Web & Teknik",
-        "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
-        "offer": "Vitrin site yenileme paketi",
+        "desc": "Kurumsal, mobil uyumlu, hızlı ve lead odaklı web sitesi",
+        "offer": "Lead odaklı web yenileme paketi",
         "owner": "Web",
         "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
         "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
-        "price_min": 15000,
-        "price_max": 35000,
+        "price_min": 35000,
+        "price_max": 90000,
         "monthly": false,
         "matched_triggers": [
           "no_website",
@@ -238,8 +278,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -250,7 +290,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 15291,
+    "estimated_value_tl": 96228,
     "ai_report": "İBB Beykoz Sahil Sosyal Tesisleri için dijital görünürlük skoru 0/100. Öne çıkan bulgular: Web sitesi yok, Instagram hesabı yok. Zeplin Media tarafında ilk fırsatlar: Web sitesi tasarımı — yüksek öncelik, Instagram yönetimi + içerik üretimi. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
     "ai_email": "Konu: İBB Beykoz Sahil Sosyal Tesisleri için kısa bir dijital sağlık notu\n\nMerhaba,\n\nİBB Beykoz Sahil Sosyal Tesisleri için yaptığımız hızlı kontrolde özellikle \"Web sitesi yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 15:42",
@@ -262,29 +302,30 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 62,
+    "sales_priority_score": 84,
     "next_action": "Telefon/adres tamamla",
     "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 5 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
         "Sosyal Medya Yönetimi",
-        "Web Sitesi Tasarımı",
-        "SSL & Güvenlik Kurulumu"
+        "AI Arama & GEO Görünürlüğü",
+        "Meta Ads & Retargeting Yönetimi",
+        "Web Sitesi Tasarımı"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 85,
       "evidence": [
         "Instagram yok",
-        "Web sitesi yok",
-        "Mobil uyum zayıf",
-        "SSL yok"
+        "Web sitesi yok"
       ],
       "categories": [
         "İçerik & Sosyal",
+        "AI Görünürlük",
+        "Büyüme & Reklam",
         "Web & Teknik"
       ]
     }
@@ -364,8 +405,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -376,7 +417,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 208,
+    "estimated_value_tl": 520,
     "ai_report": "Kanlıca Paysage Restaurant için dijital görünürlük skoru 80/100. Öne çıkan bulgular: SSL yok. Zeplin Media tarafında ilk fırsatlar: SSL kurulumu. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
     "ai_email": "Konu: Kanlıca Paysage Restaurant için kısa bir dijital sağlık notu\n\nMerhaba,\n\nKanlıca Paysage Restaurant için yaptığımız hızlı kontrolde özellikle \"SSL yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 15:42",
@@ -484,8 +525,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -496,7 +537,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 208,
+    "estimated_value_tl": 520,
     "ai_report": "Uskumru Restaurant için dijital görünürlük skoru 80/100. Öne çıkan bulgular: SSL yok. Zeplin Media tarafında ilk fırsatlar: SSL kurulumu. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
     "ai_email": "Konu: Uskumru Restaurant için kısa bir dijital sağlık notu\n\nMerhaba,\n\nUskumru Restaurant için yaptığımız hızlı kontrolde özellikle \"SSL yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 15:42",
@@ -692,8 +733,28 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -704,7 +765,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 13000,
+    "estimated_value_tl": 56500,
     "ai_report": "Gümüşsuyu Restoran için dijital görünürlük skoru 55/100. Öne çıkan bulgular: Instagram hesabı yok. Zeplin Media tarafında ilk fırsatlar: Instagram yönetimi + içerik üretimi. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
     "ai_email": "Konu: Gümüşsuyu Restoran için kısa bir dijital sağlık notu\n\nMerhaba,\n\nGümüşsuyu Restoran için yaptığımız hızlı kontrolde özellikle \"Instagram hesabı yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 15:42",
@@ -716,24 +777,26 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 42,
+    "sales_priority_score": 59,
     "next_action": "Telefon/adres tamamla",
     "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
-        "Sosyal Medya Yönetimi"
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok"
       ],
       "categories": [
-        "İçerik & Sosyal"
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
       ]
     }
   },
@@ -817,8 +880,48 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_website"
+        ],
+        "evidence": [
+          "Web sitesi yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -832,13 +935,13 @@
         "slug": "web_design",
         "name": "Web Sitesi Tasarımı",
         "category": "Web & Teknik",
-        "desc": "Kurumsal, mobil uyumlu, hızlı web sitesi",
-        "offer": "Vitrin site yenileme paketi",
+        "desc": "Kurumsal, mobil uyumlu, hızlı ve lead odaklı web sitesi",
+        "offer": "Lead odaklı web yenileme paketi",
         "owner": "Web",
         "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
         "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
-        "price_min": 15000,
-        "price_max": 35000,
+        "price_min": 35000,
+        "price_max": 90000,
         "monthly": false,
         "matched_triggers": [
           "no_website",
@@ -859,8 +962,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -871,7 +974,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 15291,
+    "estimated_value_tl": 96228,
     "schema_version": 2,
     "data_quality": {
       "has_contact": false,
@@ -880,29 +983,30 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 62,
+    "sales_priority_score": 84,
     "next_action": "Telefon/adres tamamla",
     "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 5 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
         "Sosyal Medya Yönetimi",
-        "Web Sitesi Tasarımı",
-        "SSL & Güvenlik Kurulumu"
+        "AI Arama & GEO Görünürlüğü",
+        "Meta Ads & Retargeting Yönetimi",
+        "Web Sitesi Tasarımı"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 85,
       "evidence": [
         "Instagram yok",
-        "Web sitesi yok",
-        "Mobil uyum zayıf",
-        "SSL yok"
+        "Web sitesi yok"
       ],
       "categories": [
         "İçerik & Sosyal",
+        "AI Görünürlük",
+        "Büyüme & Reklam",
         "Web & Teknik"
       ]
     }
@@ -985,8 +1089,28 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -997,7 +1121,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 13000,
+    "estimated_value_tl": 56500,
     "schema_version": 2,
     "data_quality": {
       "has_contact": false,
@@ -1006,24 +1130,26 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 42,
+    "sales_priority_score": 59,
     "next_action": "Telefon/adres tamamla",
     "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
-        "Sosyal Medya Yönetimi"
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok"
       ],
       "categories": [
-        "İçerik & Sosyal"
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
       ]
     }
   },
@@ -1105,8 +1231,28 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -1117,7 +1263,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 13000,
+    "estimated_value_tl": 56500,
     "schema_version": 2,
     "data_quality": {
       "has_contact": false,
@@ -1126,24 +1272,26 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 42,
+    "sales_priority_score": 59,
     "next_action": "Telefon/adres tamamla",
     "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
-        "Sosyal Medya Yönetimi"
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok"
       ],
       "categories": [
-        "İçerik & Sosyal"
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
       ]
     }
   },
@@ -1493,8 +1641,28 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -1505,7 +1673,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 13000,
+    "estimated_value_tl": 56500,
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
@@ -1514,24 +1682,26 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 56,
+    "sales_priority_score": 73,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
-        "Sosyal Medya Yönetimi"
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok"
       ],
       "categories": [
-        "İçerik & Sosyal"
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
       ]
     }
   },
@@ -1615,8 +1785,28 @@
         "owner": "Sosyal",
         "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
         "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
-        "price_min": 8000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": true,
         "matched_triggers": [
           "no_instagram"
@@ -1635,8 +1825,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -1647,7 +1837,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 13208,
+    "estimated_value_tl": 57020,
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
@@ -1656,19 +1846,20 @@
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 67,
+    "sales_priority_score": 84,
     "next_action": "Öncelikli arama yap",
     "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
-      "name": "İçerik Büyüme Paketi",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
+      "name": "Growth Sprint",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 3 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
         "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi",
         "SSL & Güvenlik Kurulumu"
       ],
       "owner": "Sosyal",
-      "stage": "İçerik planı",
+      "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok",
@@ -1676,6 +1867,7 @@
       ],
       "categories": [
         "İçerik & Sosyal",
+        "Büyüme & Reklam",
         "Web & Teknik"
       ]
     }
@@ -1760,13 +1952,35 @@
         "slug": "seo_schema",
         "name": "SEO & Teknik Optimizasyon",
         "category": "Web & Teknik",
-        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
-        "offer": "Teknik SEO ve görünürlük paketi",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
         "owner": "SEO",
         "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
         "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
-        "price_min": 8000,
-        "price_max": 20000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
         "monthly": true,
         "matched_triggers": [
           "no_schema",
@@ -1787,8 +2001,8 @@
         "owner": "CRM",
         "sales_angle": "Yoğun saatlerde kaçan soruları ve rezervasyon niyetini yakalar.",
         "detects": "WhatsApp butonu veya hızlı iletişim akışı yoksa.",
-        "price_min": 7000,
-        "price_max": 18000,
+        "price_min": 18000,
+        "price_max": 60000,
         "monthly": true,
         "matched_triggers": [
           "no_whatsapp"
@@ -1807,8 +2021,8 @@
         "owner": "Performance",
         "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
         "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 5000,
-        "price_max": 15000,
+        "price_min": 8000,
+        "price_max": 25000,
         "monthly": true,
         "matched_triggers": [
           "no_schema"
@@ -1827,8 +2041,8 @@
         "owner": "CRM",
         "sales_angle": "Ziyaretçiyi tek seferlik trafik olmaktan çıkarıp tekrar pazarlanabilir kitleye çevirir.",
         "detects": "Web sitesinde e-posta toplama formu yok.",
-        "price_min": 4000,
-        "price_max": 10000,
+        "price_min": 9000,
+        "price_max": 25000,
         "monthly": true,
         "matched_triggers": [
           "no_email_capture"
@@ -1839,6 +2053,74 @@
         "confidence": 70
       },
       {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_email_capture",
+          "no_whatsapp",
+          "no_og"
+        ],
+        "evidence": [
+          "E-posta formu yok",
+          "WhatsApp butonu yok",
+          "Open Graph yok"
+        ],
+        "confidence": 95
+      },
+      {
+        "slug": "crm_pipeline_setup",
+        "name": "CRM Pipeline & Takip Sistemi",
+        "category": "İletişim & CRM",
+        "desc": "Lead formu, WhatsApp, e-posta, etiketleme ve satış takip panosu kurulumu",
+        "offer": "Satış takip altyapısı",
+        "owner": "CRM",
+        "sales_angle": "Kaçan talepleri tek ekranda toplar, takip disiplinini ölçülebilir yapar.",
+        "detects": "WhatsApp, e-posta toplama veya dönüşüm takip sinyali yok.",
+        "price_min": 15000,
+        "price_max": 40000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp",
+          "no_email_capture"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok",
+          "E-posta formu yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "menu_qr_ordering",
+        "name": "QR Menü & Sipariş Akışı",
+        "category": "Yerel Platformlar",
+        "desc": "QR menü, ürün fotoğrafları, online sipariş yönlendirmesi ve kampanya alanları",
+        "offer": "Mekan sipariş deneyimi",
+        "owner": "Operasyon",
+        "sales_angle": "Mekandaki ilgiyi dijital siparişe ve tekrar pazarlamaya bağlar.",
+        "detects": "Restoran/kafe için online sipariş veya hızlı iletişim sinyali yok.",
+        "price_min": 10000,
+        "price_max": 30000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery",
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok",
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "reservation_system",
         "name": "Online Rezervasyon Sistemi",
         "category": "İletişim & CRM",
@@ -1847,28 +2129,8 @@
         "owner": "CRM",
         "sales_angle": "Telefon trafiğini düzenler, masaya veya randevuya dönüşen talebi ölçülebilir yapar.",
         "detects": "Restoran/salon için online sipariş/rezervasyon sinyali yok.",
-        "price_min": 4000,
-        "price_max": 10000,
-        "monthly": false,
-        "matched_triggers": [
-          "no_delivery"
-        ],
-        "evidence": [
-          "Online sipariş kanalı yok"
-        ],
-        "confidence": 70
-      },
-      {
-        "slug": "delivery_setup",
-        "name": "Yemeksepeti / Getir Profil Yönetimi",
-        "category": "Yerel Platformlar",
-        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
-        "offer": "Online sipariş kanal kurulumu",
-        "owner": "Operasyon",
-        "sales_angle": "Restoran için ek sipariş kanalı ve keşif yüzeyi açar.",
-        "detects": "Restoran/kafe için Yemeksepeti ve Getir sinyali yok.",
-        "price_min": 3000,
-        "price_max": 7000,
+        "price_min": 12000,
+        "price_max": 35000,
         "monthly": false,
         "matched_triggers": [
           "no_delivery"
@@ -1887,8 +2149,8 @@
         "owner": "CRM",
         "sales_angle": "Siteden veya profilden gelen ilgiyi hızlı mesaja dönüştürür.",
         "detects": "Web sitesinde WhatsApp veya hızlı iletişim butonu yok.",
-        "price_min": 2000,
-        "price_max": 5000,
+        "price_min": 8000,
+        "price_max": 22000,
         "monthly": false,
         "matched_triggers": [
           "no_whatsapp"
@@ -1897,9 +2159,29 @@
           "WhatsApp butonu yok"
         ],
         "confidence": 70
+      },
+      {
+        "slug": "delivery_setup",
+        "name": "Yemeksepeti / Getir Profil Yönetimi",
+        "category": "Yerel Platformlar",
+        "desc": "Platform kaydı, menü optimizasyonu, fotoğraf çekimi",
+        "offer": "Online sipariş kanal kurulumu",
+        "owner": "Operasyon",
+        "sales_angle": "Restoran için ek sipariş kanalı ve keşif yüzeyi açar.",
+        "detects": "Restoran/kafe için Yemeksepeti ve Getir sinyali yok.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
       }
     ],
-    "estimated_value_tl": 44790,
+    "estimated_value_tl": 155165,
     "ai_report": "Dijital varlık analizi sonuçları:\n- Schema.org ve Open Graph kullanımı yok.\n- Google yorumu ve takipçi sayısı az.\n- WhatsApp ve online sipariş platformu yok.\n Öneriler:\n- Google SEO yapılandırması\n- Sosyal paylaşım meta etiketleri\n- WhatsApp Business entegrasyonu\n- Takipçi büyüme ve yorum artırma kampanyaları \n- Yemeksepeti/Getir entegrasyonu için girişimlerde bulunun.",
     "ai_email": "Konu: The Market at Bosphorus için Growth Fırsatı\n\nMerhaba,\n\nThe Market at Bosphorus'u incelerken birkaç eksiklik gördük. Schema.org, WhatsApp butonu, online sipariş platformu ve sosyal medya takipçileri konusunda iyileştirmeye ihtiyacınız var. Bu, müşteri deneyimini ve online görünürlüğü olumlu yönde etkileyebilir. \nZeplin Media olarak restoranınızın dijital varlığını güçlendirmek konusunda uzmanız. \n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 01:54",
@@ -1911,22 +2193,22 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 85,
+    "sales_priority_score": 96,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve görünürlük paketi ile başlanabilir; 7 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 11 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
         "AI WhatsApp Asistanı",
-        "Google Ads Yönetimi",
-        "E-posta Pazarlama Kurulumu"
+        "Google Ads Yönetimi"
       ],
       "owner": "SEO",
       "stage": "Teklif",
-      "confidence": 85,
+      "confidence": 95,
       "evidence": [
         "Schema.org yok",
         "Open Graph yok",
@@ -1934,9 +2216,9 @@
       ],
       "categories": [
         "Web & Teknik",
+        "AI Görünürlük",
         "İletişim & CRM",
-        "Büyüme & Reklam",
-        "Yerel Platformlar"
+        "Büyüme & Reklam"
       ]
     }
   },
@@ -2018,13 +2300,33 @@
         "slug": "seo_schema",
         "name": "SEO & Teknik Optimizasyon",
         "category": "Web & Teknik",
-        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals",
-        "offer": "Teknik SEO ve görünürlük paketi",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
         "owner": "SEO",
         "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
         "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
-        "price_min": 8000,
-        "price_max": 20000,
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
         "monthly": true,
         "matched_triggers": [
           "no_schema"
@@ -2043,8 +2345,8 @@
         "owner": "Performance",
         "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
         "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 5000,
-        "price_max": 15000,
+        "price_min": 8000,
+        "price_max": 25000,
         "monthly": true,
         "matched_triggers": [
           "no_schema"
@@ -2063,8 +2365,28 @@
         "owner": "CRM",
         "sales_angle": "Telefon trafiğini düzenler, masaya veya randevuya dönüşen talebi ölçülebilir yapar.",
         "detects": "Restoran/salon için online sipariş/rezervasyon sinyali yok.",
-        "price_min": 4000,
-        "price_max": 10000,
+        "price_min": 12000,
+        "price_max": 35000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_delivery"
+        ],
+        "evidence": [
+          "Online sipariş kanalı yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "menu_qr_ordering",
+        "name": "QR Menü & Sipariş Akışı",
+        "category": "Yerel Platformlar",
+        "desc": "QR menü, ürün fotoğrafları, online sipariş yönlendirmesi ve kampanya alanları",
+        "offer": "Mekan sipariş deneyimi",
+        "owner": "Operasyon",
+        "sales_angle": "Mekandaki ilgiyi dijital siparişe ve tekrar pazarlamaya bağlar.",
+        "detects": "Restoran/kafe için online sipariş veya hızlı iletişim sinyali yok.",
+        "price_min": 10000,
+        "price_max": 30000,
         "monthly": false,
         "matched_triggers": [
           "no_delivery"
@@ -2083,8 +2405,8 @@
         "owner": "Operasyon",
         "sales_angle": "Restoran için ek sipariş kanalı ve keşif yüzeyi açar.",
         "detects": "Restoran/kafe için Yemeksepeti ve Getir sinyali yok.",
-        "price_min": 3000,
-        "price_max": 7000,
+        "price_min": 8000,
+        "price_max": 22000,
         "monthly": false,
         "matched_triggers": [
           "no_delivery"
@@ -2103,8 +2425,8 @@
         "owner": "Web",
         "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
         "detects": "HTTPS/SSL eksikliği.",
-        "price_min": 1500,
-        "price_max": 3500,
+        "price_min": 3500,
+        "price_max": 9000,
         "monthly": false,
         "matched_triggers": [
           "no_ssl"
@@ -2115,7 +2437,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 25207,
+    "estimated_value_tl": 92394,
     "ai_report": "Dijital Varlık Raporu:\n\n* Zayıf yönler: SSL yok, Schema.org yok, az takipçi, az Google yorumu, online sipariş platformu yok.\n* Fırsatlar: SSL kurulumu, SEO yapılandırması, takipçi büyüme kampanyası, yorum artırma kampanyası, Yemeksepeti/Getir entegrasyonu.\n* Tavsiyeler: Restoranın dijital varlığını güçlendirmek için SSL kurulumu, SEO yapılandırması ve online sipariş platformlarına entegrasyon yapmak necesario.",
     "ai_email": "Konu: Jojo Ocakbaşı Meze icin Bir Gozlem\n\nMerhaba,\n\nJojo Ocakbaşı Meze'yi incelerken SSL eksikligini ve online varliklarinizi gorduk. Musteri guvenini ve deneyimi artirmak icin Zeplin Media olarak yardimci olabiliriz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 01:54",
@@ -2127,31 +2449,30 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 78,
+    "sales_priority_score": 96,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve görünürlük paketi ile başlanabilir; 5 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 7 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
         "Google Ads Yönetimi",
-        "Online Rezervasyon Sistemi",
-        "Yemeksepeti / Getir Profil Yönetimi"
+        "Online Rezervasyon Sistemi"
       ],
       "owner": "SEO",
       "stage": "Teklif",
       "confidence": 70,
       "evidence": [
-        "Schema.org yok",
-        "Online sipariş kanalı yok"
+        "Schema.org yok"
       ],
       "categories": [
         "Web & Teknik",
+        "AI Görünürlük",
         "Büyüme & Reklam",
-        "İletişim & CRM",
-        "Yerel Platformlar"
+        "İletişim & CRM"
       ]
     }
   }

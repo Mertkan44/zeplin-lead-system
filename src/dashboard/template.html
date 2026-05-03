@@ -706,20 +706,22 @@
     align-items:stretch;
   }
   .command-copy{
-    min-height:300px;
+    min-height:350px;
     border-radius:28px;
     padding:34px;
     background:
-      radial-gradient(520px 260px at 88% 14%,rgba(255,172,72,.24) 0%,transparent 60%),
-      linear-gradient(135deg,#fffaf2 0%,#f4e7d7 100%);
-    border:1px solid rgba(36,28,20,.08);
+      linear-gradient(90deg,rgba(13,15,13,.86) 0%,rgba(18,16,14,.50) 45%,rgba(18,16,14,.12) 100%),
+      url('/lead-os-world.jpg') center/cover no-repeat;
+    border:1px solid rgba(255,255,255,.18);
+    color:#fff;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
     overflow:hidden;
+    box-shadow:0 34px 70px -46px rgba(54,21,7,.72);
   }
   .command-kicker,.section-kicker{
-    color:#ff5a2f;
+    color:#ff6a35;
     font-size:11px;
     font-weight:850;
     letter-spacing:.12em;
@@ -728,16 +730,18 @@
   .command-title{
     max-width:720px;
     margin:14px 0 14px;
-    color:#161411;
+    color:#fff;
     font-size:clamp(42px,5.5vw,76px);
     line-height:.92;
     font-weight:900;
+    text-shadow:0 16px 38px rgba(0,0,0,.34);
   }
-  .command-copy .hero-sub{max-width:640px;font-size:15px;line-height:1.65;color:#6f6255}
+  .command-copy .command-kicker{color:#ffbf45;text-shadow:0 10px 28px rgba(0,0,0,.36)}
+  .command-copy .hero-sub{max-width:640px;font-size:15px;line-height:1.65;color:rgba(255,245,232,.82);text-shadow:0 8px 24px rgba(0,0,0,.30)}
   .command-copy .tabs{margin-top:auto;padding-top:28px;border:0;gap:10px;flex-wrap:wrap}
   .command-copy .tab{
     height:38px;padding:0 14px;border:1px solid rgba(36,28,20,.08);border-radius:999px;
-    background:rgba(255,255,255,.58);display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:8px;
   }
   .command-copy .tab.active{background:#151815;color:#fff;border-color:#151815}
   .command-copy .tab.active .cnt{background:rgba(255,255,255,.14);color:#fff}
@@ -879,6 +883,62 @@
   .lead-dock .rail-list{max-height:520px;overflow:auto;padding-right:2px}
   .lead-dock .lead-row{background:rgba(255,255,255,.58)}
   .lead-dock .lead-row.active{background:linear-gradient(180deg,#fff7e8 0%,#fff1dc 100%)}
+  .hiz-card{overflow:hidden}
+  .hiz-card-visual{
+    height:128px;
+    margin:-4px -4px 16px;
+    border-radius:18px;
+    position:relative;
+    overflow:hidden;
+    background:
+      linear-gradient(135deg,rgba(16,18,15,.12),rgba(16,18,15,.52)),
+      url('/lead-os-world.jpg') var(--viz-x,72%) var(--viz-y,50%)/420% auto no-repeat;
+    border:1px solid rgba(36,28,20,.08);
+    box-shadow:inset 0 -44px 70px -38px rgba(0,0,0,.48);
+  }
+  .hiz-card-visual::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 18% 18%,rgba(255,255,255,.35),transparent 32%);
+    mix-blend-mode:screen;
+  }
+  .hiz-card-visual span{
+    position:absolute;
+    left:12px;
+    bottom:12px;
+    max-width:78%;
+    border-radius:999px;
+    padding:7px 10px;
+    background:rgba(255,250,243,.86);
+    color:#2d2118;
+    font-size:11px;
+    font-weight:850;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    backdrop-filter:blur(10px);
+  }
+  .hiz-total{
+    min-height:190px;
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:18px;
+    align-items:stretch;
+    background:linear-gradient(135deg,#191b18 0%,#2a2118 56%,#5a2d19 100%) !important;
+    color:#fff;
+    border-color:rgba(255,255,255,.12) !important;
+  }
+  .hiz-total-copy{padding:8px 0}
+  .hiz-total-title{font-size:32px;font-weight:900;line-height:1;letter-spacing:-.04em;color:#fff}
+  .hiz-total-sub{font-size:13px;color:rgba(255,245,232,.72);line-height:1.55;margin-top:10px}
+  .hiz-total-note{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .hiz-total-note span{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);border-radius:999px;padding:7px 10px;font-size:12px;color:rgba(255,245,232,.82)}
+  .hiz-total-art{
+    min-height:150px;
+    border-radius:20px;
+    background:url('/lead-os-world.jpg') 68% 55%/cover no-repeat;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+  }
   @media(max-width:1220px){
     .command-hero,.command-content{grid-template-columns:1fr}
     .command-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -895,6 +955,7 @@
     .metric-row,.ops-strip,.command-aside{grid-template-columns:1fr}
     .focus-row{grid-template-columns:1fr;gap:12px}.focus-rank{width:74px}.focus-action{align-items:stretch}
     .workbench-card,.detail-lab,.package-spotlight,.team-rhythm-card,.pipeline-snapshot,.tempo-card,.lead-dock{border-radius:20px}
+    .hiz-total{grid-template-columns:1fr}.hiz-total-art{min-height:180px}
   }
 </style>
 </head>
@@ -1462,8 +1523,8 @@ function ownerBuckets(){
   var defs=[
     {key:'sales', label:'Sales', sub:'Teklif ve ilk temas', owners:['Sales'], ic:'S'},
     {key:'seo', label:'SEO / Web', sub:'Teknik açık ve görünürlük', owners:['SEO','Web'], ic:'G'},
-    {key:'creative', label:'Creative', sub:'İçerik ve sosyal kanıt', owners:['Content','Creative'], ic:'C'},
-    {key:'ops', label:'CRM / AI', sub:'Otomasyon ve takip', owners:['CRM','AI','Performance'], ic:'O'}
+    {key:'creative', label:'Creative', sub:'İçerik ve sosyal kanıt', owners:['Content','Creative','Sosyal'], ic:'C'},
+    {key:'ops', label:'Growth Ops', sub:'CRM, reklam ve operasyon', owners:['CRM','AI','Performance','Operasyon'], ic:'O'}
   ];
   return defs.map(function(d){
     var count=leads.filter(function(l){
@@ -2064,12 +2125,22 @@ document.addEventListener('dragend', function(){
 // ──────────────────────────────────────────────────────
 // HİZMETLER
 // ──────────────────────────────────────────────────────
-var HIZ_ICONS={
-  web_design:'🌐', ssl_security:'🔒', seo_schema:'🔍', social_management:'📸',
-  google_ads:'📢', reputation_management:'⭐', whatsapp_business:'💬',
-  email_marketing:'✉️', delivery_setup:'🛵', reservation_system:'📅',
-  content_creation:'🎬', tiktok_management:'🎵'
+var HIZ_VISUALS={
+  web_design:'--viz-x:72%;--viz-y:42%', ssl_security:'--viz-x:90%;--viz-y:34%',
+  seo_schema:'--viz-x:58%;--viz-y:24%', social_management:'--viz-x:34%;--viz-y:70%',
+  google_ads:'--viz-x:80%;--viz-y:58%', reputation_management:'--viz-x:22%;--viz-y:64%',
+  whatsapp_business:'--viz-x:66%;--viz-y:74%', email_marketing:'--viz-x:47%;--viz-y:58%',
+  delivery_setup:'--viz-x:16%;--viz-y:76%', reservation_system:'--viz-x:54%;--viz-y:82%',
+  content_creation:'--viz-x:30%;--viz-y:38%', tiktok_management:'--viz-x:42%;--viz-y:72%',
+  local_seo_gbp:'--viz-x:19%;--viz-y:49%', analytics_tracking:'--viz-x:64%;--viz-y:29%',
+  ai_whatsapp_assistant:'--viz-x:78%;--viz-y:70%', meta_ads_management:'--viz-x:86%;--viz-y:46%',
+  landing_page_cro:'--viz-x:52%;--viz-y:40%', crm_pipeline_setup:'--viz-x:62%;--viz-y:62%',
+  ai_search_visibility:'--viz-x:74%;--viz-y:28%', menu_qr_ordering:'--viz-x:28%;--viz-y:80%'
 };
+
+function serviceVisualStyle(svc){
+  return HIZ_VISUALS[svc.slug] || '--viz-x:68%;--viz-y:54%';
+}
 
 function renderHizmetler(){
   var svcMap={};
@@ -2097,22 +2168,21 @@ function renderHizmetler(){
   var totalMonthly=Math.round(entries.reduce(function(a,e){ return a+e.totalVal; },0));
 
   document.getElementById('hiz-grid').innerHTML=
-    '<div class="hiz-card" style="border-color:rgba(124,226,181,.25);grid-column:1/-1;background:linear-gradient(135deg,rgba(124,226,181,.08),rgba(0,0,0,0))">'+
-      '<div style="display:flex;align-items:center;gap:16px">'+
-        '<div class="hiz-card-icon" style="background:rgba(124,226,181,.14);border-color:rgba(124,226,181,.3)">💰</div>'+
-        '<div>'+
-          '<div style="font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--mint)">~'+Number(totalMonthly).toLocaleString('tr-TR')+' TL<span style="font-size:14px;font-weight:400;color:var(--text-3)">/ay</span></div>'+
-          '<div style="font-size:13px;color:var(--text-3);margin-top:3px">'+leads.length+' lead içindeki toplam tahmini aylık potansiyel</div>'+
-        '</div>'+
+    '<div class="hiz-card hiz-total" style="grid-column:1/-1">'+
+      '<div class="hiz-total-copy">'+
+        '<div class="command-kicker">Piyasa uyumlu teklif matrisi</div>'+
+        '<div class="hiz-total-title">~'+Number(totalMonthly).toLocaleString('tr-TR')+' TL/ay potansiyel</div>'+
+        '<div class="hiz-total-sub">'+leads.length+' lead içindeki toplam tahmini aylık değer. Bantlar 2026 Türkiye ajans/freelance piyasası referans alınarak KOBİ odaklı ayarlandı.</div>'+
+        '<div class="hiz-total-note"><span>KDV hariç</span><span>Medya bütçesi hariç</span><span>API/mesaj gideri hariç</span></div>'+
       '</div>'+
+      '<div class="hiz-total-art"></div>'+
     '</div>'+
     entries.map(function(entry){
       var svc=entry.svc;
-      var icon=HIZ_ICONS[svc.slug]||'✦';
       var monthly=svc.monthly;
       return '<div class="hiz-card">'+
+        '<div class="hiz-card-visual" style="'+serviceVisualStyle(svc)+'"><span>'+esc(svc.category||'Genel')+'</span></div>'+
         '<div class="hiz-card-top">'+
-          '<div class="hiz-card-icon">'+icon+'</div>'+
           '<span class="hiz-badge '+(monthly?'monthly':'once')+'">'+(monthly?'Aylık':'Tek Seferlik')+'</span>'+
         '</div>'+
         '<div class="hiz-card-name">'+esc(svc.name)+'</div>'+
@@ -2120,14 +2190,14 @@ function renderHizmetler(){
         '<div class="hiz-card-meta">'+
           '<span class="hiz-mini">'+esc(svc.category||'Genel')+'</span>'+
           '<span class="hiz-mini">'+esc(svc.owner||'Sales')+'</span>'+
-          '<span class="hiz-mini">%'+(svc.confidence||60)+' güven</span>'+
+          '<span class="hiz-mini">'+(monthly?'Retainer':'Kurulum')+'</span>'+
         '</div>'+
         '<div class="hiz-detects"><b style="color:var(--text-2);font-weight:700">Bot neyi tespit eder?</b><br>'+esc(svc.detects||'Bu hizmet için tanımlı sinyal yok.')+'</div>'+
         '<div class="hiz-card-stats">'+
           '<div><div class="hiz-stat-val">'+entry.leads.length+'</div><div class="hiz-stat-lbl">Eşleşen Lead</div></div>'+
           '<div><div class="hiz-stat-val" style="color:var(--mint)">~'+Math.round(entry.totalVal).toLocaleString('tr-TR')+'₺</div><div class="hiz-stat-lbl">'+(monthly?'Aylık':'Yıllık')+'</div></div>'+
         '</div>'+
-        '<div class="hiz-price">₺'+Number(svc.price_min).toLocaleString('tr-TR')+' – ₺'+Number(svc.price_max).toLocaleString('tr-TR')+'</div>'+
+        '<div class="hiz-price">₺'+Number(svc.price_min).toLocaleString('tr-TR')+' – ₺'+Number(svc.price_max).toLocaleString('tr-TR')+' <span style="font-size:11px;color:var(--text-3);font-weight:600">'+(monthly?'/ ay':'/ proje')+'</span></div>'+
       '</div>';
     }).join('');
 }
