@@ -11,10 +11,12 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { min-height: 100vh; background: #FAFAF9; }
     body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-    #root { min-height: 100vh; }
+    #root { min-height: 100vh; display: flex; }
     button { font-family: inherit; }
     textarea { font-family: inherit; }
-    a { text-decoration: none; }
+    a { text-decoration: none; color: inherit; }
+    .pipe-card.dragging { opacity: 0.4; }
+    .pipe-col.drag-over { background: #F0F0EE; }
   </style>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -26,7 +28,8 @@
   <script>
     var leads    = JSON.parse(atob('__DATA__'));
     var services = JSON.parse(atob('__SERVICES__'));
-    var STATUS_KEY = 'zeplin_lead_statuses_v2';
+    var STATUS_KEY   = 'zeplin_lead_statuses_v2';
+    var OUTREACH_KEY = 'zeplin_outreach_v1';
   </script>
 
   <script type="text/babel">
@@ -56,6 +59,52 @@
     localStorage.setItem(STATUS_KEY, JSON.stringify(a));
   }
 
+  function getOutreach() {
+    try { return JSON.parse(localStorage.getItem(OUTREACH_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function saveOutreach(arr) { localStorage.setItem(OUTREACH_KEY, JSON.stringify(arr)); }
+  function getLeadEvents(name) {
+    return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
+  }
+  function addOutreach(name, action, date, note) {
+    const arr = getOutreach();
+    arr.push({ lead: name, action, date, note, ts: Date.now() });
+    saveOutreach(arr);
+    const act = ACTIONS[action];
+    if (act && act.status) setStatusLS(name, act.status);
+  }
+
+  const ACTIONS = {
+    email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
+    reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
+    call_made:         { label: 'Arama Yapıldı',      icon: '📞', status: 'contacted' },
+    meeting_scheduled: { label: 'Toplantı Planlandı', icon: '📅', status: 'contacted' },
+    note:              { label: 'Not Eklendi',         icon: '📝', status: null },
+    deal_won:          { label: 'Anlaşma Yapıldı 🎉', icon: '🎉', status: 'converted' },
+    deal_lost:         { label: 'Anlaşma Düştü',      icon: '❌', status: 'yeni' },
+  };
+
+  const PIPE_STAGES = [
+    { key: 'new',      label: 'Yeni',           color: '#9A9A9A', actions: [] },
+    { key: 'emailed',  label: 'Mail Atıldı',    color: '#76a6ff', actions: ['email_sent'] },
+    { key: 'replied',  label: 'Cevap Alındı',   color: '#f7c560', actions: ['reply_received'] },
+    { key: 'called',   label: 'Görüşüldü',      color: '#b9a8ff', actions: ['call_made'] },
+    { key: 'meeting',  label: 'Toplantı',        color: '#ff9f43', actions: ['meeting_scheduled'] },
+    { key: 'won',      label: 'Kazanıldı 🎉',  color: '#7ce2b5', actions: ['deal_won'] },
+    { key: 'lost',     label: 'Kaybedildi',      color: '#ff6770', actions: ['deal_lost'] },
+  ];
+
+  function getPipelineStage(lead) {
+    const st = getStatuses()[lead.name] || 'yeni';
+    if (st === 'converted') return 'won';
+    const evs = getLeadEvents(lead.name);
+    const last = evs.find(e => e.action !== 'note');
+    if (!last) return st === 'contacted' ? 'emailed' : 'new';
+    const map = { email_sent: 'emailed', reply_received: 'replied', call_made: 'called',
+                  meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
+    return map[last.action] || 'emailed';
+  }
+
   function issueToSeverity(text) {
     if (!text) return 'Bilgi';
     const t = text.toLowerCase();
@@ -66,10 +115,7 @@
     return 'Bilgi';
   }
 
-  function scoreDash(score) {
-    const circ = 326.7;
-    return circ * (1 - score / 100);
-  }
+  function scoreDash(score) { return 326.7 * (1 - score / 100); }
 
   function computeKPIs(arr) {
     const total = arr.length || 1;
@@ -95,16 +141,17 @@
     };
   }
 
-  // ── V1Plus Sub-components ──────────────────────────────────────────────────
+  // ── Shared Sidebar ─────────────────────────────────────────────────────────
 
   function SideIc({ name }) {
     const paths = {
-      cockpit:  <><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></>,
-      leads:    <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></>,
-      pipeline: <><path d="M3 6h18"/><path d="M5 12h14"/><path d="M8 18h8"/></>,
-      audit:    <><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
-      reports:  <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12v4"/><path d="M12 8v8"/><path d="M16 14v2"/></>,
-      settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+      cockpit:   <><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></>,
+      leads:     <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></>,
+      pipeline:  <><path d="M3 6h18"/><path d="M5 12h14"/><path d="M8 18h8"/></>,
+      audit:     <><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+      raporlar:  <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12v4"/><path d="M12 8v8"/><path d="M16 14v2"/></>,
+      hizmetler: <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4M10 14h4"/></>,
+      settings:  <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
     };
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -112,6 +159,81 @@
       </svg>
     );
   }
+
+  function Sidebar({ view, onNav, leadCount }) {
+    const navItems = [
+      { key: 'cockpit',   ic: 'cockpit',   label: 'Cockpit',   badge: leadCount },
+      { key: 'leads',     ic: 'leads',     label: 'Leadler' },
+      { key: 'pipeline',  ic: 'pipeline',  label: 'Pipeline' },
+      { key: 'audit',     ic: 'audit',     label: 'Audit' },
+      { key: 'raporlar',  ic: 'raporlar',  label: 'Raporlar' },
+      { key: 'hizmetler', ic: 'hizmetler', label: 'Hizmetler' },
+      { key: 'settings',  ic: 'settings',  label: 'Ayarlar' },
+    ];
+    const currentView = view === 'detail' ? 'leads' : view;
+
+    return (
+      <aside style={sb.sidebar}>
+        <div style={sb.brand}>
+          <div style={sb.logo}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <ellipse cx="12" cy="12" rx="10" ry="6" stroke="#0A0A0A" strokeWidth="1.5"/>
+              <path d="M22 12 L24 13 L22 14" stroke="#0A0A0A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="9" cy="12" r="1" fill="#0A0A0A"/>
+            </svg>
+          </div>
+          <div>
+            <div style={sb.brandName}>Zeplin Media</div>
+            <div style={sb.brandSub}>Lead Intelligence</div>
+          </div>
+        </div>
+
+        <nav style={sb.nav}>
+          {navItems.map(n => {
+            const active = currentView === n.key;
+            return (
+              <a key={n.key} style={active ? sb.itemActive : sb.item} onClick={() => onNav(n.key)}>
+                <SideIc name={n.ic} />
+                <span style={{ flex: 1 }}>{n.label}</span>
+                {n.badge !== undefined && (
+                  <span style={active ? sb.badgeActive : sb.badge}>{n.badge}</span>
+                )}
+              </a>
+            );
+          })}
+        </nav>
+
+        <div style={{ marginTop: 'auto' }}>
+          <div style={sb.upgradeCard}>
+            <div style={sb.upgradeEyebrow}>OTOMASYON</div>
+            <div style={sb.upgradeTitle}>Otomatik tarayıcı</div>
+            <div style={sb.upgradeBody}>15 dakikada bir tarama. Yeni leadler otomatik dosyalansın.</div>
+            <button style={sb.upgradeBtn}>Etkinleştir →</button>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  const sb = {
+    sidebar:      { width: 244, minHeight: '100vh', padding: '24px 18px', borderRight: '1px solid #ECECEC', display: 'flex', flexDirection: 'column', gap: 22, background: '#fff', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', flexShrink: 0 },
+    brand:        { display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px' },
+    logo:         { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, background: '#FAFAF9', border: '1px solid #ECECEC', flexShrink: 0 },
+    brandName:    { fontFamily: '"Inter Tight"', fontWeight: 700, fontSize: 15, letterSpacing: -0.2 },
+    brandSub:     { fontSize: 11, color: '#9A9A9A', marginTop: 1 },
+    nav:          { display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 },
+    item:         { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, color: '#6B6B6B', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
+    itemActive:   { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: '#0A0A0A', color: '#fff', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
+    badge:        { fontSize: 10.5, background: '#F4F4F2', color: '#3A3A3A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
+    badgeActive:  { fontSize: 10.5, background: '#C6F24E', color: '#0A0A0A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
+    upgradeCard:  { background: '#FAFAF9', border: '1px solid #ECECEC', borderRadius: 14, padding: 16 },
+    upgradeEyebrow:{ fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, color: '#6B6B6B' },
+    upgradeTitle: { fontFamily: '"Inter Tight"', fontWeight: 600, fontSize: 15, marginTop: 8, letterSpacing: -0.2 },
+    upgradeBody:  { fontSize: 12, color: '#6B6B6B', marginTop: 6, lineHeight: 1.45 },
+    upgradeBtn:   { marginTop: 12, padding: '8px 12px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer', width: '100%' },
+  };
+
+  // ── Sub-components (cockpit) ───────────────────────────────────────────────
 
   function SH({ eyebrow, title, right }) {
     return (
@@ -134,20 +256,16 @@
     );
   }
 
-  // ── V1Plus Component ───────────────────────────────────────────────────────
+  // ── Cockpit Main Content ───────────────────────────────────────────────────
 
-  function V1Plus({ leads, statuses, onSelect }) {
+  function CockpitMain({ leads, statuses, onSelect }) {
     const [activeTab, setActiveTab] = React.useState('Tümü');
 
     const kpi    = computeKPIs(leads);
     const counts = computeTabCounts(leads, statuses);
-
-    const tabs = [
-      ['Tümü',       counts.total],
-      ['Yeni',       counts.yeni],
-      ['Contacted',  counts.contacted],
-      ['Converted',  counts.converted],
-      ['Düşük skor', counts.low],
+    const tabs   = [
+      ['Tümü', counts.total], ['Yeni', counts.yeni], ['Contacted', counts.contacted],
+      ['Converted', counts.converted], ['Düşük skor', counts.low],
     ];
 
     const filteredLeads = React.useMemo(() => {
@@ -159,402 +277,235 @@
       return leads;
     }, [leads, statuses, activeTab]);
 
-    const topLead    = leads[0];
-    const queueLeads = filteredLeads.slice(0, 4);
-    const miniLeads  = leads.slice(4);
-
+    const topLead       = leads[0];
+    const queueLeads    = filteredLeads.slice(0, 4);
+    const miniLeads     = leads.slice(4);
     const totalVal      = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
-    const criticalCount = leads.filter(l =>
-      l.scoring && l.scoring.issues && l.scoring.issues.some(i => issueToSeverity(i) === 'Kritik')
-    ).length;
-    const packagedCount = leads.filter(l => l.matched_services && l.matched_services.length > 0).length;
+    const criticalCount = leads.filter(l => l.scoring?.issues?.some(i => issueToSeverity(i) === 'Kritik')).length;
     const lastDate      = topLead ? fmtDate(topLead.last_analyzed) : '—';
-
-    const pipelineMax = Math.max(leads.length, 1);
+    const pipelineMax   = Math.max(leads.length, 1);
 
     return (
-      <div style={vp.root}>
-
-        {/* ── Sidebar ── */}
-        <aside style={vp.sidebar}>
-          <div style={vp.sideBrand}>
-            <div style={vp.logo}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                <ellipse cx="12" cy="12" rx="10" ry="6" stroke="#0A0A0A" strokeWidth="1.5"/>
-                <path d="M22 12 L24 13 L22 14" stroke="#0A0A0A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="9" cy="12" r="1" fill="#0A0A0A"/>
-              </svg>
+      <main style={vp.main}>
+        {/* Topbar */}
+        <header style={vp.topbar}>
+          <div style={vp.search}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2">
+              <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <span>Lead, firma veya hizmet ara</span>
+            <kbd style={vp.kbd}>⌘K</kbd>
+          </div>
+          <div style={vp.topRight}>
+            <div style={vp.statusChip}><span style={vp.pulseDot}/><span>BOT AKTİF · son 2 dk</span></div>
+            <div style={vp.user}>
+              <div style={vp.avatar}>MA</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>Mert Aslan</div>
+                <div style={{ fontSize: 11, color: '#9A9A9A' }}>Sales Lead</div>
+              </div>
             </div>
-            <div>
-              <div style={vp.brandName}>Zeplin Media</div>
-              <div style={vp.brandSub}>Lead Intelligence</div>
+          </div>
+        </header>
+
+        {/* Hero */}
+        <section style={vp.hero}>
+          <div>
+            <div style={vp.eyebrow}><span style={vp.pulseDot}/>ZEPLİN OS · CANLI TARAMA</div>
+            <h1 style={vp.h1}>Lead Cockpit<span style={vp.h1Accent}>.</span></h1>
+            <p style={vp.lede}>
+              {leads.length} işletme tarandı. Bot{' '}
+              <em style={vp.em}>{kpi.packagedCount} lead</em> için satılabilir hizmet paketi çıkardı;{' '}
+              <em style={vp.em}>{criticalCount} işletmede</em> kritik açık var.
+            </p>
+            <div style={vp.heroMeta}>
+              <span>Son güncelleme</span><strong>{lastDate}</strong>
+              <span style={vp.sep}>·</span>
+              <span>Toplam pipeline</span><strong>~{fmt(totalVal)} ₺</strong>
+            </div>
+            <div style={vp.tabs}>
+              {tabs.map(([name, count]) => {
+                const active = activeTab === name;
+                return (
+                  <button key={name} onClick={() => setActiveTab(name)} style={active ? vp.tabActive : vp.tab}>
+                    {name}<span style={active ? vp.tabCountActive : vp.tabCount}>{count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <nav style={vp.sideNav}>
-            {[
-              { ic: 'cockpit',  name: 'Cockpit',  active: true, badge: leads.length },
-              { ic: 'leads',    name: 'Leadler' },
-              { ic: 'pipeline', name: 'Pipeline' },
-              { ic: 'audit',    name: 'Audit' },
-              { ic: 'reports',  name: 'Raporlar' },
-              { ic: 'settings', name: 'Ayarlar' },
-            ].map((n, i) => (
-              <a key={i} style={n.active ? vp.sideNavActive : vp.sideNavItem}>
-                <SideIc name={n.ic} />
-                <span style={{ flex: 1 }}>{n.name}</span>
-                {n.badge !== undefined && (
-                  <span style={n.active ? vp.sideBadgeA : vp.sideBadge}>{n.badge}</span>
-                )}
-              </a>
-            ))}
-          </nav>
+          {topLead && (
+            <div style={vp.heroRight}>
+              <div style={vp.focusCard}>
+                <div style={vp.focusEyebrow}>BUGÜNÜN ODAĞI</div>
+                <div style={vp.focusTitle}>{topLead.name}</div>
+                <div style={vp.focusSub}>{topLead.category || topLead.sector || 'İşletme'} · {topLead.city}</div>
+                <div style={vp.focusStats}>
+                  <div><div style={vp.fsl}>Potansiyel</div><div style={vp.fsv}>{topLead.estimated_value_tl > 0 ? `~${fmt(topLead.estimated_value_tl)} ₺` : '—'}</div></div>
+                  <div><div style={vp.fsl}>Skor</div><div style={vp.fsv}>{topLead.scoring.score}<span style={vp.fsu}>/100</span></div></div>
+                  <div><div style={vp.fsl}>Sınıf</div><div style={vp.fsv}>{topLead.scoring.grade}</div></div>
+                </div>
+                <div style={vp.focusActions}>
+                  <button style={vp.btnLime} onClick={() => onSelect(0)}>{topLead.next_action || 'Detay gör'} →</button>
+                  <button style={vp.btnGhostDark} onClick={() => onSelect(0)}>Rapor</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
-          <div style={{ marginTop: 'auto' }}>
-            <div style={vp.upgradeCard}>
-              <div style={vp.upgradeEyebrow}>OTOMASYON</div>
-              <div style={vp.upgradeTitle}>Otomatik tarayıcı</div>
-              <div style={vp.upgradeBody}>15 dakikada bir tarama. Yeni leadler otomatik dosyalansın.</div>
-              <button style={vp.upgradeBtn}>Etkinleştir →</button>
+        {/* KPI row */}
+        <section style={vp.kpiRow}>
+          <div style={{ ...vp.kpiCard, background: '#EAFBD3' }}>
+            <KpiHead label="Paketlenen fırsat" hint={`${kpi.packagedCount}/${leads.length}`}/>
+            <div style={vp.kpiBig}>%{kpi.packagedPct}</div>
+            <div style={vp.kpiBars}>{[5,7,6,9,8,11,10,12].map((v, i) => <div key={i} style={{ height: `${v*4}px`, flex: 1, background: '#0A0A0A', borderRadius: 2, opacity: 0.85 }}/>)}</div>
+            <div style={vp.kpiCap}>lead hizmete bağlandı</div>
+          </div>
+          <div style={{ ...vp.kpiCard, background: '#FFE9D9' }}>
+            <KpiHead label="Temas hazırlığı" hint={`${kpi.phoneCount}/${leads.length}`}/>
+            <div style={vp.kpiBig}>%{kpi.phonePct}</div>
+            <svg width="100%" height="48" viewBox="0 0 200 48">
+              <path d="M10 42 A50 50 0 0 1 190 42" fill="none" stroke="#FFD3B0" strokeWidth="7" strokeLinecap="round"/>
+              <path d={`M10 42 A50 50 0 0 1 ${10 + 180 * Math.min(kpi.phonePct,100)/100} 42`} fill="none" stroke="#FF6B3D" strokeWidth="7" strokeLinecap="round"/>
+            </svg>
+            <div style={vp.kpiCap}>lead telefon bilgisi içeriyor</div>
+          </div>
+          <div style={{ ...vp.kpiCard, background: '#E8EEFF' }}>
+            <KpiHead label="AI dosyası" hint={`${kpi.aiCount}/${leads.length}`}/>
+            <div style={vp.kpiBig}>%{kpi.aiPct}</div>
+            <div style={vp.dotsRow}>{Array.from({ length: leads.length }).map((_, i) => <span key={i} style={{ width: 11, height: 11, borderRadius: 99, display: 'inline-block', background: i < kpi.aiCount ? '#3D5BFF' : '#C8D0FF' }}/>)}</div>
+            <div style={vp.kpiCap}>rapor ve mail hazır</div>
+          </div>
+          <div style={{ ...vp.kpiCard, background: '#FFE0E0' }}>
+            <KpiHead label="Audit derinliği" hint={`${kpi.auditCount}/${leads.length}`}/>
+            <div style={vp.kpiBig}>%{kpi.auditPct}</div>
+            <div style={vp.dotsRow}>{Array.from({ length: leads.length }).map((_, i) => <span key={i} style={{ width: 11, height: 11, borderRadius: 99, display: 'inline-block', background: i < kpi.auditCount ? '#E04545' : '#FFC0C0' }}/>)}</div>
+            <div style={vp.kpiCap}>teknik sinyalli</div>
+          </div>
+        </section>
+
+        <div style={vp.note}>Güvenlik notu — Takım kullanımı için sıradaki aşama: kullanıcı yetkileri, kalıcı veritabanı ve audit log. Şu an pipeline aksiyonları bu tarayıcıda saklanır.</div>
+
+        {/* Two col */}
+        <section style={vp.twoCol}>
+          <div>
+            <SH eyebrow="FOCUS QUEUE" title="Öncelik masası" right={<button style={vp.btnGhost}>Tüm raporlar →</button>}/>
+            <div style={vp.queue}>
+              {queueLeads.length === 0
+                ? <div style={{ padding: 24, background: '#fff', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>Bu kategoride lead yok.</div>
+                : queueLeads.map((r, i) => {
+                    const globalIdx = leads.indexOf(r);
+                    return (
+                      <article key={r.name} style={{ ...vp.queueRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
+                        <div style={vp.queueIdx}>
+                          <div style={vp.queueIdxNum}>{String(i+1).padStart(2,'0')}</div>
+                          <div style={vp.queueIdxScore}>{r.scoring.score}<span style={{ color: '#9A9A9A', fontSize: 12, fontWeight: 400 }}>/100</span></div>
+                        </div>
+                        <div>
+                          <h3 style={vp.queueTitle}>{r.name}</h3>
+                          <div style={vp.queueSub}>{r.city} · {r.scoring.grade} sınıfı · <strong>{r.estimated_value_tl > 0 ? `~${fmt(r.estimated_value_tl)} ₺` : '—'}</strong></div>
+                          <div style={vp.queueTags}>
+                            {r.next_action && <span style={vp.tagPrimary}>{r.next_action}</span>}
+                            {(r.scoring.issues || []).slice(0, 2).map((t, ti) => <span key={ti} style={vp.tag}>{t}</span>)}
+                          </div>
+                        </div>
+                        <div style={vp.queueCta}>
+                          <div style={vp.queueCtaLabel}>Sıradaki aksiyon</div>
+                          <button style={vp.btnPrimarySm} onClick={e => { e.stopPropagation(); onSelect(globalIdx); }}>{r.next_action || 'Detay gör'} →</button>
+                        </div>
+                      </article>
+                    );
+                  })
+              }
             </div>
           </div>
-        </aside>
 
-        {/* ── Main ── */}
-        <main style={vp.main}>
-
-          {/* Top bar */}
-          <header style={vp.topbar}>
-            <div style={vp.search}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2">
-                <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-              </svg>
-              <span>Lead, firma veya hizmet ara</span>
-              <kbd style={vp.kbd}>⌘K</kbd>
-            </div>
-            <div style={vp.topRight}>
-              <div style={vp.statusChip}>
-                <span style={vp.pulseDot}/>
-                <span>BOT AKTİF · son 2 dk</span>
-              </div>
-              <button style={vp.iconBtn}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="1.6">
-                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-                  <path d="M10 21a2 2 0 0 0 4 0"/>
-                </svg>
-              </button>
-              <div style={vp.user}>
-                <div style={vp.avatar}>MA</div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>Mert Aslan</div>
-                  <div style={{ fontSize: 11, color: '#9A9A9A' }}>Sales Lead</div>
+          <aside style={vp.colSide}>
+            <SH eyebrow="PIPELINE" title="Satış sağlığı"/>
+            <div style={vp.healthCard}>
+              {[
+                { name: 'Yeni', val: counts.yeni, color: '#0A0A0A' },
+                { name: 'Temasta', val: counts.contacted, color: '#C6F24E' },
+                { name: 'Kazanıldı', val: counts.converted, color: '#FF6B3D' },
+              ].map(h => (
+                <div key={h.name} style={vp.healthRow}>
+                  <div style={vp.healthLabel}>{h.name}</div>
+                  <div style={vp.healthBarWrap}><div style={{ height: '100%', width: `${(h.val/pipelineMax)*100}%`, background: h.color, borderRadius: 99 }}/></div>
+                  <div style={vp.healthVal}>{h.val}</div>
                 </div>
-              </div>
-            </div>
-          </header>
-
-          {/* Hero */}
-          <section style={vp.hero}>
-            <div style={vp.heroLeft}>
-              <div style={vp.eyebrow}>
-                <span style={vp.pulseDot}/>
-                ZEPLİN OS · CANLI TARAMA
-              </div>
-              <h1 style={vp.h1}>Lead Cockpit<span style={vp.h1Accent}>.</span></h1>
-              <p style={vp.lede}>
-                {leads.length} işletme tarandı. Bot{' '}
-                <em style={vp.em}>{packagedCount} lead</em>{' '}
-                için satılabilir hizmet paketi çıkardı;{' '}
-                <em style={vp.em}>{criticalCount} işletmede</em> kritik açık var.
-              </p>
-              <div style={vp.heroMeta}>
-                <span>Son güncelleme</span>
-                <strong>{lastDate}</strong>
-                <span style={vp.heroMetaSep}>·</span>
-                <span>Toplam pipeline</span>
-                <strong>~{fmt(totalVal)} ₺</strong>
-              </div>
-
-              <div style={vp.tabs}>
-                {tabs.map(([name, count]) => {
-                  const active = activeTab === name;
-                  return (
-                    <button key={name} onClick={() => setActiveTab(name)} style={active ? vp.tabActive : vp.tab}>
-                      {name}
-                      <span style={active ? vp.tabCountActive : vp.tabCount}>{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              ))}
             </div>
 
-            {topLead && (
-              <div style={vp.heroRight}>
-                <div style={vp.focusCard}>
-                  <div style={vp.focusEyebrow}>BUGÜNÜN ODAĞI</div>
-                  <div style={vp.focusTitle}>{topLead.name}</div>
-                  <div style={vp.focusSub}>
-                    {topLead.category || topLead.sector || 'İşletme'} · {topLead.city}
-                  </div>
-                  <div style={vp.focusStats}>
-                    <div>
-                      <div style={vp.focusStatLabel}>Potansiyel</div>
-                      <div style={vp.focusStatValue}>
-                        {topLead.estimated_value_tl > 0 ? `~${fmt(topLead.estimated_value_tl)} ₺` : '—'}
-                      </div>
+            <SH eyebrow="HAFTALIK TEMPO" title="Ekip ritmi" right={<div style={vp.segCtl}><span style={vp.segActive}>Hafta</span><span style={{ padding: '4px 10px' }}>Ay</span></div>}/>
+            <div style={vp.chartCard}>
+              <div style={vp.chartBars}>
+                {[42,55,68,88,87,40,18].map((v, i) => (
+                  <div key={i} style={vp.barCol}>
+                    <div style={{ height: `${v}%`, width: '100%', borderRadius: 6, position: 'relative', minHeight: 6, background: (i===3||i===4) ? '#0A0A0A' : '#E8E8E6' }}>
+                      {(i===3||i===4) && <span style={vp.barLabel}>{v}</span>}
                     </div>
-                    <div>
-                      <div style={vp.focusStatLabel}>Skor</div>
-                      <div style={vp.focusStatValue}>
-                        {topLead.scoring.score}<span style={vp.focusStatUnit}>/100</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div style={vp.focusStatLabel}>Sınıf</div>
-                      <div style={vp.focusStatValue}>{topLead.scoring.grade}</div>
-                    </div>
-                  </div>
-                  <div style={vp.focusActions}>
-                    <button style={vp.btnLime} onClick={() => onSelect(0)}>
-                      {topLead.next_action || 'Detay gör'} →
-                    </button>
-                    <button style={vp.btnGhostDark} onClick={() => onSelect(0)}>Rapor</button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* KPI row */}
-          <section style={vp.kpiRow}>
-            <div style={{ ...vp.kpiCard, background: '#EAFBD3' }}>
-              <KpiHead label="Paketlenen fırsat" hint={`${kpi.packagedCount}/${leads.length}`} />
-              <div style={vp.kpiBig}>%{kpi.packagedPct}</div>
-              <div style={vp.kpiBars}>
-                {[5,7,6,9,8,11,10,12].map((v, i) => (
-                  <div key={i} style={{ height: `${v*4}px`, flex: 1, background: '#0A0A0A', borderRadius: 2, opacity: 0.85 }}/>
-                ))}
-              </div>
-              <div style={vp.kpiCap}>lead hizmete bağlandı</div>
-            </div>
-
-            <div style={{ ...vp.kpiCard, background: '#FFE9D9' }}>
-              <KpiHead label="Temas hazırlığı" hint={`${kpi.phoneCount}/${leads.length}`} />
-              <div style={vp.kpiBig}>%{kpi.phonePct}</div>
-              <svg width="100%" height="48" viewBox="0 0 200 48">
-                <path d="M10 42 A50 50 0 0 1 190 42" fill="none" stroke="#FFD3B0" strokeWidth="7" strokeLinecap="round"/>
-                <path d={`M10 42 A50 50 0 0 1 ${10 + 180 * Math.min(kpi.phonePct, 100) / 100} 42`} fill="none" stroke="#FF6B3D" strokeWidth="7" strokeLinecap="round"/>
-              </svg>
-              <div style={vp.kpiCap}>lead telefon bilgisi içeriyor</div>
-            </div>
-
-            <div style={{ ...vp.kpiCard, background: '#E8EEFF' }}>
-              <KpiHead label="AI dosyası" hint={`${kpi.aiCount}/${leads.length}`} />
-              <div style={vp.kpiBig}>%{kpi.aiPct}</div>
-              <div style={vp.dotsRow}>
-                {Array.from({ length: leads.length }).map((_, i) => (
-                  <span key={i} style={{
-                    width: 11, height: 11, borderRadius: 99, display: 'inline-block',
-                    background: i < kpi.aiCount ? '#3D5BFF' : '#C8D0FF',
-                  }}/>
-                ))}
-              </div>
-              <div style={vp.kpiCap}>rapor ve mail hazır</div>
-            </div>
-
-            <div style={{ ...vp.kpiCard, background: '#FFE0E0' }}>
-              <KpiHead label="Audit derinliği" hint={`${kpi.auditCount}/${leads.length}`} />
-              <div style={vp.kpiBig}>%{kpi.auditPct}</div>
-              <div style={vp.dotsRow}>
-                {Array.from({ length: leads.length }).map((_, i) => (
-                  <span key={i} style={{
-                    width: 11, height: 11, borderRadius: 99, display: 'inline-block',
-                    background: i < kpi.auditCount ? '#E04545' : '#FFC0C0',
-                  }}/>
-                ))}
-              </div>
-              <div style={vp.kpiCap}>teknik sinyalli</div>
-            </div>
-          </section>
-
-          <div style={vp.note}>
-            Güvenlik notu — Takım kullanımı için sıradaki aşama: kullanıcı yetkileri, kalıcı veritabanı ve audit log. Şu an pipeline aksiyonları bu tarayıcıda saklanır.
-          </div>
-
-          {/* Two column */}
-          <section style={vp.twoCol}>
-
-            {/* Focus queue */}
-            <div>
-              <SH eyebrow="FOCUS QUEUE" title="Öncelik masası" right={<button style={vp.btnGhost}>Tüm raporlar →</button>}/>
-              <div style={vp.queue}>
-                {queueLeads.length === 0 ? (
-                  <div style={{ padding: 24, background: '#fff', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>
-                    Bu kategoride lead yok.
-                  </div>
-                ) : queueLeads.map((r, i) => {
-                  const globalIdx = leads.indexOf(r);
-                  return (
-                    <article
-                      key={r.name}
-                      style={{ ...vp.queueRow, cursor: 'pointer' }}
-                      onClick={() => onSelect(globalIdx)}
-                    >
-                      <div style={vp.queueIdx}>
-                        <div style={vp.queueIdxNum}>{String(i + 1).padStart(2, '0')}</div>
-                        <div style={vp.queueIdxScore}>
-                          {r.scoring.score}
-                          <span style={{ color: '#9A9A9A', fontSize: 12, fontWeight: 400 }}>/100</span>
-                        </div>
-                      </div>
-                      <div>
-                        <h3 style={vp.queueTitle}>{r.name}</h3>
-                        <div style={vp.queueSub}>
-                          {r.city} · {r.scoring.grade} sınıfı ·{' '}
-                          <strong>{r.estimated_value_tl > 0 ? `~${fmt(r.estimated_value_tl)} ₺` : '—'}</strong>
-                        </div>
-                        <div style={vp.queueTags}>
-                          {r.next_action && <span style={vp.tagPrimary}>{r.next_action}</span>}
-                          {(r.scoring.issues || []).slice(0, 2).map((t, ti) => (
-                            <span key={ti} style={vp.tag}>{t}</span>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={vp.queueCta}>
-                        <div style={vp.queueCtaLabel}>Sıradaki aksiyon</div>
-                        <button
-                          style={vp.btnPrimarySm}
-                          onClick={e => { e.stopPropagation(); onSelect(globalIdx); }}
-                        >
-                          {r.next_action || 'Detay gör'} →
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sidebar col */}
-            <aside style={vp.colSide}>
-
-              <SH eyebrow="PIPELINE" title="Satış sağlığı"/>
-              <div style={vp.healthCard}>
-                {[
-                  { name: 'Yeni',      val: counts.yeni,      color: '#0A0A0A' },
-                  { name: 'Temasta',   val: counts.contacted, color: '#C6F24E' },
-                  { name: 'Kazanıldı', val: counts.converted, color: '#FF6B3D' },
-                ].map(h => (
-                  <div key={h.name} style={vp.healthRow}>
-                    <div style={vp.healthLabel}>{h.name}</div>
-                    <div style={vp.healthBarWrap}>
-                      <div style={{ height: '100%', width: `${(h.val / pipelineMax) * 100}%`, background: h.color, borderRadius: 99 }}/>
-                    </div>
-                    <div style={vp.healthVal}>{h.val}</div>
+                    <div style={vp.barX}>{['PZT','SAL','ÇAR','PER','CUM','CMT','PAZ'][i]}</div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              <SH
-                eyebrow="HAFTALIK TEMPO"
-                title="Ekip ritmi"
-                right={
-                  <div style={vp.segCtl}>
-                    <span style={vp.segActive}>Hafta</span>
-                    <span style={{ padding: '4px 10px' }}>Ay</span>
+            <SH eyebrow="LEAD KUYRUĞU" title="Sıradakiler" right={<a style={vp.linkSm}>Tümünü gör →</a>}/>
+            <div style={vp.miniList}>
+              {miniLeads.slice(0, 5).map((m, i) => {
+                const globalIdx = leads.indexOf(m);
+                return (
+                  <div key={i} style={{ ...vp.miniRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
+                    <div style={vp.miniIni}>{m.name.charAt(0)}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={vp.miniName}>{m.name}</div>
+                      <div style={vp.miniMeta}>Skor {m.scoring.score} · Öncelik {m.sales_priority_score || '—'}</div>
+                    </div>
+                    <div style={{ color: '#9A9A9A' }}>→</div>
                   </div>
-                }
-              />
-              <div style={vp.chartCard}>
-                <div style={vp.chartBars}>
-                  {[42,55,68,88,87,40,18].map((v, i) => (
-                    <div key={i} style={vp.barCol}>
-                      <div style={{
-                        height: `${v}%`, width: '100%', borderRadius: 6,
-                        position: 'relative', minHeight: 6,
-                        background: (i === 3 || i === 4) ? '#0A0A0A' : '#E8E8E6',
-                      }}>
-                        {(i === 3 || i === 4) && <span style={vp.barLabel}>{v}</span>}
-                      </div>
-                      <div style={vp.barX}>{['PZT','SAL','ÇAR','PER','CUM','CMT','PAZ'][i]}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <SH eyebrow="LEAD KUYRUĞU" title="Sıradakiler" right={<a style={vp.linkSm}>Tümünü gör →</a>}/>
-              <div style={vp.miniList}>
-                {miniLeads.slice(0, 5).map((m, i) => {
-                  const globalIdx = leads.indexOf(m);
-                  return (
-                    <div key={i} style={{ ...vp.miniRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
-                      <div style={vp.miniIni}>{m.name.charAt(0)}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={vp.miniName}>{m.name}</div>
-                        <div style={vp.miniMeta}>Skor {m.scoring.score} · Öncelik {m.sales_priority_score || '—'}</div>
-                      </div>
-                      <div style={{ color: '#9A9A9A' }}>→</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </aside>
-          </section>
-        </main>
-      </div>
+                );
+              })}
+            </div>
+          </aside>
+        </section>
+      </main>
     );
   }
 
   const vp = {
-    root:         { width: '100%', minHeight: '100vh', background: '#FAFAF9', fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', display: 'grid', gridTemplateColumns: '244px 1fr' },
-    sidebar:      { padding: '24px 18px', borderRight: '1px solid #ECECEC', display: 'flex', flexDirection: 'column', gap: 22, background: '#fff', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' },
-    sideBrand:    { display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px' },
-    logo:         { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, background: '#FAFAF9', border: '1px solid #ECECEC', flexShrink: 0 },
-    brandName:    { fontFamily: '"Inter Tight"', fontWeight: 700, fontSize: 15, letterSpacing: -0.2 },
-    brandSub:     { fontSize: 11, color: '#9A9A9A', marginTop: 1 },
-    sideNav:      { display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 },
-    sideNavItem:  { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, color: '#6B6B6B', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
-    sideNavActive:{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: '#0A0A0A', color: '#fff', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
-    sideBadge:    { fontSize: 10.5, background: '#F4F4F2', color: '#3A3A3A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
-    sideBadgeA:   { fontSize: 10.5, background: '#C6F24E', color: '#0A0A0A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
-    upgradeCard:  { background: '#FAFAF9', border: '1px solid #ECECEC', borderRadius: 14, padding: 16 },
-    upgradeEyebrow:{ fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, color: '#6B6B6B' },
-    upgradeTitle: { fontFamily: '"Inter Tight"', fontWeight: 600, fontSize: 15, marginTop: 8, letterSpacing: -0.2 },
-    upgradeBody:  { fontSize: 12, color: '#6B6B6B', marginTop: 6, lineHeight: 1.45 },
-    upgradeBtn:   { marginTop: 12, padding: '8px 12px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer', width: '100%' },
-    main:         { padding: '24px 40px 48px', overflowY: 'auto', minWidth: 0 },
-    topbar:       { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 22, borderBottom: '1px solid #ECECEC', marginBottom: 36 },
-    search:       { display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, color: '#9A9A9A', fontSize: 12.5, width: 320 },
-    kbd:          { marginLeft: 'auto', fontSize: 10.5, color: '#9A9A9A', background: '#F4F4F2', padding: '2px 6px', borderRadius: 4, fontFamily: '"JetBrains Mono"' },
-    topRight:     { display: 'flex', alignItems: 'center', gap: 10 },
-    statusChip:   { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 8, fontSize: 11, fontFamily: '"JetBrains Mono"', letterSpacing: 1, color: '#3A3A3A' },
-    pulseDot:     { width: 6, height: 6, borderRadius: 99, background: '#C6F24E', boxShadow: '0 0 0 4px rgba(198,242,78,0.25)', display: 'inline-block', flexShrink: 0 },
-    iconBtn:      { width: 36, height: 36, display: 'grid', placeItems: 'center', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, cursor: 'pointer' },
-    user:         { display: 'flex', alignItems: 'center', gap: 10, padding: '4px 12px 4px 4px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10 },
-    avatar:       { width: 30, height: 30, borderRadius: 8, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 },
-    hero:         { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 36, paddingBottom: 28 },
-    heroLeft:     {},
-    eyebrow:      { display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, letterSpacing: 1.2, color: '#6B6B6B', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', marginBottom: 24 },
-    h1:           { fontFamily: '"Inter Tight"', fontSize: 72, letterSpacing: -2.8, lineHeight: 0.92, fontWeight: 600, margin: 0 },
-    h1Accent:     { color: '#C6F24E' },
-    lede:         { fontSize: 17, lineHeight: 1.45, color: '#3A3A3A', maxWidth: 540, marginTop: 22, fontWeight: 400 },
-    em:           { fontStyle: 'normal', fontWeight: 600, color: '#0A0A0A', borderBottom: '1.5px solid #C6F24E' },
-    heroMeta:     { display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, color: '#6B6B6B', marginTop: 18, fontFamily: '"JetBrains Mono"', flexWrap: 'wrap' },
-    heroMetaSep:  { color: '#D0D0CE' },
-    tabs:         { display: 'flex', gap: 8, marginTop: 32, flexWrap: 'wrap' },
-    tab:          { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #ECECEC', background: '#fff', fontSize: 13, color: '#3A3A3A', cursor: 'pointer', fontWeight: 500 },
-    tabActive:    { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #0A0A0A', background: '#0A0A0A', fontSize: 13, color: '#fff', cursor: 'pointer', fontWeight: 500 },
-    tabCount:     { fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"' },
+    main:          { padding: '24px 40px 48px', overflowY: 'auto', minWidth: 0, flex: 1, fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', background: '#FAFAF9' },
+    topbar:        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 22, borderBottom: '1px solid #ECECEC', marginBottom: 36 },
+    search:        { display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, color: '#9A9A9A', fontSize: 12.5, width: 320 },
+    kbd:           { marginLeft: 'auto', fontSize: 10.5, color: '#9A9A9A', background: '#F4F4F2', padding: '2px 6px', borderRadius: 4, fontFamily: '"JetBrains Mono"' },
+    topRight:      { display: 'flex', alignItems: 'center', gap: 10 },
+    statusChip:    { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 8, fontSize: 11, fontFamily: '"JetBrains Mono"', letterSpacing: 1, color: '#3A3A3A' },
+    pulseDot:      { width: 6, height: 6, borderRadius: 99, background: '#C6F24E', boxShadow: '0 0 0 4px rgba(198,242,78,0.25)', display: 'inline-block', flexShrink: 0 },
+    user:          { display: 'flex', alignItems: 'center', gap: 10, padding: '4px 12px 4px 4px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10 },
+    avatar:        { width: 30, height: 30, borderRadius: 8, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 },
+    hero:          { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 36, paddingBottom: 28 },
+    eyebrow:       { display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, letterSpacing: 1.2, color: '#6B6B6B', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', marginBottom: 24 },
+    h1:            { fontFamily: '"Inter Tight"', fontSize: 72, letterSpacing: -2.8, lineHeight: 0.92, fontWeight: 600, margin: 0 },
+    h1Accent:      { color: '#C6F24E' },
+    lede:          { fontSize: 17, lineHeight: 1.45, color: '#3A3A3A', maxWidth: 540, marginTop: 22, fontWeight: 400 },
+    em:            { fontStyle: 'normal', fontWeight: 600, color: '#0A0A0A', borderBottom: '1.5px solid #C6F24E' },
+    heroMeta:      { display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, color: '#6B6B6B', marginTop: 18, fontFamily: '"JetBrains Mono"', flexWrap: 'wrap' },
+    sep:           { color: '#D0D0CE' },
+    tabs:          { display: 'flex', gap: 8, marginTop: 32, flexWrap: 'wrap' },
+    tab:           { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #ECECEC', background: '#fff', fontSize: 13, color: '#3A3A3A', cursor: 'pointer', fontWeight: 500 },
+    tabActive:     { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #0A0A0A', background: '#0A0A0A', fontSize: 13, color: '#fff', cursor: 'pointer', fontWeight: 500 },
+    tabCount:      { fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"' },
     tabCountActive:{ fontSize: 11, color: '#C6F24E', fontFamily: '"JetBrains Mono"' },
-    heroRight:    { display: 'flex', alignItems: 'flex-end' },
-    focusCard:    { background: '#0A0A0A', color: '#fff', borderRadius: 22, padding: 28, width: '100%' },
-    focusEyebrow: { fontSize: 11, color: '#C6F24E', letterSpacing: 1.2, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase' },
-    focusTitle:   { fontSize: 24, fontFamily: '"Inter Tight"', fontWeight: 600, letterSpacing: -0.6, marginTop: 12, lineHeight: 1.1 },
-    focusSub:     { color: '#9A9A9A', fontSize: 13.5, marginTop: 6, lineHeight: 1.4 },
-    focusStats:   { display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginTop: 22, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)' },
-    focusStatLabel:{ fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
-    focusStatValue:{ fontSize: 20, fontFamily: '"Inter Tight"', fontWeight: 600, marginTop: 6, letterSpacing: -0.5 },
-    focusStatUnit: { color: '#6B6B6B', fontSize: 13, fontWeight: 400 },
+    heroRight:     { display: 'flex', alignItems: 'flex-end' },
+    focusCard:     { background: '#0A0A0A', color: '#fff', borderRadius: 22, padding: 28, width: '100%' },
+    focusEyebrow:  { fontSize: 11, color: '#C6F24E', letterSpacing: 1.2, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase' },
+    focusTitle:    { fontSize: 24, fontFamily: '"Inter Tight"', fontWeight: 600, letterSpacing: -0.6, marginTop: 12, lineHeight: 1.1 },
+    focusSub:      { color: '#9A9A9A', fontSize: 13.5, marginTop: 6, lineHeight: 1.4 },
+    focusStats:    { display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginTop: 22, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)' },
+    fsl:           { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
+    fsv:           { fontSize: 20, fontFamily: '"Inter Tight"', fontWeight: 600, marginTop: 6, letterSpacing: -0.5 },
+    fsu:           { color: '#6B6B6B', fontSize: 13, fontWeight: 400 },
     focusActions:  { display: 'flex', gap: 10, marginTop: 22 },
     btnLime:       { padding: '11px 16px', borderRadius: 10, background: '#C6F24E', color: '#0A0A0A', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
     btnGhostDark:  { padding: '11px 16px', borderRadius: 10, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', fontWeight: 500, fontSize: 13, cursor: 'pointer' },
@@ -571,7 +522,7 @@
     eyebrowSm:     { fontSize: 11, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: '"JetBrains Mono"' },
     h2:            { fontFamily: '"Inter Tight"', fontSize: 24, fontWeight: 600, letterSpacing: -0.6, margin: '6px 0 0' },
     queue:         { display: 'flex', flexDirection: 'column', gap: 1, background: '#ECECEC', border: '1px solid #ECECEC', borderRadius: 18, overflow: 'hidden' },
-    queueRow:      { display: 'grid', gridTemplateColumns: '90px 1fr 170px', gap: 20, padding: 22, background: '#fff', alignItems: 'center', transition: 'background .12s' },
+    queueRow:      { display: 'grid', gridTemplateColumns: '90px 1fr 170px', gap: 20, padding: 22, background: '#fff', alignItems: 'center' },
     queueIdx:      { display: 'flex', flexDirection: 'column', gap: 6 },
     queueIdxNum:   { fontFamily: '"JetBrains Mono"', fontSize: 11, color: '#9A9A9A', letterSpacing: 1 },
     queueIdxScore: { fontFamily: '"Inter Tight"', fontSize: 28, fontWeight: 600, letterSpacing: -1 },
@@ -604,100 +555,63 @@
     linkSm:        { fontSize: 12, color: '#6B6B6B', cursor: 'pointer', fontFamily: '"JetBrains Mono"' },
   };
 
-  // ── LeadDetail sevStyle helper ─────────────────────────────────────────────
+  // ── Lead Detail ────────────────────────────────────────────────────────────
 
   function sevStyle(s) {
-    return ({
-      Kritik: { background: '#FFE0E0', color: '#A12020' },
-      Yüksek: { background: '#FFE9D9', color: '#A14C20' },
-      Orta:   { background: '#FFF6CC', color: '#7A5A00' },
-      Düşük:  { background: '#E8EEFF', color: '#1F3A8A' },
-      Bilgi:  { background: '#F4F4F2', color: '#3A3A3A' },
-    })[s] || { background: '#F4F4F2', color: '#3A3A3A' };
+    return ({ Kritik: { background: '#FFE0E0', color: '#A12020' }, Yüksek: { background: '#FFE9D9', color: '#A14C20' }, Orta: { background: '#FFF6CC', color: '#7A5A00' }, Düşük: { background: '#E8EEFF', color: '#1F3A8A' }, Bilgi: { background: '#F4F4F2', color: '#3A3A3A' } })[s] || { background: '#F4F4F2', color: '#3A3A3A' };
   }
-
-  // ── LeadDetail Component ───────────────────────────────────────────────────
 
   function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext }) {
     const [showReport, setShowReport] = React.useState(false);
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
     const [note,       setNote]       = React.useState('');
-
     const issues     = lead.scoring.issues || [];
-    const hasPackage = lead.matched_services && lead.matched_services.length > 0
-                    && lead.recommended_package
-                    && lead.recommended_package.name !== 'Veri tamamlama';
+    const hasPackage = lead.matched_services?.length > 0 && lead.recommended_package?.name !== 'Veri tamamlama';
     const svc = lead.recommended_package || {};
     const ms  = (lead.matched_services || [])[0] || {};
 
     function copyEmail() {
-      navigator.clipboard.writeText(lead.ai_email || '').then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+      navigator.clipboard.writeText(lead.ai_email || '').then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
     }
 
     return (
       <div style={ld.root}>
-
-        {/* Top nav */}
         <header style={ld.top}>
           <div style={ld.crumbs}>
             <span style={{ ...ld.crumb, cursor: 'pointer', color: '#6B6B6B' }} onClick={onBack}>Cockpit</span>
-            <span style={ld.crumbSep}>/</span>
-            <span style={ld.crumb}>Leadler</span>
+            <span style={ld.crumbSep}>/</span><span style={ld.crumb}>Leadler</span>
             <span style={ld.crumbSep}>/</span>
             <span style={{ ...ld.crumb, color: '#0A0A0A', fontWeight: 600 }}>{lead.name}</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={{ ...ld.btnGhost, opacity: idx === 0 ? 0.4 : 1 }} onClick={onPrev} disabled={idx === 0}>← Önceki</button>
-            <button style={{ ...ld.btnGhost, opacity: idx === total - 1 ? 0.4 : 1 }} onClick={onNext} disabled={idx === total - 1}>Sonraki →</button>
+            <button style={{ ...ld.btnGhost, opacity: idx === total-1 ? 0.4 : 1 }} onClick={onNext} disabled={idx === total-1}>Sonraki →</button>
             <button style={ld.btnDark} onClick={onBack}>← Cockpit</button>
           </div>
         </header>
 
-        {/* Hero */}
         <section style={ld.hero}>
           <div style={ld.heroLeft}>
             <div style={ld.statusRow}>
               <span style={ld.statusBadge}>● {(status || 'yeni').toUpperCase()}</span>
-              {(lead.category || lead.sector) && (
-                <span style={ld.metaTag}>{lead.category || lead.sector}</span>
-              )}
+              {(lead.category || lead.sector) && <span style={ld.metaTag}>{lead.category || lead.sector}</span>}
               {lead.city && <span style={ld.metaTag}>{lead.city}</span>}
-              {lead.last_analyzed && (
-                <span style={ld.metaText}>Son analiz · {fmtDate(lead.last_analyzed)}</span>
-              )}
+              {lead.last_analyzed && <span style={ld.metaText}>Son analiz · {fmtDate(lead.last_analyzed)}</span>}
             </div>
             <h1 style={ld.h1}>{lead.name}</h1>
             <div style={ld.urls}>
-              {lead.website && lead.website.website_url && (
-                <a href={lead.website.website_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>
-                  {lead.website.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗
-                </a>
-              )}
-              {lead.social && lead.social.instagram_url && (
-                <a href={lead.social.instagram_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>
-                  @{lead.social.instagram_username || 'instagram'} ↗
-                </a>
-              )}
-              {lead.maps_url && (
-                <a href={lead.maps_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>Google Maps ↗</a>
-              )}
+              {lead.website?.website_url && <a href={lead.website.website_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>{lead.website.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗</a>}
+              {lead.social?.instagram_url && <a href={lead.social.instagram_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>@{lead.social.instagram_username || 'instagram'} ↗</a>}
+              {lead.maps_url && <a href={lead.maps_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>Google Maps ↗</a>}
               {lead.phone && <span style={ld.urlChip}>{lead.phone}</span>}
             </div>
           </div>
-
           <div style={ld.heroRight}>
-            <div style={ld.scoreCircle}>
+            <div>
               <svg width="120" height="120" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="52" fill="none" stroke="#F4F4F2" strokeWidth="6"/>
-                <circle cx="60" cy="60" r="52" fill="none" stroke="#0A0A0A" strokeWidth="6"
-                  strokeDasharray="326.7"
-                  strokeDashoffset={scoreDash(lead.scoring.score)}
-                  transform="rotate(-90 60 60)"
-                  strokeLinecap="round"/>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#0A0A0A" strokeWidth="6" strokeDasharray="326.7" strokeDashoffset={scoreDash(lead.scoring.score)} transform="rotate(-90 60 60)" strokeLinecap="round"/>
                 <text x="60" y="60" textAnchor="middle" fontSize="32" fontWeight="600" fill="#0A0A0A" fontFamily="Inter Tight">{lead.scoring.score}</text>
                 <text x="60" y="80" textAnchor="middle" fontSize="11" fill="#9A9A9A" fontFamily="JetBrains Mono">/100</text>
               </svg>
@@ -706,7 +620,6 @@
           </div>
         </section>
 
-        {/* Next action banner */}
         {lead.next_action && (
           <div style={ld.nextAction}>
             <div>
@@ -721,25 +634,17 @@
           </div>
         )}
 
-        {/* Two col */}
         <section style={ld.cols}>
-
-          {/* Left */}
           <div>
-
-            {/* Social signals */}
             <div style={ld.statsCard}>
-              <div style={ld.statsHeader}>
-                <div style={ld.eyebrow}>SOSYAL SİNYALLER</div>
-                <div style={ld.cardTitle}>Etkileşim ve büyüme</div>
-              </div>
+              <div style={ld.statsHeader}><div style={ld.eyebrow}>SOSYAL SİNYALLER</div><div style={ld.cardTitle}>Etkileşim ve büyüme</div></div>
               <div style={ld.statsGrid}>
                 {[
-                  ['Instagram', lead.social && lead.social.has_instagram ? '✓' : '✗'],
-                  ['Takipçi',   lead.social && lead.social.stats && lead.social.stats.followers  ? String(lead.social.stats.followers)  : '—'],
-                  ['Gönderi',   lead.social && lead.social.stats && lead.social.stats.post_count  ? String(lead.social.stats.post_count)  : '—'],
-                  ['Ort. beğeni',lead.social && lead.social.stats && lead.social.stats.avg_likes   ? String(lead.social.stats.avg_likes)   : '—'],
-                  ['Etkileşim', lead.social && lead.social.stats && lead.social.stats.engagement_rate ? `%${lead.social.stats.engagement_rate}` : '—'],
+                  ['Instagram', lead.social?.has_instagram ? '✓' : '✗'],
+                  ['Takipçi',   lead.social?.stats?.followers  ? String(lead.social.stats.followers)  : '—'],
+                  ['Gönderi',   lead.social?.stats?.post_count  ? String(lead.social.stats.post_count)  : '—'],
+                  ['Ort. beğeni',lead.social?.stats?.avg_likes   ? String(lead.social.stats.avg_likes)   : '—'],
+                  ['Etkileşim', lead.social?.stats?.engagement_rate ? `%${lead.social.stats.engagement_rate}` : '—'],
                 ].map(([l, v], i) => (
                   <div key={i} style={{ ...ld.stat, ...(i === 4 ? { borderRight: 'none' } : {}) }}>
                     <div style={ld.statLabel}>{l}</div>
@@ -749,7 +654,6 @@
               </div>
             </div>
 
-            {/* Recommended package */}
             {hasPackage ? (
               <div style={ld.packCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
@@ -760,163 +664,86 @@
                   </div>
                   {(ms.price_min || ms.price_max) ? (
                     <div style={ld.packRight}>
-                      <div style={ld.packPrice}>
-                        ~{fmt(ms.price_min)} ₺{' '}
-                        <span style={{ fontSize: 11, color: '#9A9A9A' }}>/ay potansiyel</span>
-                      </div>
-                      <div style={ld.packRange}>
-                        {(ms.price_min || 0).toLocaleString('tr-TR')} – {(ms.price_max || 0).toLocaleString('tr-TR')} ₺{' '}
-                        <span style={{ color: '#9A9A9A' }}>tek seferlik</span>
-                      </div>
+                      <div style={ld.packPrice}>~{fmt(ms.price_min)} ₺ <span style={{ fontSize: 11, color: '#9A9A9A' }}>/ay</span></div>
+                      <div style={ld.packRange}>{(ms.price_min||0).toLocaleString('tr-TR')} – {(ms.price_max||0).toLocaleString('tr-TR')} ₺ <span style={{ color: '#9A9A9A' }}>tek seferlik</span></div>
                     </div>
                   ) : null}
                 </div>
                 <div style={ld.packTags}>
-                  {[svc.category, svc.name].filter(Boolean).map((t, i) => (
-                    <span key={i} style={i === 0 ? ld.tagPrimary : ld.tag}>{t}</span>
-                  ))}
-                  {(lead.scoring.issues || []).slice(0, 2).map((t, i) => (
-                    <span key={`iss-${i}`} style={ld.tag}>{t}</span>
-                  ))}
+                  {[svc.category, svc.name].filter(Boolean).map((t, i) => <span key={i} style={i === 0 ? ld.tagPrimary : ld.tag}>{t}</span>)}
                 </div>
               </div>
             ) : (
               <div style={{ ...ld.packCard, background: '#F9F9F7' }}>
                 <div style={ld.eyebrow}>ÖNERİLEN PAKET</div>
-                <div style={{ fontSize: 14, color: '#9A9A9A', marginTop: 8 }}>
-                  Paket önerisi için lead verisi tamamlanmalı.
-                </div>
+                <div style={{ fontSize: 14, color: '#9A9A9A', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
               </div>
             )}
 
-            {/* Audit findings */}
             <div style={ld.findCard}>
-              <div style={ld.findHeader}>
-                <div style={ld.eyebrow}>TARAMA BULGULARI</div>
-                <div style={ld.cardTitle}>{issues.length > 0 ? `${issues.length} sinyal` : 'Temiz'}</div>
-              </div>
-              {issues.length === 0 ? (
-                <div style={{ padding: '16px 24px', color: '#9A9A9A', fontSize: 13 }}>Sorun tespit edilmedi.</div>
-              ) : issues.map((issue, i) => {
-                const sev = issueToSeverity(issue);
-                return (
-                  <div key={i} style={ld.findRow}>
-                    <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{sev}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={ld.findTitle}>{issue}</div>
-                    </div>
-                    <button style={ld.findBtn}>Düzelt →</button>
-                  </div>
-                );
-              })}
+              <div style={ld.findHeader}><div style={ld.eyebrow}>TARAMA BULGULARI</div><div style={ld.cardTitle}>{issues.length > 0 ? `${issues.length} sinyal` : 'Temiz'}</div></div>
+              {issues.length === 0
+                ? <div style={{ padding: '16px 24px', color: '#9A9A9A', fontSize: 13 }}>Sorun tespit edilmedi.</div>
+                : issues.map((issue, i) => {
+                    const sev = issueToSeverity(issue);
+                    return (
+                      <div key={i} style={ld.findRow}>
+                        <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{sev}</div>
+                        <div style={{ flex: 1 }}><div style={ld.findTitle}>{issue}</div></div>
+                        <button style={ld.findBtn}>Düzelt →</button>
+                      </div>
+                    );
+                  })
+              }
             </div>
 
-            {/* AI Report */}
             {lead.ai_report && (
               <div style={{ ...ld.findCard, marginTop: 16 }}>
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowReport(r => !r)}>
-                  <div>
-                    <div style={ld.eyebrow}>AI RAPORU</div>
-                    <div style={ld.cardTitle}>Zeplin AI Analizi {showReport ? '▲' : '▼'}</div>
-                  </div>
+                  <div><div style={ld.eyebrow}>AI RAPORU</div><div style={ld.cardTitle}>Zeplin AI Analizi {showReport ? '▲' : '▼'}</div></div>
                 </div>
-                {showReport && (
-                  <div style={{ padding: '16px 24px', fontSize: 13.5, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                    {lead.ai_report}
-                  </div>
-                )}
+                {showReport && <div style={{ padding: '16px 24px', fontSize: 13.5, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lead.ai_report}</div>}
               </div>
             )}
 
-            {/* AI Email */}
             {lead.ai_email && (
               <div style={{ ...ld.findCard, marginTop: 16 }}>
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowEmail(e => !e)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div>
-                      <div style={ld.eyebrow}>SATIŞ E-POSTASI</div>
-                      <div style={ld.cardTitle}>Hazır taslak {showEmail ? '▲' : '▼'}</div>
-                    </div>
-                    {showEmail && (
-                      <button style={ld.findBtn} onClick={e => { e.stopPropagation(); copyEmail(); }}>
-                        {copied ? '✓ Kopyalandı' : 'Kopyala'}
-                      </button>
-                    )}
+                    <div><div style={ld.eyebrow}>SATIŞ E-POSTASI</div><div style={ld.cardTitle}>Hazır taslak {showEmail ? '▲' : '▼'}</div></div>
+                    {showEmail && <button style={ld.findBtn} onClick={e => { e.stopPropagation(); copyEmail(); }}>{copied ? '✓ Kopyalandı' : 'Kopyala'}</button>}
                   </div>
                 </div>
-                {showEmail && (
-                  <div style={{ padding: '16px 24px', fontSize: 13, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: '"JetBrains Mono"', background: '#FAFAF9' }}>
-                    {lead.ai_email}
-                  </div>
-                )}
+                {showEmail && <div style={{ padding: '16px 24px', fontSize: 13, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: '"JetBrains Mono"', background: '#FAFAF9' }}>{lead.ai_email}</div>}
               </div>
             )}
           </div>
 
-          {/* Right sidebar */}
           <aside style={ld.side}>
-
-            {/* Status */}
             <div style={ld.sideCard}>
               <div style={ld.eyebrow}>DURUM</div>
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Pipeline konumu</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[
-                  { key: 'yeni',      label: 'Yeni' },
-                  { key: 'contacted', label: 'Temasta' },
-                  { key: 'converted', label: 'Kazanıldı' },
-                ].map(s => (
-                  <button
-                    key={s.key}
-                    style={{
-                      ...ld.findBtn,
-                      background: status === s.key ? '#0A0A0A' : '#fff',
-                      color:      status === s.key ? '#fff'    : '#0A0A0A',
-                      fontWeight: status === s.key ? 600       : 400,
-                    }}
-                    onClick={() => onStatusChange(s.key)}
-                  >
-                    {s.label}
-                  </button>
+                {[{ key: 'yeni', label: 'Yeni' }, { key: 'contacted', label: 'Temasta' }, { key: 'converted', label: 'Kazanıldı' }].map(s => (
+                  <button key={s.key} style={{ ...ld.findBtn, background: status === s.key ? '#0A0A0A' : '#fff', color: status === s.key ? '#fff' : '#0A0A0A', fontWeight: status === s.key ? 600 : 400 }} onClick={() => onStatusChange(s.key)}>{s.label}</button>
                 ))}
               </div>
             </div>
 
-            {/* Activity */}
             <div style={ld.sideCard}>
               <div style={ld.eyebrow}>AKTİVİTE</div>
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Zaman çizelgesi</div>
               {lead.last_analyzed && (
-                <div style={ld.actRow}>
-                  <div style={ld.actDot}/>
-                  <div style={{ flex: 1 }}>
-                    <div style={ld.actKind}>Tarama tamamlandı</div>
-                    <div style={ld.actMeta}>{fmtDate(lead.last_analyzed)} · Skor {lead.scoring.score}</div>
-                  </div>
-                </div>
+                <div style={ld.actRow}><div style={ld.actDot}/><div style={{ flex: 1 }}><div style={ld.actKind}>Tarama tamamlandı</div><div style={ld.actMeta}>{fmtDate(lead.last_analyzed)} · Skor {lead.scoring.score}</div></div></div>
               )}
-              <div style={ld.actRow}>
-                <div style={ld.actDot}/>
-                <div style={{ flex: 1 }}>
-                  <div style={ld.actKind}>Lead listesine eklendi</div>
-                  <div style={ld.actMeta}>{lead.city || '—'}</div>
-                </div>
-              </div>
+              <div style={ld.actRow}><div style={ld.actDot}/><div style={{ flex: 1 }}><div style={ld.actKind}>Lead listesine eklendi</div><div style={ld.actMeta}>{lead.city || '—'}</div></div></div>
             </div>
 
-            {/* Notes */}
             <div style={ld.sideCard}>
               <div style={ld.eyebrow}>NOT</div>
               <div style={{ ...ld.cardTitle, marginBottom: 12 }}>Hızlı not</div>
-              <textarea
-                style={ld.textarea}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="Lead hakkında not ekle..."
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                <button style={ld.btnDarkSm}>Kaydet</button>
-              </div>
+              <textarea style={ld.textarea} value={note} onChange={e => setNote(e.target.value)} placeholder="Lead hakkında not ekle..."/>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}><button style={ld.btnDarkSm}>Kaydet</button></div>
             </div>
           </aside>
         </section>
@@ -925,7 +752,7 @@
   }
 
   const ld = {
-    root:        { width: '100%', minHeight: '100vh', background: '#FAFAF9', fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', padding: '24px 48px 48px' },
+    root:        { padding: '24px 48px 48px', overflowY: 'auto', flex: 1, fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', background: '#FAFAF9', minWidth: 0 },
     top:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #ECECEC', marginBottom: 32 },
     crumbs:      { display: 'flex', gap: 10, fontSize: 13, color: '#9A9A9A', alignItems: 'center', flexWrap: 'wrap' },
     crumb:       { fontFamily: '"JetBrains Mono"' },
@@ -943,7 +770,6 @@
     urls:        { display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' },
     urlChip:     { padding: '8px 14px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 99, fontSize: 12.5, color: '#3A3A3A', cursor: 'pointer', fontFamily: '"JetBrains Mono"' },
     heroRight:   { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 },
-    scoreCircle: { display: 'grid', placeItems: 'center' },
     gradePill:   { width: 56, height: 56, borderRadius: 14, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: '"Inter Tight"', fontSize: 26, fontWeight: 600 },
     nextAction:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24, padding: '20px 24px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, marginBottom: 28 },
     naEyebrow:   { fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#A14C20' },
@@ -959,7 +785,6 @@
     stat:        { padding: '0 14px', borderRight: '1px solid #ECECEC' },
     statLabel:   { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
     statVal:     { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.6, marginTop: 8 },
-    statDelta:   { fontSize: 11, fontFamily: '"JetBrains Mono"', marginTop: 4 },
     packCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22, marginBottom: 16 },
     packTitle:   { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.4, margin: '8px 0 6px' },
     packDesc:    { fontSize: 13, color: '#6B6B6B', maxWidth: 480 },
@@ -974,7 +799,6 @@
     findRow:     { display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid #F4F4F2' },
     sevPill:     { fontSize: 10.5, fontFamily: '"JetBrains Mono"', padding: '4px 10px', borderRadius: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, minWidth: 60, textAlign: 'center', flexShrink: 0 },
     findTitle:   { fontSize: 14, fontWeight: 600 },
-    findDesc:    { fontSize: 12.5, color: '#6B6B6B', marginTop: 2 },
     findBtn:     { padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 7, fontSize: 12, color: '#0A0A0A', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
     sideCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22 },
     actRow:      { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' },
@@ -983,6 +807,248 @@
     actMeta:     { fontSize: 11.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginTop: 2 },
     textarea:    { width: '100%', minHeight: 80, padding: 12, border: '1px solid #ECECEC', borderRadius: 10, fontSize: 13, resize: 'vertical', boxSizing: 'border-box', color: '#0A0A0A', background: '#FAFAF9', outline: 'none' },
   };
+
+  // ── Pipeline View ──────────────────────────────────────────────────────────
+
+  function PipelineView({ leads, onSelect }) {
+    const [tick, setTick] = React.useState(0);
+    const dragRef = React.useRef('');
+
+    function refresh() { setTick(t => t + 1); }
+
+    const byStage = {};
+    PIPE_STAGES.forEach(s => { byStage[s.key] = []; });
+    leads.forEach(l => { const stage = getPipelineStage(l); (byStage[stage] = byStage[stage] || []).push(l); });
+
+    const won = byStage['won'].length;
+    const active = ['emailed','replied','called','meeting'].reduce((a, k) => a + (byStage[k]||[]).length, 0);
+
+    function handleDrop(e, stageKey) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const name = dragRef.current;
+      if (!name) return;
+      const stageObj = PIPE_STAGES.find(s => s.key === stageKey);
+      if (!stageObj) return;
+      if (stageObj.actions.length) {
+        addOutreach(name, stageObj.actions[0], new Date().toISOString().slice(0,16), '');
+      } else if (stageKey === 'new') {
+        setStatusLS(name, 'yeni');
+      } else if (stageKey === 'won') {
+        addOutreach(name, 'deal_won', new Date().toISOString().slice(0,16), '');
+      } else if (stageKey === 'lost') {
+        addOutreach(name, 'deal_lost', new Date().toISOString().slice(0,16), '');
+      }
+      dragRef.current = '';
+      refresh();
+    }
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
+        <div style={pv.header}>
+          <div>
+            <div style={pv.pageEyebrow}>PIPELINE</div>
+            <h1 style={pv.pageTitle}>Satış kanalı</h1>
+            <p style={pv.pageSub}>{leads.length} lead · {won} kazanıldı · {active} aktif temasta</p>
+          </div>
+        </div>
+        <div style={pv.board}>
+          {PIPE_STAGES.map(stage => {
+            const cards = byStage[stage.key] || [];
+            return (
+              <div
+                key={stage.key}
+                style={pv.col}
+                className="pipe-col"
+                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
+                onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
+                onDrop={e => handleDrop(e, stage.key)}
+              >
+                <div style={pv.colHead}>
+                  <span style={{ ...pv.colDot, background: stage.color }}/>
+                  <span style={pv.colTitle}>{stage.label}</span>
+                  <span style={pv.colCnt}>{cards.length}</span>
+                </div>
+                <div style={pv.cards}>
+                  {cards.map(l => {
+                    const globalIdx = leads.indexOf(l);
+                    const val = l.estimated_value_tl || 0;
+                    return (
+                      <div
+                        key={l.name}
+                        style={pv.card}
+                        className="pipe-card"
+                        draggable
+                        onDragStart={e => { dragRef.current = l.name; e.currentTarget.classList.add('dragging'); }}
+                        onDragEnd={e => e.currentTarget.classList.remove('dragging')}
+                        onClick={() => onSelect(globalIdx)}
+                      >
+                        <div style={pv.cardName}>{l.name}</div>
+                        <div style={pv.cardMeta}>
+                          <span style={{ ...pv.cardScore, background: stage.color + '22', color: stage.color }}>{l.scoring.grade} {l.scoring.score}</span>
+                          {val > 0 && <span style={pv.cardVal}>~{fmt(val)} ₺</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {cards.length === 0 && <div style={pv.empty}>Buraya sürükle</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const pv = {
+    header:      { padding: '28px 40px 20px', borderBottom: '1px solid #ECECEC', background: '#fff' },
+    pageEyebrow: { fontSize: 11, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#9A9A9A', marginBottom: 8 },
+    pageTitle:   { fontFamily: '"Inter Tight"', fontSize: 36, fontWeight: 700, letterSpacing: -1.2, margin: 0 },
+    pageSub:     { fontSize: 13, color: '#6B6B6B', marginTop: 6, fontFamily: '"JetBrains Mono"' },
+    board:       { display: 'flex', gap: 10, padding: '24px 32px 40px', overflowX: 'auto', alignItems: 'flex-start', flex: 1 },
+    col:         { minWidth: 200, flex: '0 0 200px', background: '#F4F4F2', borderRadius: 14, padding: 12, display: 'flex', flexDirection: 'column', gap: 0 },
+    colHead:     { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 },
+    colDot:      { width: 8, height: 8, borderRadius: 99, flexShrink: 0 },
+    colTitle:    { fontSize: 12.5, fontWeight: 600, flex: 1 },
+    colCnt:      { fontSize: 11, fontFamily: '"JetBrains Mono"', background: 'rgba(0,0,0,0.08)', padding: '2px 7px', borderRadius: 99, color: '#3A3A3A' },
+    cards:       { display: 'flex', flexDirection: 'column', gap: 8 },
+    card:        { background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' },
+    cardName:    { fontSize: 13, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 },
+    cardMeta:    { display: 'flex', gap: 6, flexWrap: 'wrap' },
+    cardScore:   { fontSize: 11, fontFamily: '"JetBrains Mono"', fontWeight: 700, padding: '2px 8px', borderRadius: 6 },
+    cardVal:     { fontSize: 11, color: '#1F8B3B', fontFamily: '"JetBrains Mono"' },
+    empty:       { fontSize: 12, color: '#C0C0BC', textAlign: 'center', padding: '20px 0', border: '1.5px dashed #E0E0DC', borderRadius: 10 },
+  };
+
+  // ── Hizmetler View ─────────────────────────────────────────────────────────
+
+  function HizmetlerView({ leads }) {
+    const svcMap = {};
+    leads.forEach(l => {
+      (l.matched_services || []).forEach(svc => {
+        if (!svcMap[svc.slug]) svcMap[svc.slug] = { svc, leads: [], totalVal: 0 };
+        svcMap[svc.slug].leads.push(l);
+        const mid = ((svc.price_min || 0) + (svc.price_max || 0)) / 2;
+        svcMap[svc.slug].totalVal += svc.monthly ? mid : mid / 12;
+      });
+    });
+
+    const entries = services.map(svc => {
+      const active = svcMap[svc.slug] || { leads: [], totalVal: 0 };
+      return { svc, leads: active.leads, totalVal: active.totalVal };
+    }).sort((a, b) => b.leads.length - a.leads.length);
+
+    const totalMonthly = Math.round(entries.reduce((a, e) => a + e.totalVal, 0));
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
+        <div style={pv.header}>
+          <div>
+            <div style={pv.pageEyebrow}>HİZMETLER</div>
+            <h1 style={pv.pageTitle}>Zeplin Media Hizmetleri</h1>
+            <p style={pv.pageSub}>{entries.length} hizmet · {entries.reduce((a,e)=>a+e.leads.length,0)} aktif eşleşme · ~{totalMonthly.toLocaleString('tr-TR')} ₺/ay potansiyel</p>
+          </div>
+        </div>
+        <div style={hv.grid}>
+          {entries.map(({ svc, leads: matched, totalVal }) => (
+            <div key={svc.slug} style={hv.card}>
+              <div style={hv.cardTop}>
+                <span style={{ ...hv.badge, background: svc.monthly ? '#E8EEFF' : '#EAFBD3', color: svc.monthly ? '#1F3A8A' : '#1F6B3B' }}>
+                  {svc.monthly ? 'Aylık' : 'Tek Seferlik'}
+                </span>
+                <span style={{ ...hv.badge, background: '#F4F4F2', color: '#3A3A3A' }}>{svc.category || 'Genel'}</span>
+              </div>
+              <div style={hv.cardName}>{svc.name}</div>
+              {svc.desc && <div style={hv.cardDesc}>{svc.desc}</div>}
+              {svc.detects && <div style={hv.detects}><strong style={{ color: '#3A3A3A' }}>Bot tespit eder:</strong> {svc.detects}</div>}
+              <div style={hv.cardStats}>
+                <div><div style={hv.statVal}>{matched.length}</div><div style={hv.statLbl}>Eşleşen Lead</div></div>
+                <div><div style={{ ...hv.statVal, color: '#1F8B3B' }}>~{Math.round(totalVal).toLocaleString('tr-TR')} ₺</div><div style={hv.statLbl}>{svc.monthly ? 'Aylık' : 'Yıllık'}</div></div>
+              </div>
+              <div style={hv.price}>₺{(svc.price_min||0).toLocaleString('tr-TR')} – ₺{(svc.price_max||0).toLocaleString('tr-TR')} <span style={{ fontSize: 11, color: '#9A9A9A', fontWeight: 600 }}>{svc.monthly ? '/ ay' : '/ proje'}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const hv = {
+    grid:     { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14, padding: '24px 32px 40px' },
+    card:     { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 },
+    cardTop:  { display: 'flex', gap: 6 },
+    badge:    { fontSize: 10.5, fontFamily: '"JetBrains Mono"', fontWeight: 600, padding: '3px 9px', borderRadius: 99 },
+    cardName: { fontFamily: '"Inter Tight"', fontSize: 17, fontWeight: 600, letterSpacing: -0.3, marginTop: 4 },
+    cardDesc: { fontSize: 12.5, color: '#6B6B6B', lineHeight: 1.45 },
+    detects:  { fontSize: 12, color: '#9A9A9A', background: '#F9F9F7', padding: '8px 12px', borderRadius: 8, lineHeight: 1.4 },
+    cardStats:{ display: 'flex', gap: 24, paddingTop: 10, borderTop: '1px solid #F4F4F2', marginTop: 4 },
+    statVal:  { fontFamily: '"Inter Tight"', fontSize: 20, fontWeight: 700, letterSpacing: -0.5 },
+    statLbl:  { fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginTop: 2 },
+    price:    { fontFamily: '"Inter Tight"', fontSize: 15, fontWeight: 600, color: '#0A0A0A', marginTop: 4 },
+  };
+
+  // ── Raporlar View ──────────────────────────────────────────────────────────
+
+  function RaporlarView({ leads, statuses, onSelect }) {
+    const [sort, setSort] = React.useState('score');
+    const sorted = React.useMemo(() => {
+      const arr = leads.slice();
+      if (sort === 'score')    arr.sort((a, b) => b.scoring.score - a.scoring.score);
+      if (sort === 'value')    arr.sort((a, b) => (b.estimated_value_tl||0) - (a.estimated_value_tl||0));
+      if (sort === 'priority') arr.sort((a, b) => (b.sales_priority_score||0) - (a.sales_priority_score||0));
+      return arr;
+    }, [leads, sort]);
+
+    const totalPipeline = leads.reduce((a, l) => a + (l.estimated_value_tl||0), 0);
+    const readyToContact = leads.filter(l => l.phone || l.address).length;
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
+        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={pv.pageEyebrow}>RAPORLAR</div>
+            <h1 style={pv.pageTitle}>Lead rapor görünümü</h1>
+            <p style={pv.pageSub}>{leads.length} lead · Ulaşılabilir: {readyToContact} · Pipeline: ~{totalPipeline.toLocaleString('tr-TR')} ₺</p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: '#6B6B6B', fontFamily: '"JetBrains Mono"' }}>Sırala:</span>
+            {[['score','Puan'],['value','Değer'],['priority','Öncelik']].map(([k,l]) => (
+              <button key={k} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: sort===k ? '#0A0A0A' : '#fff', color: sort===k ? '#fff' : '#3A3A3A', fontSize: 12, cursor: 'pointer', fontWeight: sort===k ? 600 : 400 }} onClick={() => setSort(k)}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '24px 32px 40px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {sorted.map((l, i) => {
+            const originalIdx = leads.indexOf(l);
+            const st = statuses[l.name] || 'yeni';
+            const statusColors = { yeni: '#FFE0E0', contacted: '#E8EEFF', converted: '#EAFBD3' };
+            const statusTextColors = { yeni: '#A12020', contacted: '#1F3A8A', converted: '#1F6B3B' };
+            const statusLabels = { yeni: 'Yeni', contacted: 'Temasta', converted: 'Kazanıldı' };
+            return (
+              <div key={l.name} style={{ background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: '18px 24px', cursor: 'pointer', display: 'grid', gridTemplateColumns: '60px 1fr 180px 120px', gap: 20, alignItems: 'center' }} onClick={() => onSelect(originalIdx)}>
+                <div style={{ fontFamily: '"Inter Tight"', fontSize: 28, fontWeight: 700, letterSpacing: -1, color: '#0A0A0A' }}>{l.scoring.score}<span style={{ fontSize: 12, color: '#9A9A9A', fontWeight: 400 }}>/100</span></div>
+                <div>
+                  <div style={{ fontFamily: '"Inter Tight"', fontSize: 16, fontWeight: 600, letterSpacing: -0.3 }}>{l.name}</div>
+                  <div style={{ fontSize: 12.5, color: '#6B6B6B', marginTop: 4 }}>{l.city} · {l.scoring.grade} sınıfı</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    {(l.scoring.issues || []).slice(0, 3).map((t, ti) => (
+                      <span key={ti} style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#F4F4F2', padding: '3px 9px', borderRadius: 99, color: '#3A3A3A' }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: '"Inter Tight"', fontSize: 16, fontWeight: 600, color: '#1F8B3B' }}>{l.estimated_value_tl > 0 ? `~${fmt(l.estimated_value_tl)} ₺` : '—'}</div>
+                  {l.next_action && <div style={{ fontSize: 11.5, color: '#6B6B6B', marginTop: 4 }}>{l.next_action}</div>}
+                </div>
+                <div style={{ background: statusColors[st], color: statusTextColors[st], fontSize: 11, fontFamily: '"JetBrains Mono"', fontWeight: 600, padding: '6px 12px', borderRadius: 99, textAlign: 'center' }}>{statusLabels[st]}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   // ── App ────────────────────────────────────────────────────────────────────
 
@@ -1001,29 +1067,46 @@
       setStatuses(getStatuses());
     }
 
-    if (view === 'detail') {
-      const lead = sorted[selectedIdx];
-      return (
-        <LeadDetail
-          lead={lead}
-          idx={selectedIdx}
-          total={sorted.length}
-          status={statuses[lead.name] || 'yeni'}
-          onStatusChange={s => handleStatusChange(lead.name, s)}
-          onBack={() => setView('cockpit')}
-          onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
-          onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}
-        />
-      );
+    function navigate(v) {
+      if (v === 'leads') { setView('cockpit'); return; }
+      if (v === 'audit') { setView('cockpit'); return; }
+      if (v === 'settings') { return; }
+      setView(v);
+    }
+
+    function selectLead(i) { setSelectedIdx(i); setView('detail'); }
+
+    function renderContent() {
+      switch (view) {
+        case 'detail':
+          return (
+            <LeadDetail
+              lead={sorted[selectedIdx]}
+              idx={selectedIdx}
+              total={sorted.length}
+              status={statuses[sorted[selectedIdx].name] || 'yeni'}
+              onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
+              onBack={() => setView('cockpit')}
+              onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
+              onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}
+            />
+          );
+        case 'pipeline':
+          return <PipelineView leads={sorted} onSelect={selectLead}/>;
+        case 'hizmetler':
+          return <HizmetlerView leads={leads} />;
+        case 'raporlar':
+          return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
+        default:
+          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead}/>;
+      }
     }
 
     return (
-      <V1Plus
-        leads={sorted}
-        statuses={statuses}
-        onSelect={i => { setSelectedIdx(i); setView('detail'); }}
-        onStatusChange={handleStatusChange}
-      />
+      <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+        <Sidebar view={view} onNav={navigate} leadCount={leads.length}/>
+        {renderContent()}
+      </div>
     );
   }
 
