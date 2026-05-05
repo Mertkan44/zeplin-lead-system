@@ -163,14 +163,11 @@
   function Sidebar({ view, onNav, leadCount }) {
     const navItems = [
       { key: 'cockpit',   ic: 'cockpit',   label: 'Cockpit',   badge: leadCount },
-      { key: 'leads',     ic: 'leads',     label: 'Leadler' },
+      { key: 'raporlar',  ic: 'leads',     label: 'Leadler' },
       { key: 'pipeline',  ic: 'pipeline',  label: 'Pipeline' },
-      { key: 'audit',     ic: 'audit',     label: 'Audit' },
-      { key: 'raporlar',  ic: 'raporlar',  label: 'Raporlar' },
       { key: 'hizmetler', ic: 'hizmetler', label: 'Hizmetler' },
-      { key: 'settings',  ic: 'settings',  label: 'Ayarlar' },
     ];
-    const currentView = view === 'detail' ? 'leads' : view;
+    const currentView = view === 'detail' ? 'raporlar' : view;
 
     return (
       <aside style={sb.sidebar}>
@@ -1067,12 +1064,7 @@
       setStatuses(getStatuses());
     }
 
-    function navigate(v) {
-      if (v === 'leads') { setView('cockpit'); return; }
-      if (v === 'audit') { setView('cockpit'); return; }
-      if (v === 'settings') { return; }
-      setView(v);
-    }
+    function navigate(v) { setView(v); }
 
     function selectLead(i) { setSelectedIdx(i); setView('detail'); }
 
