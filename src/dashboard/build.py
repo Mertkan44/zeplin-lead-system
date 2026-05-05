@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from src.lead_schema import format_issues, validate_leads
 from src.services import ZEPLIN_SERVICES
 
 DEFAULT_DATA = ROOT / "leads_final.json"
@@ -20,6 +21,9 @@ def build_dashboard(
     output_path: Path = DEFAULT_OUTPUT,
 ) -> None:
     data = json.loads(data_path.read_text(encoding="utf-8"))
+    issues = validate_leads(data)
+    if issues:
+        raise ValueError("Invalid lead data:\n" + format_issues(issues, limit=50))
     payload = base64.b64encode(json.dumps(data, ensure_ascii=True).encode("utf-8")).decode("ascii")
     services_payload = base64.b64encode(
         json.dumps(ZEPLIN_SERVICES, ensure_ascii=True).encode("utf-8")

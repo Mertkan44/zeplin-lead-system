@@ -26,10 +26,14 @@
   <div id="root"></div>
 
   <script>
-    var leads    = JSON.parse(atob('__DATA__'));
+    var BOOTSTRAP_LEADS = JSON.parse(atob('__DATA__'));
+    var leads    = BOOTSTRAP_LEADS.slice();
     var services = JSON.parse(atob('__SERVICES__'));
     var STATUS_KEY   = 'zeplin_lead_statuses_v2';
     var OUTREACH_KEY = 'zeplin_outreach_v1';
+    var remoteStatuses = {};
+    var outreachEvents = [];
+    var apiReady = false;
   </script>
 
   <script type="text/babel">
@@ -51,27 +55,108 @@
     } catch(e) { return str; }
   }
 
-  function getStatuses() {
+  function readLocalStatuses() {
     try { return JSON.parse(localStorage.getItem(STATUS_KEY) || '{}'); } catch(e) { return {}; }
   }
+  function writeLocalStatuses(obj) {
+    localStorage.setItem(STATUS_KEY, JSON.stringify(obj || {}));
+  }
+  function getStatuses() {
+    return Object.assign({}, readLocalStatuses(), remoteStatuses);
+  }
+  function persistStatus(name, s) {
+    if (!apiReady) return Promise.resolve();
+    return fetch('/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, status: s }),
+    }).then(res => {
+      if (!res.ok) throw new Error('status_save_failed');
+      return res.json();
+    }).catch(err => {
+      apiReady = false;
+      console.warn('Status save fallback:', err);
+    });
+  }
   function setStatusLS(name, s) {
-    const a = getStatuses(); a[name] = s;
-    localStorage.setItem(STATUS_KEY, JSON.stringify(a));
+    const next = getStatuses();
+    next[name] = s;
+    remoteStatuses[name] = s;
+    writeLocalStatuses(next);
+    return persistStatus(name, s);
   }
 
-  function getOutreach() {
+  function readLocalOutreach() {
     try { return JSON.parse(localStorage.getItem(OUTREACH_KEY) || '[]'); } catch(e) { return []; }
   }
-  function saveOutreach(arr) { localStorage.setItem(OUTREACH_KEY, JSON.stringify(arr)); }
+  function normalizeOutreachEvent(item) {
+    if (!item) return null;
+    return {
+      lead: item.lead || item.lead_name || '',
+      action: item.action || 'note',
+      date: item.date || item.happened_at || item.created_at || new Date().toISOString(),
+      note: item.note || '',
+      ts: item.ts || item.id || Date.now(),
+    };
+  }
+  function getOutreach() {
+    return outreachEvents.length ? outreachEvents : readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
+  }
+  function saveOutreach(arr) {
+    outreachEvents = (arr || []).map(normalizeOutreachEvent).filter(Boolean);
+    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
+  }
   function getLeadEvents(name) {
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
   }
+  function persistOutreachEvent(evt) {
+    if (!apiReady) return Promise.resolve();
+    return fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lead_name: evt.lead,
+        action: evt.action,
+        happened_at: evt.date,
+        note: evt.note,
+      }),
+    }).then(res => {
+      if (!res.ok) throw new Error('outreach_save_failed');
+      return res.json();
+    }).catch(err => {
+      apiReady = false;
+      console.warn('Outreach save fallback:', err);
+    });
+  }
   function addOutreach(name, action, date, note) {
     const arr = getOutreach();
-    arr.push({ lead: name, action, date, note, ts: Date.now() });
+    const evt = { lead: name, action, date, note, ts: Date.now() };
+    arr.push(evt);
     saveOutreach(arr);
     const act = ACTIONS[action];
     if (act && act.status) setStatusLS(name, act.status);
+    return persistOutreachEvent(evt);
+  }
+
+  function applyRemoteLeads(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    leads = rows.slice();
+    remoteStatuses = {};
+    leads.forEach(l => { remoteStatuses[l.name] = l.status || 'yeni'; });
+    writeLocalStatuses(getStatuses());
+  }
+
+  function applyRemoteOutreach(rows) {
+    if (!Array.isArray(rows)) return;
+    outreachEvents = rows.map(normalizeOutreachEvent).filter(Boolean);
+    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
+  }
+
+  function fetchJSON(url, options) {
+    return fetch(url, options || {}).then(res => {
+      if (!res.ok) throw new Error(`request_failed_${res.status}`);
+      return res.json();
+    });
   }
 
   const ACTIONS = {
@@ -569,7 +654,7 @@
     return ({ Kritik: { background: '#FFE0E0', color: '#A12020' }, Yüksek: { background: '#FFE9D9', color: '#A14C20' }, Orta: { background: '#FFF6CC', color: '#7A5A00' }, Düşük: { background: '#E8EEFF', color: '#1F3A8A' }, Bilgi: { background: '#F4F4F2', color: '#3A3A3A' } })[s] || { background: '#F4F4F2', color: '#3A3A3A' };
   }
 
-  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext }) {
+  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange }) {
     const [showReport, setShowReport] = React.useState(false);
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
@@ -581,6 +666,15 @@
 
     function copyEmail() {
       navigator.clipboard.writeText(lead.ai_email || '').then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    }
+
+    function saveNote() {
+      const value = note.trim();
+      if (!value) return;
+      addOutreach(lead.name, 'note', new Date().toISOString(), value).finally(() => {
+        setNote('');
+        if (onDataChange) onDataChange();
+      });
     }
 
     return (
@@ -751,7 +845,7 @@
               <div style={ld.eyebrow}>NOT</div>
               <div style={{ ...ld.cardTitle, marginBottom: 12 }}>Hızlı not</div>
               <textarea style={ld.textarea} value={note} onChange={e => setNote(e.target.value)} placeholder="Lead hakkında not ekle..."/>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}><button style={ld.btnDarkSm}>Kaydet</button></div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}><button style={ld.btnDarkSm} onClick={saveNote}>Kaydet</button></div>
             </div>
           </aside>
         </section>
@@ -818,7 +912,7 @@
 
   // ── Pipeline View ──────────────────────────────────────────────────────────
 
-  function PipelineView({ leads, onSelect }) {
+  function PipelineView({ leads, onSelect, onDataChange }) {
     const [tick, setTick] = React.useState(0);
     const dragRef = React.useRef('');
 
@@ -848,6 +942,7 @@
         addOutreach(name, 'deal_lost', new Date().toISOString().slice(0,16), '');
       }
       dragRef.current = '';
+      if (onDataChange) onDataChange();
       refresh();
     }
 
@@ -1063,23 +1158,56 @@
   function App() {
     const [view,        setView]        = React.useState('cockpit');
     const [selectedIdx, setSelectedIdx] = React.useState(0);
+    const [leadRows,    setLeadRows]    = React.useState(() => leads.slice());
     const [statuses,    setStatuses]    = React.useState(() => getStatuses());
 
     const sorted = React.useMemo(
-      () => [...leads].sort((a, b) => b.scoring.score - a.scoring.score),
-      []
+      () => [...leadRows].sort((a, b) => b.scoring.score - a.scoring.score),
+      [leadRows]
     );
 
+    function syncSharedState() {
+      setLeadRows(leads.slice());
+      setStatuses({ ...getStatuses() });
+    }
+
     function handleStatusChange(name, s) {
-      setStatusLS(name, s);
-      setStatuses(getStatuses());
+      setStatusLS(name, s).finally(syncSharedState);
     }
 
     function navigate(v) { setView(v); }
 
     function selectLead(i) { setSelectedIdx(i); setView('detail'); }
 
+    React.useEffect(() => {
+      Promise.all([
+        fetchJSON('/api/leads?limit=500').then(rows => {
+          apiReady = true;
+          applyRemoteLeads(rows);
+        }).catch(err => {
+          apiReady = false;
+          console.warn('Lead API fallback:', err);
+        }),
+        fetchJSON('/api/outreach?limit=1000').then(rows => {
+          apiReady = true;
+          applyRemoteOutreach(rows);
+        }).catch(err => {
+          console.warn('Outreach API fallback:', err);
+          outreachEvents = readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
+        }),
+      ]).finally(syncSharedState);
+    }, []);
+
+    React.useEffect(() => {
+      if (selectedIdx > Math.max(sorted.length - 1, 0)) {
+        setSelectedIdx(0);
+      }
+    }, [selectedIdx, sorted.length]);
+
     function renderContent() {
+      if (!sorted.length) {
+        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: '#6B6B6B', background: '#FAFAF9' }}>Lead verisi bulunamadı.</div>;
+      }
       switch (view) {
         case 'detail':
           return (
@@ -1089,15 +1217,16 @@
               total={sorted.length}
               status={statuses[sorted[selectedIdx].name] || 'yeni'}
               onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
+              onDataChange={syncSharedState}
               onBack={() => setView('cockpit')}
               onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
               onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}
             />
           );
         case 'pipeline':
-          return <PipelineView leads={sorted} onSelect={selectLead}/>;
+          return <PipelineView leads={sorted} onSelect={selectLead} onDataChange={syncSharedState}/>;
         case 'hizmetler':
-          return <HizmetlerView leads={leads} />;
+          return <HizmetlerView leads={leadRows} />;
         case 'raporlar':
           return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
         default:
@@ -1107,7 +1236,7 @@
 
     return (
       <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
-        <Sidebar view={view} onNav={navigate} leadCount={leads.length}/>
+        <Sidebar view={view} onNav={navigate} leadCount={leadRows.length}/>
         {renderContent()}
       </div>
     );

@@ -18,3 +18,15 @@ def groq_client() -> Groq:
     if not api_key:
         raise RuntimeError("GROQ_API_KEY is missing. Copy .env.example to .env and add the key.")
     return Groq(api_key=api_key)
+
+
+def env(name: str, default: str | None = None) -> str | None:
+    load_env()
+    return os.getenv(name, default)
+
+
+def required_env(name: str) -> str:
+    value = env(name)
+    if not value:
+        raise RuntimeError(f"{name} is missing. Copy .env.example to .env and add the value.")
+    return value

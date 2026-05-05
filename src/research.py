@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import re
+from urllib.parse import urljoin, urlparse
+
+import httpx
+from bs4 import BeautifulSoup
+
+
+def _text(node) -> str:
+    return " ".join(node.get_text(" ", strip=True).split())
+
+
+def _same_domain(base: str, href: str) -> bool:
+    try:
+        return urlparse(base).netloc == urlparse(urljoin(base, href)).netloc
+    except Exception:
+        return False
+
+
+def research_website(url: str | None, *, max_links: int = 8) -> dict:
+    empty = {
+        "status": "missing",
+        "url": url,
+        "title": None,
+        "meta_description": None,
+        "headings": [],
+        "internal_links": [],
+        "contact_signals": [],
+        "content_sample": None,
+    }
+    if not url:
+        return empty
+
+    try:
+        with httpx.Client(timeout=15, follow_redirects=True) as client:
+            response = client.get(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+                },
+            )
+            response.raise_for_status()
+    except Exception as exc:
+        return {**empty, "status": "error", "error": str(exc)[:160]}
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    title = _text(soup.title) if soup.title else None
+    meta = soup.find("meta", attrs={"name": re.compile("^description$", re.I)})
+    meta_description = meta.get("content", "").strip() if meta else None
+    headings = [_text(h) for h in soup.find_all(["h1", "h2"])[:8]]
+    links = []
+    for a in soup.find_all("a", href=True):
+        href = a.get("href")
+        label = _text(a)
+        if not href or not label or not _same_domain(url, href):
+            continue
+        full = urljoin(url, href)
+        if full not in [item["url"] for item in links]:
+            links.append({"label": label[:80], "url": full})
+        if len(links) >= max_links:
+            break
+
+    raw_text = _text(soup)
+    lower = raw_text.lower()
+    contact_signals = []
+    for label, pattern in {
+        "phone": r"(\+90|0)\s?\d{3}[\s)-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}",
+        "email": r"[\w.+-]+@[\w-]+\.[\w.-]+",
+        "reservation": r"rezervasyon|reservation|randevu",
+        "delivery": r"yemeksepeti|getir|paket servis|online sipariş",
+        "whatsapp": r"whatsapp|wa\.me",
+    }.items():
+        if re.search(pattern, lower, re.I):
+            contact_signals.append(label)
+
+    return {
+        "status": "ok",
+        "url": str(response.url),
+        "title": title,
+        "meta_description": meta_description,
+        "headings": [h for h in headings if h][:8],
+        "internal_links": links,
+        "contact_signals": contact_signals,
+        "content_sample": raw_text[:1200] if raw_text else None,
+    }
+
+
+def enrich_research(lead: dict) -> dict:
+    enriched = dict(lead)
+    website = lead.get("website") or {}
+    enriched["research"] = {
+        "website": research_website(website.get("website_url")),
+    }
+    return enriched

@@ -12,6 +12,14 @@ venv/bin/playwright install chromium
 ```
 
 Add `GROQ_API_KEY` to `.env` for AI report generation.
+To use DeepSeek instead, set `AI_PROVIDER=deepseek` and add `DEEPSEEK_API_KEY`.
+DeepSeek defaults to `deepseek-v4-pro`.
+The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODEL`
+and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
+`.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
+
+For Supabase persistence on the free plan, create a project, run `supabase/schema.sql`
+in the SQL editor, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.env`.
 
 ## Common Commands
 
@@ -19,6 +27,12 @@ Normalize existing leads and rebuild the dashboard:
 
 ```bash
 venv/bin/python scripts/migrate_leads.py --write --build
+```
+
+Validate lead data before publishing:
+
+```bash
+venv/bin/python scripts/validate_data.py
 ```
 
 Run the local security guard before committing:
@@ -37,6 +51,29 @@ Scan, rebuild, commit, and push:
 
 ```bash
 venv/bin/python besiktas.py --query restoran --city "Istanbul Besiktas" --max 5 --push
+```
+
+Scan and sync the merged lead set to Supabase:
+
+```bash
+venv/bin/python besiktas.py --query restoran --city "Istanbul Besiktas" --max 5 --resume --deep-research --sync-supabase
+```
+
+Sync the current local `leads_final.json` to Supabase:
+
+```bash
+venv/bin/python scripts/sync_supabase.py
+```
+
+Use the technical CLI for modular operations:
+
+```bash
+venv/bin/python scripts/zeplin.py validate
+venv/bin/python scripts/zeplin.py research --limit 5
+venv/bin/python scripts/zeplin.py ai --limit 5
+venv/bin/python scripts/zeplin.py sync
+venv/bin/python scripts/zeplin.py leads --limit 10
+venv/bin/python scripts/zeplin.py cache
 ```
 
 Serve the dashboard locally:
