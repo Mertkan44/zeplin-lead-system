@@ -19,6 +19,7 @@ from src.pipeline_state import get_stage, put_stage
 from src.research import enrich_research
 from src.services import match_services, estimate_value
 from src.storage.supabase import insert_run_log, is_enabled as supabase_enabled, upsert_leads
+from scripts.migrate_leads import normalize_lead
 
 QUERY = "restoran"
 CITY = "Istanbul Besiktas"
@@ -76,6 +77,7 @@ async def run(
     deep_research: bool,
     force_ai: bool,
 ):
+    failures = []
     # 1. Scrape
     raw = await scrape(query, city, max_results)
     print(f"\n📋 {len(raw)} işletme bulundu:")
@@ -160,21 +162,41 @@ async def run(
             audited[idx] = cached_ai
             print("    ↩️  resume: AI cache kullanıldı")
             continue
-        if deep_research:
-            lead = enrich_research(lead)
-        lead["research_brief"] = generate_research_brief(lead, force=force_ai)
-        lead["ai_report"] = generate_report(lead, force=force_ai)
-        lead["ai_email"] = generate_email(lead, force=force_ai)
-        lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-        audited[idx] = lead
-        put_stage(lead["name"], "ai", lead, city=city, query=query)
+        try:
+            if deep_research:
+                lead = enrich_research(lead)
+            lead["research_brief"] = generate_research_brief(lead, force=force_ai)
+            lead["ai_report"] = generate_report(lead, force=force_ai)
+            lead["ai_email"] = generate_email(lead, force=force_ai)
+            lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+            lead = normalize_lead(lead)
+            audited[idx] = lead
+            put_stage(lead["name"], "ai", lead, city=city, query=query)
+        except Exception as exc:
+            lead = normalize_lead(lead)
+            lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+            audited[idx] = lead
+            failures.append({"name": lead["name"], "stage": "ai", "error": str(exc)})
+            print(f"    ⚠️ AI fallback ile devam: {exc}")
+            put_stage(lead["name"], "ai", lead, city=city, query=query)
 
     # 4. Birleştir
     existing = json.load(open('leads_final.json', encoding='utf-8'))
-    existing_names = {l['name'] for l in existing}
-    new_ones = [l for l in audited if l['name'] not in existing_names]
-    merged = existing + new_ones
-    print(f"\n📊 {len(existing)} mevcut + {len(new_ones)} yeni = {len(merged)} toplam")
+    existing_map = {lead["name"]: lead for lead in existing}
+    new_count = 0
+    updated_count = 0
+    for lead in audited:
+        normalized = normalize_lead(lead)
+        if normalized["name"] in existing_map:
+            prior = existing_map[normalized["name"]]
+            if prior.get("status") and not normalized.get("status"):
+                normalized["status"] = prior["status"]
+            updated_count += 1
+        else:
+            new_count += 1
+        existing_map[normalized["name"]] = normalized
+    merged = list(existing_map.values())
+    print(f"\n📊 {len(existing)} mevcut + {new_count} yeni / {updated_count} güncel = {len(merged)} toplam")
 
     # 5. Dashboard & push
     update_dashboard(merged)
@@ -183,9 +205,17 @@ async def run(
             synced = upsert_leads(merged)
             insert_run_log(
                 kind="scan",
-                status="success",
+                status="partial_success" if failures else "success",
                 message=f"{city} scan synced {synced} leads",
-                meta={"query": query, "city": city, "max_results": max_results, "synced": synced},
+                meta={
+                    "query": query,
+                    "city": city,
+                    "max_results": max_results,
+                    "synced": synced,
+                    "new_count": new_count,
+                    "updated_count": updated_count,
+                    "failures": failures,
+                },
             )
             print(f"🟢 Supabase sync tamamlandı: {synced} lead")
         else:
@@ -194,6 +224,8 @@ async def run(
         git_push(f"add {len(new_ones)} {city} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     else:
         print("ℹ️ Push atlanıldı. Commit/push için --push kullan.")
+    if failures:
+        print(f"⚠️ {len(failures)} lead AI fallback ile tamamlandı.")
     print(f"\n🎉 Tamamlandı!")
 
 def parse_args():
