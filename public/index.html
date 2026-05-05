@@ -363,9 +363,20 @@
           <div style={{ ...vp.kpiCard, background: '#FFE9D9' }}>
             <KpiHead label="Temas hazırlığı" hint={`${kpi.phoneCount}/${leads.length}`}/>
             <div style={vp.kpiBig}>%{kpi.phonePct}</div>
-            <svg width="100%" height="48" viewBox="0 0 200 48">
-              <path d="M10 42 A50 50 0 0 1 190 42" fill="none" stroke="#FFD3B0" strokeWidth="7" strokeLinecap="round"/>
-              <path d={`M10 42 A50 50 0 0 1 ${10 + 180 * Math.min(kpi.phonePct,100)/100} 42`} fill="none" stroke="#FF6B3D" strokeWidth="7" strokeLinecap="round"/>
+            <svg width="100%" height="52" viewBox="0 0 200 52">
+              {/* Arc: center (100,129) r=121 → endpoints (10,48) and (190,48), peak (100,8) */}
+              <path d="M10 48 A121 121 0 0 1 190 48" fill="none" stroke="#FFD3B0" strokeWidth="7" strokeLinecap="round"/>
+              {(() => {
+                const pct = Math.min(Math.max(kpi.phonePct, 0), 100) / 100;
+                if (pct <= 0) return null;
+                const cx = 100, cy = 129, r = 121;
+                const a0 = 222 * Math.PI / 180;
+                const a1 = 318 * Math.PI / 180;
+                const a  = a0 + pct * (a1 - a0);
+                const ex = (cx + r * Math.cos(a)).toFixed(1);
+                const ey = (cy + r * Math.sin(a)).toFixed(1);
+                return <path d={`M10 48 A121 121 0 0 1 ${ex} ${ey}`} fill="none" stroke="#FF6B3D" strokeWidth="7" strokeLinecap="round"/>;
+              })()}
             </svg>
             <div style={vp.kpiCap}>lead telefon bilgisi içeriyor</div>
           </div>
