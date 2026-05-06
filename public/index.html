@@ -342,6 +342,47 @@
     ];
   }
 
+  function triggerQuickLeadAction(lead) {
+    const meta = getPrimaryActionMeta(lead);
+    if (meta.intent === 'call' && lead.phone) {
+      openExternal(`tel:${lead.phone.replace(/\s+/g, '')}`);
+      return;
+    }
+    if (meta.intent === 'draft' && lead.ai_email && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(lead.ai_email).catch(() => {});
+      return;
+    }
+    if (meta.intent === 'enrich') {
+      openExternal(lead.maps_url || lead.website?.website_url || lead.social?.instagram_url);
+      return;
+    }
+    openExternal(lead.website?.website_url || lead.maps_url || lead.social?.instagram_url);
+  }
+
+  function getDailyTasks(arr, statuses) {
+    return arr
+      .filter(lead => (statuses[lead.name] || 'yeni') !== 'converted')
+      .slice()
+      .sort((a, b) => {
+        const delta = (b.sales_priority_score || 0) - (a.sales_priority_score || 0);
+        if (delta !== 0) return delta;
+        return (b.estimated_value_tl || 0) - (a.estimated_value_tl || 0);
+      })
+      .slice(0, 5)
+      .map(lead => {
+        const meta = getPrimaryActionMeta(lead);
+        let reason = 'Sonraki adim belirginlestirilmeli.';
+        if (needsContactCompletion(lead)) {
+          reason = 'Temas öncesi telefon veya adres eksigi kapatilmali.';
+        } else if (lead.phone) {
+          reason = 'Telefon bilgisi hazir; bugun sicak temas kurulabilir.';
+        } else if (lead.ai_email) {
+          reason = 'Taslak hazir; gonderim oncesi son kontrol yeterli.';
+        }
+        return { lead, meta, reason };
+      });
+  }
+
   function issueToSeverity(text) {
     if (!text) return 'Bilgi';
     const t = text.toLowerCase();
@@ -506,6 +547,7 @@
     const kpi    = computeKPIs(leads);
     const counts = computeTabCounts(leads, statuses);
     const readiness = computeReadinessBuckets(leads);
+    const dailyTasks = React.useMemo(() => getDailyTasks(leads, statuses), [leads, statuses]);
     const tabs   = [
       ['Tümü', counts.total], ['Yeni', counts.yeni], ['Contacted', counts.contacted],
       ['Converted', counts.converted], ['Düşük skor', counts.low],
@@ -615,6 +657,35 @@
             <div style={vp.opsLabel}>Teklif hazır</div>
             <div style={vp.opsValue}>{readiness.proposalReady}</div>
             <div style={vp.opsSub}>Rapor, taslak ve paket eslesmesi birlikte hazır.</div>
+          </div>
+        </section>
+
+        <section style={vp.taskSection}>
+          <SH eyebrow="BUGÜNÜN GÖREVLERİ" title="Operasyon masası" right={<button style={vp.btnGhost} onClick={onOpenReports}>Pipeline'a git →</button>}/>
+          <div style={vp.taskGrid}>
+            {dailyTasks.map(({ lead, meta, reason }) => {
+              const globalIdx = leads.indexOf(lead);
+              return (
+                <article key={lead.name} style={vp.taskCard}>
+                  <div style={vp.taskTop}>
+                    <div>
+                      <div style={vp.taskEyebrow}>Öncelik {lead.sales_priority_score || '—'}</div>
+                      <div style={vp.taskTitle}>{lead.name}</div>
+                    </div>
+                    <div style={vp.taskScore}>{lead.scoring.score}</div>
+                  </div>
+                  <div style={vp.taskMeta}>{lead.city || '—'} · {lead.scoring.grade} sınıfı · {lead.estimated_value_tl > 0 ? `~${fmt(lead.estimated_value_tl)} ₺` : 'Potansiyel hesaplanmadi'}</div>
+                  <div style={vp.taskReason}>{reason}</div>
+                  <div style={vp.taskFooter}>
+                    <span style={vp.tagNeutral}>{meta.label}</span>
+                    <div style={vp.taskActions}>
+                      <button style={vp.btnGhost} onClick={() => triggerQuickLeadAction(lead)}>Hızlı aç</button>
+                      <button style={vp.btnPrimarySm} onClick={() => onSelect(globalIdx)}>Detaya git →</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
 
@@ -789,6 +860,17 @@
     opsLabel:      { fontSize: 11, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
     opsValue:      { fontFamily: '"Inter Tight"', fontSize: 34, fontWeight: 600, letterSpacing: -1.2, marginTop: 10 },
     opsSub:        { fontSize: 12.5, color: '#6B6B6B', lineHeight: 1.45, marginTop: 8 },
+    taskSection:   { marginTop: 30 },
+    taskGrid:      { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 },
+    taskCard:      { background: '#fff', border: '1px solid #ECECEC', borderRadius: 16, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 },
+    taskTop:       { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
+    taskEyebrow:   { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
+    taskTitle:     { fontFamily: '"Inter Tight"', fontSize: 18, fontWeight: 600, letterSpacing: -0.4, marginTop: 6, lineHeight: 1.15 },
+    taskScore:     { minWidth: 44, height: 44, borderRadius: 12, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: '"Inter Tight"', fontSize: 18, fontWeight: 600 },
+    taskMeta:      { fontSize: 12, color: '#6B6B6B', fontFamily: '"JetBrains Mono"', lineHeight: 1.5 },
+    taskReason:    { fontSize: 13, color: '#3A3A3A', lineHeight: 1.5, minHeight: 40 },
+    taskFooter:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 'auto', flexWrap: 'wrap' },
+    taskActions:   { display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' },
     btnLime:       { padding: '11px 16px', borderRadius: 10, background: '#C6F24E', color: '#0A0A0A', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
     btnGhostDark:  { padding: '11px 16px', borderRadius: 10, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', fontWeight: 500, fontSize: 13, cursor: 'pointer' },
     kpiRow:        { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 8 },
@@ -1195,6 +1277,7 @@
 
   function PipelineView({ leads, onSelect, onDataChange }) {
     const [tick, setTick] = React.useState(0);
+    const [busyLead, setBusyLead] = React.useState('');
     const dragRef = React.useRef('');
 
     function refresh() { setTick(t => t + 1); }
@@ -1204,7 +1287,18 @@
     leads.forEach(l => { const stage = getPipelineStage(l); (byStage[stage] = byStage[stage] || []).push(l); });
 
     const won = byStage['won'].length;
-    const active = ['emailed','replied','called','meeting'].reduce((a, k) => a + (byStage[k]||[]).length, 0);
+    const active = ['draft','contacted','meeting'].reduce((a, k) => a + (byStage[k]||[]).length, 0);
+
+    function runCardAction(lead, event) {
+      event.stopPropagation();
+      setBusyLead(lead.name);
+      startLeadAction(lead)
+        .finally(() => {
+          setBusyLead('');
+          if (onDataChange) onDataChange();
+          refresh();
+        });
+    }
 
     function handleDrop(e, stageKey) {
       e.preventDefault();
@@ -1268,9 +1362,22 @@
                         onClick={() => onSelect(globalIdx)}
                       >
                         <div style={pv.cardName}>{l.name}</div>
+                        <div style={pv.cardActionLabel}>{getPrimaryActionMeta(l).label}</div>
                         <div style={pv.cardMeta}>
                           <span style={{ ...pv.cardScore, background: stage.color + '22', color: stage.color }}>{l.scoring.grade} {l.scoring.score}</span>
                           {val > 0 && <span style={pv.cardVal}>~{fmt(val)} ₺</span>}
+                        </div>
+                        <div style={pv.cardActions}>
+                          <button
+                            style={{ ...pv.cardBtn, ...(busyLead === l.name ? pv.cardBtnMuted : null) }}
+                            onClick={e => runCardAction(l, e)}
+                            disabled={busyLead === l.name}
+                          >
+                            {busyLead === l.name ? 'Kaydediliyor…' : getPrimaryActionMeta(l).label}
+                          </button>
+                          <button style={pv.cardBtnGhost} onClick={e => { e.stopPropagation(); triggerQuickLeadAction(l); }}>
+                            Hızlı aç
+                          </button>
                         </div>
                       </div>
                     );
@@ -1299,7 +1406,12 @@
     cards:       { display: 'flex', flexDirection: 'column', gap: 8 },
     card:        { background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' },
     cardName:    { fontSize: 13, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 },
+    cardActionLabel:{ fontSize: 10.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
     cardMeta:    { display: 'flex', gap: 6, flexWrap: 'wrap' },
+    cardActions: { display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' },
+    cardBtn:     { flex: 1, minHeight: 32, padding: '7px 10px', borderRadius: 8, border: 'none', background: '#0A0A0A', color: '#fff', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' },
+    cardBtnMuted:{ opacity: 0.72, cursor: 'progress' },
+    cardBtnGhost:{ minHeight: 32, padding: '7px 10px', borderRadius: 8, border: '1px solid #ECECEC', background: '#fff', color: '#3A3A3A', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' },
     cardScore:   { fontSize: 11, fontFamily: '"JetBrains Mono"', fontWeight: 700, padding: '2px 8px', borderRadius: 6 },
     cardVal:     { fontSize: 11, color: '#1F8B3B', fontFamily: '"JetBrains Mono"' },
     empty:       { fontSize: 12, color: '#C0C0BC', textAlign: 'center', padding: '20px 0', border: '1.5px dashed #E0E0DC', borderRadius: 10 },
