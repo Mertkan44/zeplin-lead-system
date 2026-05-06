@@ -28,9 +28,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 5850,
+        "following": 3572,
+        "post_count": 476,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -42,25 +42,34 @@
       }
     },
     "scoring": {
-      "score": 80,
+      "score": 53,
       "max_score": 100,
-      "grade": "A",
+      "grade": "C",
       "issues": [
-        "SSL yok"
+        "SSL yok",
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "SSL kurulumu"
+        "SSL kurulumu",
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Kanlıca Teras'ın dijital varlığı:\n- Web sitesi vardır (kanlicateras.com)\n- Instagram hesabına sahiptir\n- SSL sertifikası eksik\nPuanı: 80/100\nGüvenlik ve güvenlik sertifikası eksikliği dikkat çekiyor.",
     "ai_email": "Konu: Kanlıca Teras için küçük bir gözlem \n\nMerhaba,\n\nKanlıca Teras'ı incelerken Instagram hesabinizin olduğunu gördük, ancak web sitenizde SSL sertifikası eksik. Bu küçük detay, müşteri güvenini doğrudan etkiliyor ve Google sıralamalarınızda sizi geri bırakıyor.\n\nZeplin Media olarak SSL kurulumu, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kisa bir görüşmede size ücretsiz bir analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media | zeplinmedia.com",
     "last_analyzed": "2026-05-01 13:49",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "(0216) 680 90 00",
+    "address": "Kanlıca, Halide Edip Adıvar Cd. No:6, 34810 Beykoz/İstanbul",
+    "rating": 4.7,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -92,15 +101,15 @@
     "estimated_value_tl": 520,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 29,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 68,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Dijital Sağlık Onarımı",
       "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
@@ -162,24 +171,27 @@
       }
     },
     "scoring": {
-      "score": 0,
+      "score": 6,
       "max_score": 100,
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram hesabı yok"
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Web sitesi tasarımı — yüksek öncelik",
-        "Instagram yönetimi + içerik üretimi"
+        "Web sitesi tasarımı",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "sector": "restaurant",
     "phone": null,
-    "address": null,
-    "rating": null,
+    "address": "PAŞABAHÇE MAHALLESİ BURUNBAHÇE MEVKİ, Barbaros Cd. NO:16, 34800 Beykoz/İstanbul",
+    "rating": 4.3,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -296,15 +308,15 @@
     "last_analyzed": "2026-05-02 15:42",
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 84,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 100,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
       "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 5 hizmet sinyali bulundu.",
@@ -359,9 +371,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 5192,
+        "following": 3061,
+        "post_count": 740,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -373,22 +385,31 @@
       }
     },
     "scoring": {
-      "score": 80,
+      "score": 53,
       "max_score": 100,
-      "grade": "A",
+      "grade": "C",
       "issues": [
-        "SSL yok"
+        "SSL yok",
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "SSL kurulumu"
+        "SSL kurulumu",
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "0533 502 85 85",
+    "address": "Kanlıca, Hekimler Sitesi Cd., 34810 Beykoz/İstanbul",
+    "rating": 4.2,
     "review_count": null,
-    "category": null,
+    "category": "Akdeniz mutfağı restoranı",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -423,15 +444,15 @@
     "last_analyzed": "2026-05-02 15:42",
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 29,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 68,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Dijital Sağlık Onarımı",
       "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
@@ -479,9 +500,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 37000,
+        "following": 9,
+        "post_count": 610,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -493,22 +514,31 @@
       }
     },
     "scoring": {
-      "score": 80,
+      "score": 53,
       "max_score": 100,
-      "grade": "A",
+      "grade": "C",
       "issues": [
-        "SSL yok"
+        "SSL yok",
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "SSL kurulumu"
+        "SSL kurulumu",
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "0541 275 75 75",
+    "address": "Anadolu Hisarı, Körfez Cd. No:55, 34810 Beykoz/İstanbul",
+    "rating": 4.3,
     "review_count": null,
-    "category": null,
+    "category": "Deniz mahsülleri restoranı",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -543,15 +573,15 @@
     "last_analyzed": "2026-05-02 15:42",
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 29,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 68,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Dijital Sağlık Onarımı",
       "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
@@ -613,18 +643,29 @@
       }
     },
     "scoring": {
-      "score": 90,
+      "score": 57,
       "max_score": 100,
-      "grade": "A",
-      "issues": [],
-      "opportunities": []
+      "grade": "B",
+      "issues": [
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
+      ]
     },
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "0532 467 79 53",
+    "address": "Paşabahçe, Barbaros Cd. 27 A, 34800 Beykoz/İstanbul",
+    "rating": 4.1,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -638,15 +679,15 @@
     "last_analyzed": "2026-05-02 15:42",
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": false,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 18,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 49,
+    "next_action": "Derin audit yap",
+    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış.",
     "recommended_package": {
       "name": "Veri tamamlama",
       "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
@@ -701,22 +742,33 @@
       }
     },
     "scoring": {
-      "score": 55,
+      "score": 45,
       "max_score": 100,
-      "grade": "B",
+      "grade": "C",
       "issues": [
-        "Instagram hesabı yok"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok",
+        "Az Google yorumu (0)",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Instagram yönetimi + içerik üretimi"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yorum artırma kampanyası",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
-    "review_count": null,
-    "category": null,
+    "phone": "444 6 661",
+    "address": "Gümüşsuyu, Kelle İbrahim Cd. No:34, 34820, 34820 Beykoz/İstanbul",
+    "rating": 4.0,
+    "review_count": 0,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -763,40 +815,104 @@
           "Instagram yok"
         ],
         "confidence": 70
+      },
+      {
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
       }
     ],
-    "estimated_value_tl": 56500,
+    "estimated_value_tl": 107000,
     "ai_report": "Gümüşsuyu Restoran için dijital görünürlük skoru 55/100. Öne çıkan bulgular: Instagram hesabı yok. Zeplin Media tarafında ilk fırsatlar: Instagram yönetimi + içerik üretimi. İlk temas için kısa bir teknik sağlık kontrolü ve net aksiyon listesi önerilir.",
     "ai_email": "Konu: Gümüşsuyu Restoran için kısa bir dijital sağlık notu\n\nMerhaba,\n\nGümüşsuyu Restoran için yaptığımız hızlı kontrolde özellikle \"Instagram hesabı yok\" başlığını not ettik. Bu tip küçük açıklar arama görünürlüğünü, müşteri güvenini ve dönüşümü doğrudan etkileyebiliyor.\n\nZeplin Media olarak size kısa bir analiz ve uygulanabilir aksiyon listesi çıkarabiliriz. Bu hafta 15 dakikalık bir görüşme uygun olur mu?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-02 15:42",
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 59,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 96,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 5 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
         "Sosyal Medya Yönetimi",
-        "Meta Ads & Retargeting Yönetimi"
+        "Meta Ads & Retargeting Yönetimi",
+        "Google Business Profil Optimizasyonu",
+        "Google Ads Yönetimi"
       ],
       "owner": "Sosyal",
       "stage": "Teklif",
       "confidence": 70,
       "evidence": [
-        "Instagram yok"
+        "Instagram yok",
+        "Google yorumu az"
       ],
       "categories": [
         "İçerik & Sosyal",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "Yerel SEO"
       ]
     }
   },
@@ -843,27 +959,30 @@
       }
     },
     "scoring": {
-      "score": 0,
+      "score": 6,
       "max_score": 100,
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok"
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi"
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Balkan Lokantası'nın dijital varlığı yok. \n- Web sitesi bulunmuyor.\n- Instagram hesabı bulunmuyor.\nDijital olarak görünür değil.",
     "ai_email": "Konu: Balkan Lokantası için kucuk bir gozlem\n\nMerhaba,\n\nBalkan Lokantası'nı incelerken web sitenizin ve Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklikler, musteri guvenini ve isletmenizin ऑनलayınını dogrudan etkiliyor.\n\nZeplin Media olarak web sitesi tasarımı, sosyal medya hesap yönetiminde uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 15:07",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "(0212) 327 55 69",
+    "address": "No:, Cihannüma, Akmaz Çeşme Sk. No:8, 34353 Beşiktaş/İstanbul",
+    "rating": 4.2,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -977,15 +1096,15 @@
     "estimated_value_tl": 96228,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 84,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 100,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
       "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 5 hizmet sinyali bulundu.",
@@ -1054,25 +1173,34 @@
       }
     },
     "scoring": {
-      "score": 55,
+      "score": 45,
       "max_score": 100,
-      "grade": "B",
+      "grade": "C",
       "issues": [
-        "Instagram yok"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Instagram yönetimi"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Dijital Varlık Analiz Raporu:\n\n* Web sitesi: Mevcut\n* Puan: 55/100\n* Instagram: Yok\n* Eksikler: Instagram hesabının oluşturulmamış olması\n* Öneri: Instagram hesabını oluşturarak dijital varlıklarını güçlendirebilir.",
     "ai_email": "Konu: Manzara Restaurant icin sosyal medya bakisi\n\nMerhaba,\n\nManzara Restaurant'i incelerken web sitenizin oldugunu gorduk, ancak Instagram hesabınızın olmadığını fark ettik. Bu kucuk eksiklik, musteri iletişiminizi ve marka bilinirliğinizi olumsuz etkileyebiliyor.\n\nZeplin Media olarak Instagram hesabı oluşturma, sosyal medya yönetimi ve içerik stratejisi konularında uzmanız. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 15:07",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "(0212) 227 30 00",
+    "address": "Cihannüma, Saray Cd No:5, 34353 Beşiktaş/İstanbul",
+    "rating": 4.4,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1124,15 +1252,15 @@
     "estimated_value_tl": 56500,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 59,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 90,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
       "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
@@ -1196,25 +1324,34 @@
       }
     },
     "scoring": {
-      "score": 55,
+      "score": 45,
       "max_score": 100,
-      "grade": "B",
+      "grade": "C",
       "issues": [
-        "Instagram yok"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Instagram yönetimi"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Nevale Mutfak'ın dijital varlik analizinin sonuclari asagidadir:\n\n* Web sitesinde var\n* Puan: 55/100\n* Eksikler:\n + Instagram hesabi yok\nNevale Mutfak, Instagram'i kullanarak dijital varligini guclendirebilir.",
     "ai_email": "Konu: Nevale Mutfak icin dikkatlice bakis\n\nMerhaba,\n\nNevale Mutfak'i incelerken Instagram hesabınızın olmadığını gorduk. Bu kucuk eksiklik, musteri etkilesimini ve marka gorunurlugunu dogrudan etkiliyor.\n\nZeplin Media olarak sosyal medya hesabi olusturma, sosyal medya yonetimi ve dijital pazarlamada uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 15:07",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "0552 390 68 57",
+    "address": "Türkali, Mecit Ali Sk. No:12/A, 34357 Beşiktaş/İstanbul",
+    "rating": 4.9,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1266,15 +1403,15 @@
     "estimated_value_tl": 56500,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 59,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 90,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
       "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
@@ -1324,9 +1461,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 27000,
+        "following": 103,
+        "post_count": 588,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -1338,21 +1475,32 @@
       }
     },
     "scoring": {
-      "score": 90,
+      "score": 61,
       "max_score": 100,
-      "grade": "A",
-      "issues": [],
-      "opportunities": []
+      "grade": "B",
+      "issues": [
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
+      ]
     },
     "ai_report": "Banyan Restaurant'ın dijital varlığı şu şekildedir:\n* Web sitesi mevcuttur.\n* Instagram hesabında aktif paylaşımlar vardır.\n* Genel puanı 90/100'dür.\n* Eksiklikler bilinmemektedir.",
     "ai_email": "Konu: Banyan Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nBanyan Restaurant'i incelerken Instagram hesabinizin oldugunu gorduk, ancak web sitenizin mobil uyumlu olmadigini ve SEO acliklari yasadiğini gorduk. Bu kucuk detaylar, musteri guvenini ve sirketinizin online varligini dogrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu web tasarimi, SEO optimizasyonu ve sosyal medya yonetiminde uzmaniz. Kisa bir gorusmede size ucretsiz analiz sunabiliriz.\n\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 15:07",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "(0212) 259 90 60",
+    "address": "Yıldız Muallim Naci Caddesi &, Salhane Sk. No:3, 34347 Beşiktaş/İstanbul",
+    "rating": 4.2,
     "review_count": null,
-    "category": null,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1363,15 +1511,15 @@
     "estimated_value_tl": 0,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": false,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 18,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 49,
+    "next_action": "Derin audit yap",
+    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış.",
     "recommended_package": {
       "name": "Veri tamamlama",
       "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
@@ -1412,9 +1560,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 65000,
+        "following": 309,
+        "post_count": 2331,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -1426,21 +1574,32 @@
       }
     },
     "scoring": {
-      "score": 90,
+      "score": 61,
       "max_score": 100,
-      "grade": "A",
-      "issues": [],
-      "opportunities": []
+      "grade": "B",
+      "issues": [
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Online sipariş platformu yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
+      ]
     },
     "ai_report": "Shang Palace'in dijital varlığı şöyle:\n- Web sitesi mevcuttur: https://www.shangpalacebosphorus.com/\n- Instagram hesabı mevcuttur: https://www.instagram.com/shangrilaistanbul/\nDijital varlığı güçlü, ancak sosyal medya hesaplarının eksiksizliği cần daha fazla dikkat gerektiriyor.",
     "ai_email": "Konu: Shang Palace icin kucuk bir gozlem\n\nMerhaba,\n\nShang Palace'i incelerken Instagram hesabınızın olduğunu gorduk, ancak web sitenizin mobil uyumlu tasarımı biraz eksik görünüyor. Bu küçük detay, müşterilerinizi sitenizde longer tutmanızı doğrudan etkiliyor.\n\nZeplin Media olarak mobil uyumlu tasarım, site hız optimizasyonu ve sosyal medya yönetiminde uzmanız. Kısa bir görüşmede size ücretsiz analiz sunabiliriz.\n\n15 dakikanız var mı?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 15:07",
     "sector": "restaurant",
-    "phone": null,
-    "address": null,
-    "rating": null,
+    "phone": "(0212) 275 88 88",
+    "address": "Sinanpaşa, Hayrettin İskelesi Sk., 34353 Beşiktaş/İstanbul",
+    "rating": 4.5,
     "review_count": null,
-    "category": null,
+    "category": "Çin restoranı",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1451,15 +1610,15 @@
     "estimated_value_tl": 0,
     "schema_version": 2,
     "data_quality": {
-      "has_contact": false,
-      "has_maps_rating": false,
+      "has_contact": true,
+      "has_maps_rating": true,
       "has_service_match": false,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 18,
-    "next_action": "Telefon/adres tamamla",
-    "priority_reason": "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı.",
+    "sales_priority_score": 49,
+    "next_action": "Derin audit yap",
+    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış.",
     "recommended_package": {
       "name": "Veri tamamlama",
       "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
@@ -1502,9 +1661,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 157000,
+        "following": 36,
+        "post_count": 4263,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -1516,51 +1675,131 @@
       }
     },
     "scoring": {
-      "score": 80,
+      "score": 61,
       "max_score": 100,
-      "grade": "A",
+      "grade": "B",
       "issues": [
-        "Az takipçi (0)"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Az Google yorumu (0)",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Takipçi büyüme kampanyası"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "TikTok hesabı açılması",
+        "Yorum artırma kampanyası",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "The Hunger Beyoğlu Narmanlı Han'ın dijital varlik analiz raporu:\n\n* Az takipçi sayısı (0) önemli bir sorun\n* Takipçi büyüme kampanyası önemli bir fırsat\n* Web sayfası ve Instagram hesabı mevcut\n* 80/100 puan ile yüksek bir dijital puanlama \n* Sosyal medya varlığı geliştirilmeli.",
     "ai_email": "Konu: The Hunger icin kucuk bir gozlem\n\nMerhaba,\n\nThe Hunger'i incelerken sosyal medya takipçi sayısında eksikligini gorduk. Bu kucuk detay musteri ilgini etkiliyor.\nZeplin Media olarak sosyal medya yonetiminde uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 17:49",
     "sector": "restaurant",
-    "rating": null,
-    "review_count": null,
-    "category": null,
+    "rating": 4.7,
+    "review_count": 0,
+    "category": "Restoran",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
       "has_getir": null,
       "getir_url": null
     },
-    "matched_services": [],
-    "estimated_value_tl": 0,
+    "matched_services": [
+      {
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 50500,
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
-      "has_service_match": false,
+      "has_maps_rating": true,
+      "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 35,
-    "next_action": "Derin audit yap",
-    "priority_reason": "Satılabilir hizmet eşleşmesi oluşmamış.",
+    "sales_priority_score": 80,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
-      "name": "Veri tamamlama",
-      "summary": "Satış paketi önermeden önce iletişim ve audit sinyalleri tamamlanmalı.",
-      "primary_service": null,
-      "included_services": [],
-      "owner": "Sales",
-      "stage": "Araştırma",
-      "confidence": 0,
-      "evidence": []
+      "name": "Growth Sprint",
+      "summary": "Google Maps görünürlük paketi ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "primary_service": "Google Business Profil Optimizasyonu",
+      "included_services": [
+        "Google Business Profil Optimizasyonu",
+        "Google Ads Yönetimi",
+        "Google Yorum & İtibar Yönetimi"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 70,
+      "evidence": [
+        "Google yorumu az"
+      ],
+      "categories": [
+        "Yerel SEO",
+        "Büyüme & Reklam"
+      ]
     }
   },
   {
@@ -1608,23 +1847,32 @@
       }
     },
     "scoring": {
-      "score": 55,
+      "score": 45,
       "max_score": 100,
-      "grade": "B",
+      "grade": "C",
       "issues": [
-        "Instagram yok"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
-        "Instagram yönetimi"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Dijital Varlık Analizi:\n- Web sitesi mevcuttur\n- Telefon ve adres bilgisi eksiksiz\n- Puan: 55/100 (Grade B)\n- Sorun: Instagram hesabı yok\n- Fırsat: Instagram hesabının oluşturulması ve yönetimi",
     "ai_email": "Konu: Seabreeze Lounge Rooftop Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nSeabreeze Lounge Rooftop Restaurant'i incelerken Instagram hesabınızın olmadığını gorduk. Bu eksiklik musteri etkilesimini azaltiyor.\nZeplin Media olarak sosyal medya yonetimi, hiz optimizasyonu ve dijital pazarlamada uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 17:49",
     "sector": "restaurant",
-    "rating": null,
+    "rating": 4.8,
     "review_count": null,
-    "category": null,
+    "category": "Deniz mahsülleri restoranı",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1677,14 +1925,14 @@
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 73,
-    "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "sales_priority_score": 90,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
       "name": "Growth Sprint",
       "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 2 hizmet sinyali bulundu.",
@@ -1750,25 +1998,34 @@
       }
     },
     "scoring": {
-      "score": 45,
+      "score": 37,
       "max_score": 100,
       "grade": "C",
       "issues": [
         "SSL yok",
-        "Instagram yok"
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok",
+        "Online sipariş platformu yok"
       ],
       "opportunities": [
         "SSL kurulumu",
-        "Instagram yönetimi"
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi",
+        "TikTok hesabı açılması",
+        "Yemeksepeti / Getir entegrasyonu"
       ]
     },
     "ai_report": "Dijital Varlık Analizi Raporu:\n\n* İnziva Restaurant'ın web sitesi SSL sertifikası bulunmuyor.\n* Instagram hesabı yok.\n* Web sitesine güncelleme yapılmıyor.\n* Fırsatlar:\n + SSL sertifikası kurulumu\n + Instagram hesabının açılması ve yönetimi\n* Web sitesi ve sosyal medya hesaplarının iyileştirilmesiyle daha fazla müşteri çekilebilir.",
     "ai_email": "Konu: İnziva Restaurant icin kucuk bir gozlem\n\nMerhaba,\n\nİnziva Restaurant'i incelerken SSL eksikligini ve Instagram hesabının olmadigini gorduk. Bu kucuk detay musteri guvenini etkiliyor.\nZeplin Media olarak SSL, hiz optimizasyonu ve sosyal medya yonetiminde uzmaniz.\n15 dakikaniz var mi?\n\nMertkan | Zeplin Media",
     "last_analyzed": "2026-05-01 17:49",
     "sector": "restaurant",
-    "rating": null,
+    "rating": 5.0,
     "review_count": null,
-    "category": null,
+    "category": "Et Yemekleri Restoranı",
     "delivery": {
       "has_yemeksepeti": null,
       "yemeksepeti_url": null,
@@ -1841,12 +2098,12 @@
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": false
     },
-    "sales_priority_score": 84,
+    "sales_priority_score": 98,
     "next_action": "Öncelikli arama yap",
     "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
     "recommended_package": {
@@ -1880,7 +2137,7 @@
     "sector": "restaurant",
     "phone": "(0212) 257 41 11",
     "address": "Kuruçeşme, Kuruçeşme Arena No:56, 34345 Beşiktaş/İstanbul",
-    "rating": null,
+    "rating": 4.6,
     "review_count": null,
     "category": "Restoran",
     "website": {
@@ -1907,11 +2164,11 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
-        "avg_likes": 287,
-        "avg_comments": 8,
+        "followers": 78000,
+        "following": 99,
+        "post_count": 85,
+        "avg_likes": null,
+        "avg_comments": null,
         "engagement_rate": null
       },
       "tiktok": {
@@ -1927,14 +2184,12 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 55,
+      "score": 65,
       "max_score": 100,
       "grade": "B",
       "issues": [
         "Schema.org yok",
         "WhatsApp butonu yok",
-        "Az takipçi (0)",
-        "Az Google yorumu (0)",
         "Online sipariş platformu yok"
       ],
       "opportunities": [
@@ -1942,8 +2197,6 @@
         "Sosyal paylaşım meta etiketleri",
         "E-posta toplama formu",
         "WhatsApp Business entegrasyonu",
-        "Takipçi büyüme kampanyası",
-        "Yorum artırma kampanyası",
         "Yemeksepeti / Getir entegrasyonu"
       ]
     },
@@ -2188,12 +2441,12 @@
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 96,
+    "sales_priority_score": 93,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
@@ -2257,11 +2510,11 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
-        "avg_likes": 21969,
-        "avg_comments": 655,
+        "followers": 5000000,
+        "following": 61,
+        "post_count": 972,
+        "avg_likes": null,
+        "avg_comments": null,
         "engagement_rate": null
       },
       "tiktok": {
@@ -2277,21 +2530,17 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 65,
+      "score": 69,
       "max_score": 100,
       "grade": "B",
       "issues": [
         "SSL yok",
         "Schema.org yok",
-        "Az takipçi (0)",
-        "Az Google yorumu (0)",
         "Online sipariş platformu yok"
       ],
       "opportunities": [
         "SSL kurulumu",
         "Google SEO yapılandırması",
-        "Takipçi büyüme kampanyası",
-        "Yorum artırma kampanyası",
         "Yemeksepeti / Getir entegrasyonu"
       ]
     },
@@ -2449,7 +2698,7 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 96,
+    "sales_priority_score": 93,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
     "recommended_package": {
@@ -2536,13 +2785,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -2845,7 +3092,7 @@
     "phone": "(0216) 310 28 28",
     "address": "Kavacık Mah. Mehmet Ali Birand Cad, Kavacık, Orhan Veli Kanık Parkı NO:47, 34810 Beykoz/İstanbul",
     "rating": 4.0,
-    "review_count": null,
+    "review_count": 0,
     "category": "Restoran",
     "website": {
       "has_website": true,
@@ -2948,6 +3195,46 @@
         "confidence": 70
       },
       {
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
         "slug": "email_marketing",
         "name": "E-posta Pazarlama Kurulumu",
         "category": "İletişim & CRM",
@@ -2964,6 +3251,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -3068,7 +3375,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 84415,
+    "estimated_value_tl": 134915,
     "research": {
       "website": {
         "status": "ok",
@@ -3122,26 +3429,26 @@
     "last_analyzed": "2026-05-06 01:13",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 8 hizmet sinyali bulundu.",
+      "summary": "Aylık sosyal medya yönetimi ile başlanabilir; 11 hizmet sinyali bulundu.",
       "primary_service": "Sosyal Medya Yönetimi",
       "included_services": [
         "Sosyal Medya Yönetimi",
         "Meta Ads & Retargeting Yönetimi",
-        "E-posta Pazarlama Kurulumu",
-        "Landing Page & Dönüşüm Optimizasyonu"
+        "Google Business Profil Optimizasyonu",
+        "Google Ads Yönetimi"
       ],
       "owner": "Sosyal",
       "stage": "Teklif",
       "confidence": 70,
       "evidence": [
         "Instagram yok",
-        "E-posta formu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "İçerik & Sosyal",
         "Büyüme & Reklam",
-        "İletişim & CRM",
-        "Web & Teknik"
+        "Yerel SEO",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -3165,7 +3472,7 @@
     "phone": "0554 340 48 81",
     "address": "Hayırseverler Sok, Paşabahçe, Saip Molla Cd. No:4, İstanbul, 34820 Beykoz/İstanbul",
     "rating": 5.0,
-    "review_count": null,
+    "review_count": 0,
     "category": "İkinci El Mağazası",
     "website": {
       "has_website": false,
@@ -3273,6 +3580,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -3333,22 +3662,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -3369,6 +3698,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -3481,7 +3830,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 212519,
+    "estimated_value_tl": 246519,
     "research": {
       "website": {
         "status": "missing",
@@ -3500,13 +3849,13 @@
     "last_analyzed": "2026-05-06 01:16",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 12 hizmet sinyali bulundu.",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 14 hizmet sinyali bulundu.",
       "primary_service": "AI Arama & GEO Görünürlüğü",
       "included_services": [
         "AI Arama & GEO Görünürlüğü",
         "SEO & Teknik Optimizasyon",
-        "AI WhatsApp Asistanı",
-        "Sosyal Medya Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -3515,13 +3864,13 @@
         "Schema.org yok",
         "Open Graph yok",
         "Web sitesi yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "AI Görünürlük",
         "Web & Teknik",
-        "İletişim & CRM",
-        "İçerik & Sosyal"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -3596,13 +3945,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -3905,7 +4252,7 @@
     "phone": "0537 475 34 12",
     "address": "Merkez, Fevzi Paşa Cd. No:82B, 34820 Beykoz/İstanbul",
     "rating": 5.0,
-    "review_count": null,
+    "review_count": 0,
     "category": "Çiçekçi",
     "website": {
       "has_website": false,
@@ -4013,6 +4360,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -4073,22 +4442,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -4109,6 +4478,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -4221,7 +4610,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 212519,
+    "estimated_value_tl": 246519,
     "research": {
       "website": {
         "status": "missing",
@@ -4240,13 +4629,13 @@
     "last_analyzed": "2026-05-06 01:19",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 12 hizmet sinyali bulundu.",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 14 hizmet sinyali bulundu.",
       "primary_service": "AI Arama & GEO Görünürlüğü",
       "included_services": [
         "AI Arama & GEO Görünürlüğü",
         "SEO & Teknik Optimizasyon",
-        "AI WhatsApp Asistanı",
-        "Sosyal Medya Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -4255,13 +4644,13 @@
         "Schema.org yok",
         "Open Graph yok",
         "Web sitesi yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "AI Görünürlük",
         "Web & Teknik",
-        "İletişim & CRM",
-        "İçerik & Sosyal"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -4285,7 +4674,7 @@
     "phone": "0532 256 47 14",
     "address": "Merkez, Mehmet Yavuz Cd. No:41, 34820, 34820 Beykoz/İstanbul",
     "rating": 4.7,
-    "review_count": null,
+    "review_count": 0,
     "category": "Organik Gıda Marketi",
     "website": {
       "has_website": false,
@@ -4393,6 +4782,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -4453,22 +4864,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -4489,6 +4900,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -4601,7 +5032,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 212519,
+    "estimated_value_tl": 246519,
     "research": {
       "website": {
         "status": "missing",
@@ -4620,13 +5051,13 @@
     "last_analyzed": "2026-05-06 01:20",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 12 hizmet sinyali bulundu.",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 14 hizmet sinyali bulundu.",
       "primary_service": "AI Arama & GEO Görünürlüğü",
       "included_services": [
         "AI Arama & GEO Görünürlüğü",
         "SEO & Teknik Optimizasyon",
-        "AI WhatsApp Asistanı",
-        "Sosyal Medya Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -4635,13 +5066,13 @@
         "Schema.org yok",
         "Open Graph yok",
         "Web sitesi yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "AI Görünürlük",
         "Web & Teknik",
-        "İletişim & CRM",
-        "İçerik & Sosyal"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -4665,7 +5096,7 @@
     "phone": "0555 100 09 06",
     "address": "Arnavutköy, Bebek Arnavutköy Cd No:26/A, 34345 Beşiktaş/İstanbul",
     "rating": 4.2,
-    "review_count": null,
+    "review_count": 0,
     "category": "Kafe",
     "website": {
       "has_website": false,
@@ -4775,6 +5206,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -4835,22 +5288,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -4871,6 +5324,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -5045,7 +5518,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 217393,
+    "estimated_value_tl": 251393,
     "research": {
       "website": {
         "status": "missing",
@@ -5064,13 +5537,13 @@
     "last_analyzed": "2026-05-06 01:12",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 15 hizmet sinyali bulundu.",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 17 hizmet sinyali bulundu.",
       "primary_service": "AI Arama & GEO Görünürlüğü",
       "included_services": [
         "AI Arama & GEO Görünürlüğü",
         "SEO & Teknik Optimizasyon",
-        "AI WhatsApp Asistanı",
-        "Sosyal Medya Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -5079,13 +5552,13 @@
         "Schema.org yok",
         "Open Graph yok",
         "Web sitesi yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "AI Görünürlük",
         "Web & Teknik",
-        "İletişim & CRM",
-        "İçerik & Sosyal"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -5160,13 +5633,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -5540,13 +6011,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -5922,14 +6391,12 @@
         "Web sitesi yok",
         "Instagram yok",
         "Google puanı düşük (3.4)",
-        "Az Google yorumu (0)",
         "Online sipariş platformu yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
         "Instagram yönetimi",
         "Google yorumları yönetimi",
-        "Yorum artırma kampanyası",
         "Yemeksepeti / Getir entegrasyonu"
       ]
     },
@@ -6357,7 +6824,7 @@
     "phone": null,
     "address": "Fikirtepe mh Mandıra cd, İnci Sk. 3/B, Kadıköy/İstanbul",
     "rating": 5.0,
-    "review_count": null,
+    "review_count": 0,
     "category": "Depo",
     "website": {
       "has_website": false,
@@ -6465,6 +6932,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
         "category": "İçerik & Sosyal",
@@ -6505,22 +6994,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -6541,6 +7030,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -6653,7 +7162,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 173519,
+    "estimated_value_tl": 207519,
     "research": {
       "website": {
         "status": "missing",
@@ -6672,13 +7181,13 @@
     "last_analyzed": "2026-05-06 01:24",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 11 hizmet sinyali bulundu.",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 13 hizmet sinyali bulundu.",
       "primary_service": "AI Arama & GEO Görünürlüğü",
       "included_services": [
         "AI Arama & GEO Görünürlüğü",
         "SEO & Teknik Optimizasyon",
-        "Sosyal Medya Yönetimi",
-        "Meta Ads & Retargeting Yönetimi"
+        "Google Ads Yönetimi",
+        "Sosyal Medya Yönetimi"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -6687,13 +7196,13 @@
         "Schema.org yok",
         "Open Graph yok",
         "Web sitesi yok",
-        "Instagram yok"
+        "Google yorumu az"
       ],
       "categories": [
         "AI Görünürlük",
         "Web & Teknik",
-        "İçerik & Sosyal",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "İçerik & Sosyal"
       ]
     },
     "schema_version": 2,
@@ -6716,7 +7225,7 @@
     "sector": "retail",
     "phone": "0546 559 80 26",
     "address": "Ferideekergil Apt, Türkali, Nüzhetiye Cd. No:56 D:1A, 34357 Beşiktaş/İstanbul",
-    "rating": null,
+    "rating": 4.5,
     "review_count": null,
     "category": "Mutfak Ekipmanları Mağazası",
     "website": {
@@ -6763,23 +7272,21 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 38,
+      "score": 44,
       "max_score": 100,
       "grade": "C",
       "issues": [
         "SSL yok",
         "Site yavaş (3402ms)",
         "WhatsApp butonu yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "SSL kurulumu",
         "Site hız optimizasyonu",
         "WhatsApp Business entegrasyonu",
         "Instagram yönetimi",
-        "TikTok hesabı açılması",
-        "Yorum artırma kampanyası"
+        "TikTok hesabı açılması"
       ]
     },
     "matched_services": [
@@ -7091,7 +7598,7 @@
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": true
@@ -7108,8 +7615,8 @@
     "sector": "default",
     "phone": "(0216) 418 52 98",
     "address": "Rasimpaşa, Duatepe Sk. No:61, 34716 Kadıköy/İstanbul",
-    "rating": null,
-    "review_count": null,
+    "rating": 5.0,
+    "review_count": 0,
     "category": "Hobi dükkanı",
     "website": {
       "has_website": true,
@@ -7155,7 +7662,7 @@
       "getir_url": "https://getir.com/yemek/restoran/porridgeshop-kadikoy-bostanci-mah-kadikoy-istanbul/"
     },
     "scoring": {
-      "score": 47,
+      "score": 53,
       "max_score": 100,
       "grade": "C",
       "issues": [
@@ -7218,6 +7725,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
         "category": "İçerik & Sosyal",
@@ -7258,22 +7787,42 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -7340,7 +7889,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 150791,
+    "estimated_value_tl": 184791,
     "research": {
       "website": {
         "status": "ok",
@@ -7384,13 +7933,13 @@
     "last_analyzed": "2026-05-06 01:13",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 8 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 10 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
         "AI Arama & GEO Görünürlüğü",
-        "Sosyal Medya Yönetimi",
-        "Meta Ads & Retargeting Yönetimi"
+        "Google Ads Yönetimi",
+        "Sosyal Medya Yönetimi"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -7398,19 +7947,19 @@
       "evidence": [
         "Schema.org yok",
         "Open Graph yok",
-        "Instagram yok"
+        "Google yorumu az"
       ],
       "categories": [
         "Web & Teknik",
         "AI Görünürlük",
-        "İçerik & Sosyal",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "İçerik & Sosyal"
       ]
     },
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": true
@@ -7428,7 +7977,7 @@
     "phone": "(0216) 405 25 19",
     "address": "Feneryolu, Gazi Muhtar Paşa Sk. 57/1, 34724 Kadıköy/İstanbul",
     "rating": 4.6,
-    "review_count": null,
+    "review_count": 0,
     "category": "Doğal Gıda Satış Yeri",
     "website": {
       "has_website": true,
@@ -7538,6 +8087,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "social_management",
         "name": "Sosyal Medya Yönetimi",
         "category": "İçerik & Sosyal",
@@ -7578,22 +8149,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -7614,6 +8185,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -7684,7 +8275,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 167791,
+    "estimated_value_tl": 201791,
     "research": {
       "website": {
         "status": "ok",
@@ -7706,13 +8297,13 @@
     "last_analyzed": "2026-05-06 01:14",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 9 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 11 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
         "AI Arama & GEO Görünürlüğü",
-        "Sosyal Medya Yönetimi",
-        "Meta Ads & Retargeting Yönetimi"
+        "Google Ads Yönetimi",
+        "Sosyal Medya Yönetimi"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -7720,13 +8311,13 @@
       "evidence": [
         "Schema.org yok",
         "Open Graph yok",
-        "Instagram yok"
+        "Google yorumu az"
       ],
       "categories": [
         "Web & Teknik",
         "AI Görünürlük",
-        "İçerik & Sosyal",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "İçerik & Sosyal"
       ]
     },
     "schema_version": 2,
@@ -7776,9 +8367,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 42000,
+        "following": 834,
+        "post_count": 1090,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -7796,17 +8387,12 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 73,
+      "score": 77,
       "max_score": 100,
       "grade": "B",
-      "issues": [
-        "Az takipçi (0)",
-        "Az Google yorumu (0)"
-      ],
+      "issues": [],
       "opportunities": [
-        "E-posta toplama formu",
-        "Takipçi büyüme kampanyası",
-        "Yorum artırma kampanyası"
+        "E-posta toplama formu"
       ]
     },
     "matched_services": [
@@ -7951,7 +8537,7 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 71,
+    "sales_priority_score": 57,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
@@ -7964,7 +8550,7 @@
     "phone": "0505 441 62 18",
     "address": "Caferağa, Neşet Ömer Sk. No:3 D:1, 34710 Kadıköy/İstanbul",
     "rating": 4.3,
-    "review_count": null,
+    "review_count": 0,
     "category": "Kitapçı",
     "website": {
       "has_website": true,
@@ -7990,9 +8576,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 3615,
+        "following": 473,
+        "post_count": 1644,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -8010,18 +8596,16 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 70,
+      "score": 74,
       "max_score": 100,
       "grade": "B",
       "issues": [
         "Schema.org yok",
-        "Az takipçi (0)",
         "Az Google yorumu (0)"
       ],
       "opportunities": [
         "Google SEO yapılandırması",
         "Sosyal paylaşım meta etiketleri",
-        "Takipçi büyüme kampanyası",
         "Yorum artırma kampanyası"
       ]
     },
@@ -8083,10 +8667,52 @@
         "price_max": 25000,
         "monthly": true,
         "matched_triggers": [
+          "low_reviews",
           "no_schema"
         ],
         "evidence": [
+          "Google yorumu az",
           "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -8111,7 +8737,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 90750,
+    "estimated_value_tl": 124750,
     "research": {
       "website": {
         "status": "ok",
@@ -8165,25 +8791,27 @@
     "last_analyzed": "2026-05-06 01:24",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 4 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 6 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
         "AI Arama & GEO Görünürlüğü",
         "Google Ads Yönetimi",
-        "Landing Page & Dönüşüm Optimizasyonu"
+        "Google Business Profil Optimizasyonu"
       ],
       "owner": "SEO",
       "stage": "Teklif",
       "confidence": 85,
       "evidence": [
         "Schema.org yok",
-        "Open Graph yok"
+        "Open Graph yok",
+        "Google yorumu az"
       ],
       "categories": [
         "Web & Teknik",
         "AI Görünürlük",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "Yerel SEO"
       ]
     },
     "schema_version": 2,
@@ -8194,7 +8822,7 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 93,
+    "sales_priority_score": 90,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
@@ -8206,8 +8834,8 @@
     "sector": "restaurant",
     "phone": "(0216) 330 70 99",
     "address": "Fenerbahçe, Erguvan Sk. 17/A, 34726 Kadıköy/İstanbul",
-    "rating": null,
-    "review_count": null,
+    "rating": 4.5,
+    "review_count": 0,
     "category": "Sanat Kafe",
     "website": {
       "has_website": true,
@@ -8233,9 +8861,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 14000,
+        "following": 724,
+        "post_count": 2228,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -8253,14 +8881,13 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 51,
+      "score": 61,
       "max_score": 100,
-      "grade": "C",
+      "grade": "B",
       "issues": [
         "SSL yok",
         "Schema.org yok",
         "WhatsApp butonu yok",
-        "Az takipçi (0)",
         "Az Google yorumu (0)",
         "Online sipariş platformu yok"
       ],
@@ -8269,7 +8896,6 @@
         "Google SEO yapılandırması",
         "Sosyal paylaşım meta etiketleri",
         "WhatsApp Business entegrasyonu",
-        "Takipçi büyüme kampanyası",
         "Yorum artırma kampanyası",
         "Yemeksepeti / Getir entegrasyonu"
       ]
@@ -8320,6 +8946,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -8340,22 +8988,42 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -8504,7 +9172,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 138685,
+    "estimated_value_tl": 172685,
     "research": {
       "website": {
         "status": "ok",
@@ -8546,13 +9214,13 @@
     "last_analyzed": "2026-05-06 01:26",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 11 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 13 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
         "AI Arama & GEO Görünürlüğü",
-        "AI WhatsApp Asistanı",
-        "Google Ads Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -8560,26 +9228,26 @@
       "evidence": [
         "Schema.org yok",
         "Open Graph yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "Web & Teknik",
         "AI Görünürlük",
-        "İletişim & CRM",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 100,
-    "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "sales_priority_score": 96,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
   {
     "name": "Armağan Giyim Ümraniye Mağaza",
@@ -8589,7 +9257,7 @@
     "sector": "retail",
     "phone": "(0216) 521 85 90",
     "address": "Atatürk, Alemdağ Cd NO.126, 34764 Ümraniye/İstanbul",
-    "rating": null,
+    "rating": 3.9,
     "review_count": null,
     "category": "Kadın giyim mağazası",
     "website": {
@@ -8616,9 +9284,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 143000,
+        "following": 7,
+        "post_count": 502,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -8636,18 +9304,14 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 63,
+      "score": 70,
       "max_score": 100,
       "grade": "B",
       "issues": [
-        "SSL yok",
-        "Az takipçi (0)",
-        "Az Google yorumu (0)"
+        "SSL yok"
       ],
       "opportunities": [
-        "SSL kurulumu",
-        "Takipçi büyüme kampanyası",
-        "Yorum artırma kampanyası"
+        "SSL kurulumu"
       ]
     },
     "matched_services": [
@@ -8750,12 +9414,12 @@
     "schema_version": 2,
     "data_quality": {
       "has_contact": true,
-      "has_maps_rating": false,
+      "has_maps_rating": true,
       "has_service_match": true,
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 65,
+    "sales_priority_score": 59,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
@@ -8819,13 +9483,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -9148,7 +9810,7 @@
     "phone": "(0216) 265 11 03",
     "address": "Caferağa Mah, neşet ömer sokak :1/B, Gen. Asım Gündüz Caddesi No:13/C D:C, 34710 Kadıköy/İstanbul",
     "rating": 4.0,
-    "review_count": null,
+    "review_count": 0,
     "category": "Giyim mağazası",
     "website": {
       "has_website": true,
@@ -9174,9 +9836,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 962000,
+        "following": 27,
+        "post_count": 7039,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -9194,14 +9856,13 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 53,
+      "score": 57,
       "max_score": 100,
-      "grade": "C",
+      "grade": "B",
       "issues": [
         "SSL yok",
         "Schema.org yok",
         "WhatsApp butonu yok",
-        "Az takipçi (0)",
         "Az Google yorumu (0)"
       ],
       "opportunities": [
@@ -9210,7 +9871,6 @@
         "Sosyal paylaşım meta etiketleri",
         "E-posta toplama formu",
         "WhatsApp Business entegrasyonu",
-        "Takipçi büyüme kampanyası",
         "Yorum artırma kampanyası"
       ]
     },
@@ -9260,6 +9920,28 @@
         "confidence": 85
       },
       {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews",
+          "no_schema"
+        ],
+        "evidence": [
+          "Google yorumu az",
+          "Schema.org yok"
+        ],
+        "confidence": 85
+      },
+      {
         "slug": "ai_whatsapp_assistant",
         "name": "AI WhatsApp Asistanı",
         "category": "İletişim & CRM",
@@ -9280,22 +9962,22 @@
         "confidence": 70
       },
       {
-        "slug": "google_ads",
-        "name": "Google Ads Yönetimi",
-        "category": "Büyüme & Reklam",
-        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
-        "offer": "Yerel talep kampanyası",
-        "owner": "Performance",
-        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
-        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
-        "price_min": 8000,
-        "price_max": 25000,
+        "slug": "local_seo_gbp",
+        "name": "Google Business Profil Optimizasyonu",
+        "category": "Yerel SEO",
+        "desc": "Maps profil düzeni, kategori, açıklama, fotoğraf ve rota aksiyonları",
+        "offer": "Google Maps görünürlük paketi",
+        "owner": "SEO",
+        "sales_angle": "Yakındaki müşterinin karar ekranında işletmeyi daha güçlü gösterir.",
+        "detects": "Az yorum, düşük puan veya zayıf yerel profil sinyali.",
+        "price_min": 10000,
+        "price_max": 28000,
         "monthly": true,
         "matched_triggers": [
-          "no_schema"
+          "low_reviews"
         ],
         "evidence": [
-          "Schema.org yok"
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -9316,6 +9998,26 @@
         ],
         "evidence": [
           "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "reputation_management",
+        "name": "Google Yorum & İtibar Yönetimi",
+        "category": "Yerel SEO",
+        "desc": "Yorum artırma, müşteri geri bildirim sistemi, Maps optimizasyonu",
+        "offer": "Maps itibar büyütme paketi",
+        "owner": "SEO",
+        "sales_angle": "Google Maps karar anında daha güçlü sosyal kanıt üretir.",
+        "detects": "Düşük Google puanı veya az yorum.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": true,
+        "matched_triggers": [
+          "low_reviews"
+        ],
+        "evidence": [
+          "Google yorumu az"
         ],
         "confidence": 70
       },
@@ -9406,7 +10108,7 @@
         "confidence": 70
       }
     ],
-    "estimated_value_tl": 150811,
+    "estimated_value_tl": 184811,
     "research": {
       "website": {
         "status": "error",
@@ -9426,13 +10128,13 @@
     "last_analyzed": "2026-05-06 01:32",
     "recommended_package": {
       "name": "Growth Sprint",
-      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 9 hizmet sinyali bulundu.",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 11 hizmet sinyali bulundu.",
       "primary_service": "SEO & Teknik Optimizasyon",
       "included_services": [
         "SEO & Teknik Optimizasyon",
         "AI Arama & GEO Görünürlüğü",
-        "AI WhatsApp Asistanı",
-        "Google Ads Yönetimi"
+        "Google Ads Yönetimi",
+        "AI WhatsApp Asistanı"
       ],
       "owner": "SEO",
       "stage": "Teklif",
@@ -9440,13 +10142,13 @@
       "evidence": [
         "Schema.org yok",
         "Open Graph yok",
-        "WhatsApp butonu yok"
+        "Google yorumu az"
       ],
       "categories": [
         "Web & Teknik",
         "AI Görünürlük",
-        "İletişim & CRM",
-        "Büyüme & Reklam"
+        "Büyüme & Reklam",
+        "İletişim & CRM"
       ]
     },
     "schema_version": 2,
@@ -9457,9 +10159,9 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 100,
-    "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "sales_priority_score": 96,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
   {
     "name": "Tepe Nautilus AVM",
@@ -9524,8 +10226,7 @@
         "Mobil uyumsuz",
         "Schema.org yok",
         "WhatsApp butonu yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "SSL kurulumu",
@@ -9534,8 +10235,7 @@
         "Sosyal paylaşım meta etiketleri",
         "E-posta toplama formu",
         "WhatsApp Business entegrasyonu",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [
@@ -9861,9 +10561,9 @@
       "has_facebook": false,
       "facebook_url": null,
       "stats": {
-        "followers": null,
-        "following": null,
-        "post_count": null,
+        "followers": 58000,
+        "following": 20,
+        "post_count": 1735,
         "avg_likes": null,
         "avg_comments": null,
         "engagement_rate": null
@@ -9881,20 +10581,16 @@
       "getir_url": null
     },
     "scoring": {
-      "score": 58,
+      "score": 62,
       "max_score": 100,
       "grade": "B",
       "issues": [
-        "SSL yok",
-        "Az takipçi (0)",
-        "Az Google yorumu (0)"
+        "SSL yok"
       ],
       "opportunities": [
         "SSL kurulumu",
         "E-posta toplama formu",
-        "Takipçi büyüme kampanyası",
-        "TikTok hesabı açılması",
-        "Yorum artırma kampanyası"
+        "TikTok hesabı açılması"
       ]
     },
     "matched_services": [
@@ -10119,7 +10815,7 @@
       "has_ai": true,
       "has_audit_depth": true
     },
-    "sales_priority_score": 93,
+    "sales_priority_score": 87,
     "next_action": "Satış mailini gönder",
     "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
   },
@@ -10183,13 +10879,11 @@
       "grade": "D",
       "issues": [
         "Web sitesi yok",
-        "Instagram yok",
-        "Az Google yorumu (0)"
+        "Instagram yok"
       ],
       "opportunities": [
         "Web sitesi tasarımı",
-        "Instagram yönetimi",
-        "Yorum artırma kampanyası"
+        "Instagram yönetimi"
       ]
     },
     "matched_services": [

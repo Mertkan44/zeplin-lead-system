@@ -74,12 +74,17 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
                 break
 
         content = await page.content()
+        body_text = await page.locator("body").inner_text()
 
         # Adres fallback
         if not result["address"]:
             m = re.search(r'"address"\s*:\s*"([^"]{10,100})"', content)
             if m:
                 result["address"] = m.group(1)
+        if not result["address"]:
+            m = re.search(rf'{re.escape(business_name)}.*?\n(?:[\d][,.][\d]\n)?(?:.+?·.+?\n)?([^\n]+/(?:İstanbul|Istanbul))', body_text, re.S)
+            if m:
+                result["address"] = m.group(1).strip()
 
         # Rating — aria-label "4,5 yıldız" veya "4.5 stars" formatı
         for sel in ['span[aria-label*="yıldız"]', 'span[aria-label*="star"]', 'div[aria-label*="yıldız"]']:
@@ -98,6 +103,10 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
                 m = re.search(r'"stars"\s*:\s*([\d.]+)', content)
             if m:
                 result["rating"] = float(m.group(1))
+        if result["rating"] is None:
+            m = re.search(rf'{re.escape(business_name)}\n([\d][,.][\d])\n', body_text)
+            if m:
+                result["rating"] = float(m.group(1).replace(',', '.'))
 
         # Review count — "(1.234 yorum)" veya "(1,234 reviews)"
         for pattern in [
@@ -114,6 +123,9 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
                     break
                 except:
                     pass
+        if result["review_count"] is None:
+            if re.search(r'\bYorum yok\b', body_text, re.I) or re.search(r'\bNo reviews\b', body_text, re.I):
+                result["review_count"] = 0
 
         # Kategori (business type)
         for sel in ['button[jsaction*="category"]', 'span[jsaction*="category"]',
@@ -130,6 +142,12 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
             m = re.search(r'"category"\s*:\s*"([^"]{3,50})"', content)
             if m:
                 result["category"] = m.group(1)
+        if not result["category"]:
+            m = re.search(rf'{re.escape(business_name)}\n(?:[\d][,.][\d]\n)?([^\n·]+)', body_text)
+            if m:
+                candidate = m.group(1).strip()
+                if candidate and len(candidate) < 60 and candidate.lower() not in {"genel bakış", "overview"}:
+                    result["category"] = candidate
 
     except Exception as e:
         console.print(f"[red]Maps hata: {e}[/red]")
@@ -382,9 +400,23 @@ async def get_instagram_stats(page, username: str) -> dict:
     if not username:
         return stats
     try:
+        content = ""
+        body_text = ""
+
+        async with httpx.AsyncClient(
+            timeout=8,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Version/16.0 Mobile/15E148 Safari/604.1"},
+        ) as client:
+            resp = await client.get(f"https://www.instagram.com/{username}/")
+            if resp.status_code == 200:
+                content = resp.text
+
         await page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded")
         await page.wait_for_timeout(3500)
-        content = await page.content()
+        if not content:
+            content = await page.content()
+        body_text = await page.locator("body").inner_text()
 
         for pattern, key in [
             (r'([\d,\.]+[KkMm]?)\s+[Ff]ollowers?', "followers"),
@@ -394,6 +426,21 @@ async def get_instagram_stats(page, username: str) -> dict:
             m = re.search(pattern, content)
             if m:
                 stats[key] = _parse_ig_num(m.group(1))
+        if stats["followers"] is None:
+            m = re.search(r'content="([\d,\.]+)\s+Followers,\s+([\d,\.]+)\s+Following,\s+([\d,\.]+)\s+Posts', content, re.I)
+            if m:
+                stats["followers"] = _parse_ig_num(m.group(1))
+                stats["following"] = _parse_ig_num(m.group(2))
+                stats["post_count"] = _parse_ig_num(m.group(3))
+        if stats["followers"] is None:
+            for pattern, key in [
+                (r'([\d,\.]+[KkMm]?)\s+followers', "followers"),
+                (r'([\d,\.]+[KkMm]?)\s+following', "following"),
+                (r'([\d,\.]+[KkMm]?)\s+posts', "post_count"),
+            ]:
+                m = re.search(pattern, body_text, re.I)
+                if m and stats[key] is None:
+                    stats[key] = _parse_ig_num(m.group(1))
 
         likes_raw = re.findall(r'"like_count"\s*:\s*(\d+)', content)
         if not likes_raw:
@@ -475,7 +522,7 @@ def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None
         score += 12
         if ig_stats:
             er = ig_stats.get("engagement_rate")
-            followers = ig_stats.get("followers") or 0
+            followers = ig_stats.get("followers")
             if er is not None:
                 if er >= 3:
                     score += 8
@@ -484,9 +531,9 @@ def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None
                 else:
                     issues.append(f"Düşük etkileşim (%{er})")
                     opportunities.append("İçerik stratejisi & etkileşim artırma")
-            if followers >= 500:
+            if followers is not None and followers >= 500:
                 score += 4
-            else:
+            elif followers is not None:
                 issues.append(f"Az takipçi ({followers})")
                 opportunities.append("Takipçi büyüme kampanyası")
     else:
@@ -501,7 +548,7 @@ def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None
     # ── Yerel güven (maks 12) ──────────────────────────
     if maps_data:
         rating = maps_data.get("rating")
-        review_count = maps_data.get("review_count") or 0
+        review_count = maps_data.get("review_count")
         if rating is not None:
             if rating >= 4.0:
                 score += 6
@@ -510,11 +557,11 @@ def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None
             else:
                 issues.append(f"Google puanı düşük ({rating})")
                 opportunities.append("Google yorumları yönetimi")
-        if review_count >= 100:
+        if review_count is not None and review_count >= 100:
             score += 6
-        elif review_count >= 20:
+        elif review_count is not None and review_count >= 20:
             score += 3
-        else:
+        elif review_count is not None:
             issues.append(f"Az Google yorumu ({review_count})")
             opportunities.append("Yorum artırma kampanyası")
 
