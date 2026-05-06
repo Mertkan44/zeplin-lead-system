@@ -159,6 +159,75 @@
     });
   }
 
+  function openExternal(url) {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function startLeadAction(lead) {
+    const action = lead.phone ? 'call_made' : 'email_sent';
+    return addOutreach(
+      lead.name,
+      action,
+      new Date().toISOString(),
+      lead.next_action || 'Sonraki aksiyon başlatıldı'
+    );
+  }
+
+  function openFixContext(lead, issue) {
+    const target = lead.website?.website_url || lead.maps_url || lead.social?.instagram_url;
+    if (issue && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(`${lead.name}: ${issue}`).catch(() => {});
+    }
+    if (target) {
+      openExternal(target);
+      return;
+    }
+    window.alert(`${lead.name} için düzeltilecek başlık: ${issue}`);
+  }
+
+  function promptLeadSearch(rows, onSelect) {
+    const q = window.prompt('Lead, firma veya hizmet ara');
+    if (!q) return;
+    const term = q.trim().toLowerCase();
+    const idx = rows.findIndex(lead => {
+      const hay = [
+        lead.name,
+        lead.city,
+        lead.category,
+        lead.sector,
+        lead.next_action,
+        ...(lead.scoring?.issues || []),
+      ].join(' ').toLowerCase();
+      return hay.includes(term);
+    });
+    if (idx >= 0) {
+      onSelect(idx);
+      return;
+    }
+    window.alert(`"${q}" için eşleşen lead bulunamadı.`);
+  }
+
+  function copyAutomationPlan() {
+    const text = [
+      'Zeplin otomasyon planı',
+      '- Her 15 dakikada ilçe bazlı tarama',
+      '- Yeni leadleri audit et',
+      '- AI rapor ve mail üret',
+      '- Supabase sync yap',
+      '- Dashboardı rebuild et',
+    ].join('\n');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        window.alert('Otomasyon planı panoya kopyalandı.');
+      }).catch(() => {
+        window.alert(text);
+      });
+      return;
+    }
+    window.alert(text);
+  }
+
   const ACTIONS = {
     email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
     reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
@@ -245,7 +314,7 @@
     );
   }
 
-  function Sidebar({ view, onNav, leadCount }) {
+  function Sidebar({ view, onNav, leadCount, onAutomationClick }) {
     const navItems = [
       { key: 'cockpit',   ic: 'cockpit',   label: 'Cockpit',   badge: leadCount },
       { key: 'raporlar',  ic: 'leads',     label: 'Leadler' },
@@ -290,7 +359,7 @@
             <div style={sb.upgradeEyebrow}>OTOMASYON</div>
             <div style={sb.upgradeTitle}>Otomatik tarayıcı</div>
             <div style={sb.upgradeBody}>15 dakikada bir tarama. Yeni leadler otomatik dosyalansın.</div>
-            <button style={sb.upgradeBtn}>Etkinleştir →</button>
+            <button style={sb.upgradeBtn} onClick={onAutomationClick}>Etkinleştir →</button>
           </div>
         </div>
       </aside>
@@ -340,7 +409,7 @@
 
   // ── Cockpit Main Content ───────────────────────────────────────────────────
 
-  function CockpitMain({ leads, statuses, onSelect }) {
+  function CockpitMain({ leads, statuses, onSelect, onOpenReports, onOpenSearch }) {
     const [activeTab, setActiveTab] = React.useState('Tümü');
 
     const kpi    = computeKPIs(leads);
@@ -371,13 +440,13 @@
       <main style={vp.main}>
         {/* Topbar */}
         <header style={vp.topbar}>
-          <div style={vp.search}>
+          <button style={{ ...vp.search, cursor: 'pointer' }} onClick={onOpenSearch}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2">
               <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
             </svg>
             <span>Lead, firma veya hizmet ara</span>
             <kbd style={vp.kbd}>⌘K</kbd>
-          </div>
+          </button>
           <div style={vp.topRight}>
             <div style={vp.statusChip}><span style={vp.pulseDot}/><span>BOT AKTİF · son 2 dk</span></div>
             <div style={vp.user}>
@@ -430,7 +499,7 @@
                 </div>
                 <div style={vp.focusActions}>
                   <button style={vp.btnLime} onClick={() => onSelect(0)}>{topLead.next_action || 'Detay gör'} →</button>
-                  <button style={vp.btnGhostDark} onClick={() => onSelect(0)}>Rapor</button>
+                  <button style={vp.btnGhostDark} onClick={onOpenReports}>Rapor</button>
                 </div>
               </div>
             </div>
@@ -484,7 +553,7 @@
         {/* Two col */}
         <section style={vp.twoCol}>
           <div>
-            <SH eyebrow="FOCUS QUEUE" title="Öncelik masası" right={<button style={vp.btnGhost}>Tüm raporlar →</button>}/>
+            <SH eyebrow="FOCUS QUEUE" title="Öncelik masası" right={<button style={vp.btnGhost} onClick={onOpenReports}>Tüm raporlar →</button>}/>
             <div style={vp.queue}>
               {queueLeads.length === 0
                 ? <div style={{ padding: 24, background: '#fff', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>Bu kategoride lead yok.</div>
@@ -545,7 +614,7 @@
               </div>
             </div>
 
-            <SH eyebrow="LEAD KUYRUĞU" title="Sıradakiler" right={<a style={vp.linkSm}>Tümünü gör →</a>}/>
+            <SH eyebrow="LEAD KUYRUĞU" title="Sıradakiler" right={<a style={vp.linkSm} onClick={onOpenReports}>Tümünü gör →</a>}/>
             <div style={vp.miniList}>
               {miniLeads.slice(0, 5).map((m, i) => {
                 const globalIdx = leads.indexOf(m);
@@ -677,6 +746,16 @@
       });
     }
 
+    function skipLead() {
+      onNext();
+    }
+
+    function handlePrimaryAction() {
+      startLeadAction(lead).finally(() => {
+        if (onDataChange) onDataChange();
+      });
+    }
+
     return (
       <div style={ld.root}>
         <header style={ld.top}>
@@ -730,8 +809,8 @@
               {lead.priority_reason && <div style={ld.naDesc}>{lead.priority_reason}</div>}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button style={ld.btnGhost}>Atla</button>
-              <button style={ld.btnDark}>Aksiyonu başlat →</button>
+              <button style={ld.btnGhost} onClick={skipLead}>Atla</button>
+              <button style={ld.btnDark} onClick={handlePrimaryAction}>Aksiyonu başlat →</button>
             </div>
           </div>
         )}
@@ -792,7 +871,7 @@
                       <div key={i} style={ld.findRow}>
                         <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{sev}</div>
                         <div style={{ flex: 1 }}><div style={ld.findTitle}>{issue}</div></div>
-                        <button style={ld.findBtn}>Düzelt →</button>
+                        <button style={ld.findBtn} onClick={() => openFixContext(lead, issue)}>Düzelt →</button>
                       </div>
                     );
                   })
@@ -1179,6 +1258,12 @@
 
     function selectLead(i) { setSelectedIdx(i); setView('detail'); }
 
+    function openReports() { setView('raporlar'); }
+
+    function openSearch() { promptLeadSearch(sorted, selectLead); }
+
+    function handleAutomationClick() { copyAutomationPlan(); }
+
     React.useEffect(() => {
       Promise.all([
         fetchJSON('/api/leads?limit=500').then(rows => {
@@ -1230,13 +1315,13 @@
         case 'raporlar':
           return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
         default:
-          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead}/>;
+          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenReports={openReports} onOpenSearch={openSearch}/>;
       }
     }
 
     return (
       <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
-        <Sidebar view={view} onNav={navigate} leadCount={leadRows.length}/>
+        <Sidebar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick}/>
         {renderContent()}
       </div>
     );
