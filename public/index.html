@@ -378,6 +378,14 @@
     };
   }
 
+  function computeReadinessBuckets(arr) {
+    return {
+      readyToCall: arr.filter(lead => Boolean(lead.phone)).length,
+      needsData: arr.filter(lead => needsContactCompletion(lead)).length,
+      proposalReady: arr.filter(lead => Boolean(lead.ai_report) && Boolean(lead.ai_email) && Boolean(lead.matched_services?.length)).length,
+    };
+  }
+
   // ── Shared Sidebar ─────────────────────────────────────────────────────────
 
   function SideIc({ name }) {
@@ -497,6 +505,7 @@
 
     const kpi    = computeKPIs(leads);
     const counts = computeTabCounts(leads, statuses);
+    const readiness = computeReadinessBuckets(leads);
     const tabs   = [
       ['Tümü', counts.total], ['Yeni', counts.yeni], ['Contacted', counts.contacted],
       ['Converted', counts.converted], ['Düşük skor', counts.low],
@@ -589,6 +598,24 @@
               </div>
             </div>
           )}
+        </section>
+
+        <section style={vp.opsGrid}>
+          <div style={vp.opsCard}>
+            <div style={vp.opsLabel}>Hazır arama</div>
+            <div style={vp.opsValue}>{readiness.readyToCall}</div>
+            <div style={vp.opsSub}>Telefon bilgisi tamam, direkt temas kurulabilir.</div>
+          </div>
+          <div style={vp.opsCard}>
+            <div style={vp.opsLabel}>Veri tamamlama</div>
+            <div style={vp.opsValue}>{readiness.needsData}</div>
+            <div style={vp.opsSub}>Telefon / adres eksiği yüzünden önce profil tamamlanmalı.</div>
+          </div>
+          <div style={vp.opsCard}>
+            <div style={vp.opsLabel}>Teklif hazır</div>
+            <div style={vp.opsValue}>{readiness.proposalReady}</div>
+            <div style={vp.opsSub}>Rapor, taslak ve paket eslesmesi birlikte hazır.</div>
+          </div>
         </section>
 
         {/* KPI row */}
@@ -757,6 +784,11 @@
     fsu:           { color: '#6B6B6B', fontSize: 13, fontWeight: 400 },
     focusHint:     { fontSize: 12, color: '#B7B7B2', marginTop: 16, lineHeight: 1.45 },
     focusActions:  { display: 'flex', gap: 10, marginTop: 22 },
+    opsGrid:       { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 8, marginBottom: 18 },
+    opsCard:       { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 18 },
+    opsLabel:      { fontSize: 11, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
+    opsValue:      { fontFamily: '"Inter Tight"', fontSize: 34, fontWeight: 600, letterSpacing: -1.2, marginTop: 10 },
+    opsSub:        { fontSize: 12.5, color: '#6B6B6B', lineHeight: 1.45, marginTop: 8 },
     btnLime:       { padding: '11px 16px', borderRadius: 10, background: '#C6F24E', color: '#0A0A0A', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
     btnGhostDark:  { padding: '11px 16px', borderRadius: 10, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', fontWeight: 500, fontSize: 13, cursor: 'pointer' },
     kpiRow:        { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 8 },
@@ -826,6 +858,7 @@
     const events     = getLeadEvents(lead.name);
     const actionMeta = getPrimaryActionMeta(lead);
     const readiness  = getLeadReadiness(lead);
+    const lastEvent  = events[0] || null;
 
     React.useEffect(() => {
       if (!feedback) return;
@@ -898,6 +931,13 @@
               {lead.social?.instagram_url && <a href={lead.social.instagram_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>@{lead.social.instagram_username || 'instagram'} ↗</a>}
               {lead.maps_url && <a href={lead.maps_url} target="_blank" rel="noopener noreferrer" style={ld.urlChip}>Google Maps ↗</a>}
               {lead.phone && <span style={ld.urlChip}>{lead.phone}</span>}
+            </div>
+            <div style={ld.quickActions}>
+              {lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} style={ld.quickBtn}>Telefonu aç</a>}
+              {lead.website?.website_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.website.website_url)}>Siteyi aç</button>}
+              {lead.social?.instagram_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.social.instagram_url)}>Instagram aç</button>}
+              {lead.maps_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.maps_url)}>Maps aç</button>}
+              {lead.ai_email && <button style={ld.quickBtn} onClick={copyEmail}>{copied ? 'Taslak kopyalandi' : 'Taslagi kopyala'}</button>}
             </div>
           </div>
           <div style={ld.heroRight}>
@@ -1041,6 +1081,12 @@
             <div style={ld.sideCard}>
               <div style={ld.eyebrow}>AKTİVİTE</div>
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Zaman çizelgesi</div>
+              {lastEvent && (
+                <div style={ld.lastEventBanner}>
+                  <div style={ld.lastEventLabel}>Son hareket</div>
+                  <div style={ld.lastEventText}>{(ACTIONS[lastEvent.action] || ACTIONS.note).label}</div>
+                </div>
+              )}
               {events.map((event, eventIdx) => {
                 const meta = ACTIONS[event.action] || ACTIONS.note;
                 return (
@@ -1094,6 +1140,8 @@
     metaText:    { fontSize: 11.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginLeft: 6 },
     h1:          { fontFamily: '"Inter Tight"', fontSize: 52, fontWeight: 600, letterSpacing: -2, lineHeight: 1.05, margin: '20px 0 0' },
     urls:        { display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' },
+    quickActions:{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' },
+    quickBtn:    { padding: '8px 14px', background: '#FAFAF9', border: '1px solid #ECECEC', borderRadius: 10, fontSize: 12, color: '#0A0A0A', cursor: 'pointer', fontWeight: 500 },
     urlChip:     { padding: '8px 14px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 99, fontSize: 12.5, color: '#3A3A3A', cursor: 'pointer', fontFamily: '"JetBrains Mono"' },
     heroRight:   { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 },
     gradePill:   { width: 56, height: 56, borderRadius: 14, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: '"Inter Tight"', fontSize: 26, fontWeight: 600 },
@@ -1132,6 +1180,9 @@
     readinessGrid:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
     readyItemOk: { display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#EEF9E9', color: '#1F6B3B', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
     readyItemWarn:{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#FFF5EA', color: '#A14C20', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
+    lastEventBanner:{ padding: '10px 12px', borderRadius: 10, background: '#FAFAF9', border: '1px solid #ECECEC', marginBottom: 8 },
+    lastEventLabel:{ fontSize: 10.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1 },
+    lastEventText: { fontSize: 13, color: '#0A0A0A', fontWeight: 600, marginTop: 6 },
     actRow:      { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' },
     actDot:      { width: 8, height: 8, borderRadius: 99, background: '#0A0A0A', marginTop: 6, flexShrink: 0 },
     actKind:     { fontSize: 13, fontWeight: 500 },
