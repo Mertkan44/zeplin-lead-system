@@ -103,7 +103,7 @@ async def run(
                 audited.append(cached)
                 continue
 
-            maps_data = await find_from_google_maps(page, lead["maps_url"], name)
+            maps_data = await find_from_google_maps(page, lead["maps_url"], name, lead.get("city"))
             print(f"  🌐 {maps_data.get('website_url') or '—'}")
             print(f"  📞 {maps_data.get('phone') or '—'}")
             print(f"  📍 {maps_data.get('address') or '—'}")

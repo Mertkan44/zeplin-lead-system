@@ -31,7 +31,7 @@ async def refresh_metrics(path: Path) -> list[dict]:
             merged = dict(lead)
 
             if lead.get("maps_url"):
-                maps_data = await find_from_google_maps(page, lead["maps_url"], name)
+                maps_data = await find_from_google_maps(page, lead["maps_url"], name, lead.get("city"))
                 for key in ("phone", "address", "rating", "review_count", "category"):
                     if maps_data.get(key) is not None:
                         merged[key] = maps_data.get(key)

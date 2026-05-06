@@ -3,6 +3,7 @@ import json
 import re
 import httpx
 import time
+from urllib.parse import quote_plus
 from playwright.async_api import async_playwright
 from rich.console import Console
 
@@ -30,8 +31,83 @@ def detect_sector(category: str | None) -> str:
             return sector
     return "default"
 
+
+def _normalize_maps_card_text(text: str) -> str:
+    return re.sub(r"\s+", "\n", text or "").strip()
+
+
+def _parse_maps_search_card(text: str) -> dict:
+    normalized = _normalize_maps_card_text(text)
+    result = {"rating": None, "review_count": None, "category": None, "phone": None, "address": None}
+    if not normalized:
+        return result
+
+    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
+    saw_no_reviews = False
+    for line in lines:
+        if result["rating"] is None and re.fullmatch(r"[\d][,.][\d]", line):
+            try:
+                result["rating"] = float(line.replace(",", "."))
+            except Exception:
+                pass
+        if re.search(r"yorum yok|no reviews", line, re.I):
+            saw_no_reviews = True
+        if result["phone"] is None:
+            phone_match = re.search(r"(\+?\d[\d\s()]{8,})", line)
+            if phone_match:
+                result["phone"] = phone_match.group(1).strip()
+        if result["category"] is None and "·" in line:
+            category = line.split("·", 1)[0].strip()
+            if category and len(category) < 60 and not re.search(r"kapalı|açık|yorum|reviews?", category, re.I):
+                result["category"] = category
+            maybe_address = line.rsplit("·", 1)[-1].strip()
+            if (
+                result["address"] is None
+                and maybe_address
+                and len(maybe_address) > 4
+                and not re.search(r"kapalı|açık|yorum|reviews?", maybe_address, re.I)
+                and not re.search(r"^\+?\d", maybe_address)
+            ):
+                result["address"] = maybe_address
+
+    if saw_no_reviews and result["rating"] is None:
+        result["review_count"] = 0
+
+    return result
+
+
+async def _find_maps_search_fallback(page, business_name: str, city: str | None = None) -> dict:
+    fallback = {"rating": None, "review_count": None, "category": None, "phone": None, "address": None}
+    query = " ".join(part for part in [business_name, city] if part).strip()
+    if not query:
+        return fallback
+    try:
+        await page.goto(f"https://www.google.com/maps/search/{quote_plus(query)}", wait_until="domcontentloaded")
+        await page.wait_for_timeout(4500)
+        cards = await page.query_selector_all("div.Nv2PK")
+        for card in cards[:12]:
+            try:
+                title_el = await card.query_selector("div.qBF1Pd")
+                title = (await title_el.inner_text()).strip() if title_el else ""
+                if title and title.lower() != business_name.lower():
+                    continue
+                html = await card.inner_html()
+                if business_name.lower() not in html.lower():
+                    continue
+                parsed = _parse_maps_search_card(await card.inner_text())
+                for key, value in parsed.items():
+                    if fallback.get(key) is None and value is not None:
+                        fallback[key] = value
+                if any(value is not None for value in fallback.values()):
+                    return fallback
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return fallback
+
 # ── Google Maps ────────────────────────────────────────
-async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict:
+async def find_from_google_maps(page, maps_url: str, business_name: str, city: str | None = None) -> dict:
     result = {
         "website_url": None, "phone": None, "address": None,
         "rating": None, "review_count": None, "category": None,
@@ -151,6 +227,20 @@ async def find_from_google_maps(page, maps_url: str, business_name: str) -> dict
 
     except Exception as e:
         console.print(f"[red]Maps hata: {e}[/red]")
+
+    if (
+        result["rating"] is None
+        or result["review_count"] is None
+        or result["category"] is None
+        or result["phone"] is None
+    ):
+        fallback = await _find_maps_search_fallback(page, business_name, city)
+        for key, value in fallback.items():
+            if result.get(key) is None and value is not None:
+                result[key] = value
+
+    if result["rating"] is not None and result["review_count"] == 0:
+        result["review_count"] = None
 
     return result
 
@@ -603,7 +693,7 @@ async def audit_all(leads_file="leads_raw.json"):
             maps_data = {}
             if lead.get("maps_url"):
                 console.print("  📍 Google Maps...")
-                maps_data = await find_from_google_maps(page, lead["maps_url"], name)
+                maps_data = await find_from_google_maps(page, lead["maps_url"], name, lead.get("city"))
                 console.print(f"     Web: {maps_data.get('website_url','—')}")
                 console.print(f"     Tel: {maps_data.get('phone','—')}")
                 console.print(f"     Puan: {maps_data.get('rating','—')} ({maps_data.get('review_count','?')} yorum)")
