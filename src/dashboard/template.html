@@ -295,6 +295,53 @@
     return map[last.action] || (st === 'contacted' ? 'emailed' : 'new');
   }
 
+  function hasContactInfo(lead) {
+    return Boolean(lead.phone || lead.address);
+  }
+
+  function needsContactCompletion(lead) {
+    const nextAction = lead.next_action || '';
+    return /telefon|adres/i.test(nextAction) || !hasContactInfo(lead);
+  }
+
+  function getPrimaryActionMeta(lead) {
+    if (needsContactCompletion(lead)) {
+      return {
+        label: 'Veriyi tamamla',
+        helper: 'Maps ya da siteyi acar, status degismez.',
+        intent: 'enrich',
+      };
+    }
+    if (lead.phone) {
+      return {
+        label: 'Aramayi kaydet',
+        helper: 'Temasta durumuna tasir ve zaman cizelgesine ekler.',
+        intent: 'call',
+      };
+    }
+    if (lead.ai_email) {
+      return {
+        label: 'Taslagi kopyala',
+        helper: 'Hazir e-postayi panoya kopyalar, otomatik gondermez.',
+        intent: 'draft',
+      };
+    }
+    return {
+      label: 'Aksiyonu kaydet',
+      helper: 'Sadece takip icin aktivite olusturur.',
+      intent: 'review',
+    };
+  }
+
+  function getLeadReadiness(lead) {
+    return [
+      { label: 'Telefon / adres', ready: hasContactInfo(lead) },
+      { label: 'AI raporu', ready: Boolean(lead.ai_report) },
+      { label: 'Mail taslagi', ready: Boolean(lead.ai_email) },
+      { label: 'Paket eslesmesi', ready: Boolean(lead.matched_services && lead.matched_services.length) },
+    ];
+  }
+
   function issueToSeverity(text) {
     if (!text) return 'Bilgi';
     const t = text.toLowerCase();
@@ -471,6 +518,7 @@
     const criticalCount = leads.filter(l => l.scoring?.issues?.some(i => issueToSeverity(i) === 'Kritik')).length;
     const lastDate      = topLead ? fmtDate(topLead.last_analyzed) : '—';
     const pipelineMax   = Math.max(leads.length, 1);
+    const topLeadAction = topLead ? getPrimaryActionMeta(topLead) : null;
 
     return (
       <main style={vp.main}>
@@ -533,8 +581,9 @@
                   <div><div style={vp.fsl}>Skor</div><div style={vp.fsv}>{topLead.scoring.score}<span style={vp.fsu}>/100</span></div></div>
                   <div><div style={vp.fsl}>Sınıf</div><div style={vp.fsv}>{topLead.scoring.grade}</div></div>
                 </div>
+                {topLeadAction && <div style={vp.focusHint}>{topLeadAction.helper}</div>}
                 <div style={vp.focusActions}>
-                  <button style={vp.btnLime} onClick={() => onSelect(0)}>{topLead.next_action || 'Detay gör'} →</button>
+                  <button style={vp.btnLime} onClick={() => onSelect(0)}>{topLeadAction ? topLeadAction.label : (topLead.next_action || 'Detay gör')} →</button>
                   <button style={vp.btnGhostDark} onClick={onOpenReports}>Rapor</button>
                 </div>
               </div>
@@ -595,6 +644,7 @@
                 ? <div style={{ padding: 24, background: '#fff', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>Bu kategoride lead yok.</div>
                 : queueLeads.map((r, i) => {
                     const globalIdx = leads.indexOf(r);
+                    const actionMeta = getPrimaryActionMeta(r);
                     return (
                       <article key={r.name} style={{ ...vp.queueRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
                         <div style={vp.queueIdx}>
@@ -606,12 +656,13 @@
                           <div style={vp.queueSub}>{r.city} · {r.scoring.grade} sınıfı · <strong>{r.estimated_value_tl > 0 ? `~${fmt(r.estimated_value_tl)} ₺` : '—'}</strong></div>
                           <div style={vp.queueTags}>
                             {r.next_action && <span style={vp.tagPrimary}>{r.next_action}</span>}
+                            <span style={vp.tagNeutral}>{actionMeta.label}</span>
                             {(r.scoring.issues || []).slice(0, 2).map((t, ti) => <span key={ti} style={vp.tag}>{t}</span>)}
                           </div>
                         </div>
                         <div style={vp.queueCta}>
                           <div style={vp.queueCtaLabel}>Sıradaki aksiyon</div>
-                          <button style={vp.btnPrimarySm} onClick={e => { e.stopPropagation(); onSelect(globalIdx); }}>{r.next_action || 'Detay gör'} →</button>
+                          <button style={vp.btnPrimarySm} onClick={e => { e.stopPropagation(); onSelect(globalIdx); }}>{actionMeta.label} →</button>
                         </div>
                       </article>
                     );
@@ -704,6 +755,7 @@
     fsl:           { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
     fsv:           { fontSize: 20, fontFamily: '"Inter Tight"', fontWeight: 600, marginTop: 6, letterSpacing: -0.5 },
     fsu:           { color: '#6B6B6B', fontSize: 13, fontWeight: 400 },
+    focusHint:     { fontSize: 12, color: '#B7B7B2', marginTop: 16, lineHeight: 1.45 },
     focusActions:  { display: 'flex', gap: 10, marginTop: 22 },
     btnLime:       { padding: '11px 16px', borderRadius: 10, background: '#C6F24E', color: '#0A0A0A', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
     btnGhostDark:  { padding: '11px 16px', borderRadius: 10, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', fontWeight: 500, fontSize: 13, cursor: 'pointer' },
@@ -729,6 +781,7 @@
     queueTags:     { display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' },
     tag:           { padding: '4px 10px', borderRadius: 99, background: '#F4F4F2', color: '#3A3A3A', fontSize: 11, fontFamily: '"JetBrains Mono"' },
     tagPrimary:    { padding: '4px 10px', borderRadius: 99, background: '#0A0A0A', color: '#fff', fontSize: 11, fontFamily: '"JetBrains Mono"' },
+    tagNeutral:    { padding: '4px 10px', borderRadius: 99, background: '#FFF5EA', color: '#A14C20', fontSize: 11, fontFamily: '"JetBrains Mono"' },
     queueCta:      { textAlign: 'right' },
     queueCtaLabel: { fontSize: 11, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"', marginBottom: 8 },
     btnPrimarySm:  { padding: '9px 14px', borderRadius: 8, background: '#0A0A0A', color: '#fff', border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' },
@@ -771,6 +824,8 @@
     const svc = lead.recommended_package || {};
     const ms  = (lead.matched_services || [])[0] || {};
     const events     = getLeadEvents(lead.name);
+    const actionMeta = getPrimaryActionMeta(lead);
+    const readiness  = getLeadReadiness(lead);
 
     React.useEffect(() => {
       if (!feedback) return;
@@ -864,11 +919,12 @@
               <div style={ld.naEyebrow}>SONRAKİ EN İYİ AKSİYON · ÖNCELİK {lead.sales_priority_score || '—'}</div>
               <div style={ld.naTitle}>{lead.next_action}</div>
               {lead.priority_reason && <div style={ld.naDesc}>{lead.priority_reason}</div>}
+              <div style={ld.naHelper}>{actionMeta.helper}</div>
               {feedback && <div style={ld.inlineFeedback}>{feedback}</div>}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={{ ...ld.btnGhost, opacity: busy ? 0.7 : 1 }} onClick={skipLead} disabled={busy}>Atla</button>
-              <button style={{ ...ld.btnDark, opacity: busy ? 0.7 : 1 }} onClick={handlePrimaryAction} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Aksiyonu başlat →'}</button>
+              <button style={{ ...ld.btnDark, opacity: busy ? 0.7 : 1 }} onClick={handlePrimaryAction} disabled={busy}>{busy ? 'Kaydediliyor…' : `${actionMeta.label} →`}</button>
             </div>
           </div>
         )}
@@ -960,6 +1016,19 @@
 
           <aside style={ld.side}>
             <div style={ld.sideCard}>
+              <div style={ld.eyebrow}>HAZIRLIK</div>
+              <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Temas checklist</div>
+              <div style={ld.readinessGrid}>
+                {readiness.map(item => (
+                  <div key={item.label} style={item.ready ? ld.readyItemOk : ld.readyItemWarn}>
+                    <span>{item.ready ? 'Hazır' : 'Eksik'}</span>
+                    <strong>{item.label}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={ld.sideCard}>
               <div style={ld.eyebrow}>DURUM</div>
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Pipeline konumu</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -1032,6 +1101,7 @@
     naEyebrow:   { fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#A14C20' },
     naTitle:     { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.4, marginTop: 6 },
     naDesc:      { fontSize: 13, color: '#6B6B6B', marginTop: 4, maxWidth: 600 },
+    naHelper:    { fontSize: 12, color: '#9A9A9A', marginTop: 8, lineHeight: 1.45 },
     inlineFeedback:{ fontSize: 12, color: '#1F6B3B', marginTop: 10, fontWeight: 500 },
     cols:        { display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 24 },
     side:        { display: 'flex', flexDirection: 'column', gap: 16 },
@@ -1059,6 +1129,9 @@
     findTitle:   { fontSize: 14, fontWeight: 600 },
     findBtn:     { padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 7, fontSize: 12, color: '#0A0A0A', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
     sideCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22 },
+    readinessGrid:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
+    readyItemOk: { display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#EEF9E9', color: '#1F6B3B', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
+    readyItemWarn:{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#FFF5EA', color: '#A14C20', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
     actRow:      { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' },
     actDot:      { width: 8, height: 8, borderRadius: 99, background: '#0A0A0A', marginTop: 6, flexShrink: 0 },
     actKind:     { fontSize: 13, fontWeight: 500 },
