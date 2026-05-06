@@ -275,13 +275,13 @@
   };
 
   const PIPE_STAGES = [
-    { key: 'new',      label: 'Yeni',           color: '#9A9A9A', actions: [] },
-    { key: 'emailed',  label: 'Mail Atıldı',    color: '#76a6ff', actions: ['email_sent'] },
-    { key: 'replied',  label: 'Cevap Alındı',   color: '#f7c560', actions: ['reply_received'] },
-    { key: 'called',   label: 'Görüşüldü',      color: '#b9a8ff', actions: ['call_made'] },
-    { key: 'meeting',  label: 'Toplantı',        color: '#ff9f43', actions: ['meeting_scheduled'] },
-    { key: 'won',      label: 'Kazanıldı 🎉',  color: '#7ce2b5', actions: ['deal_won'] },
-    { key: 'lost',     label: 'Kaybedildi',      color: '#ff6770', actions: ['deal_lost'] },
+    { key: 'new',      label: 'Yeni',              color: '#9A9A9A', actions: [] },
+    { key: 'enrich',   label: 'Veri Tamamlama',    color: '#ffb36b', actions: ['data_enrichment_started'] },
+    { key: 'draft',    label: 'Taslak Hazır',      color: '#76a6ff', actions: ['draft_prepared'] },
+    { key: 'contacted',label: 'Temasta',           color: '#b9a8ff', actions: ['call_made', 'email_sent', 'reply_received'] },
+    { key: 'meeting',  label: 'Toplantı',          color: '#ff9f43', actions: ['meeting_scheduled'] },
+    { key: 'won',      label: 'Kazanıldı',         color: '#7ce2b5', actions: ['deal_won'] },
+    { key: 'lost',     label: 'Kaybedildi',        color: '#ff6770', actions: ['deal_lost'] },
   ];
 
   function getPipelineStage(lead) {
@@ -289,10 +289,10 @@
     if (st === 'converted') return 'won';
     const evs = getLeadEvents(lead.name);
     const last = evs.find(e => e.action !== 'note');
-    if (!last) return st === 'contacted' ? 'emailed' : 'new';
-    const map = { email_sent: 'emailed', reply_received: 'replied', call_made: 'called',
+    if (!last) return st === 'contacted' ? 'contacted' : 'new';
+    const map = { data_enrichment_started: 'enrich', draft_prepared: 'draft', outreach_review_started: 'draft', email_sent: 'contacted', reply_received: 'contacted', call_made: 'contacted',
                   meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
-    return map[last.action] || (st === 'contacted' ? 'emailed' : 'new');
+    return map[last.action] || (st === 'contacted' ? 'contacted' : 'new');
   }
 
   function hasContactInfo(lead) {
@@ -1376,13 +1376,28 @@
 
   function RaporlarView({ leads, statuses, onSelect }) {
     const [sort, setSort] = React.useState('score');
+    const [cityFilter, setCityFilter] = React.useState('all');
+    const [statusFilter, setStatusFilter] = React.useState('all');
+    const [readinessFilter, setReadinessFilter] = React.useState('all');
+    const cities = React.useMemo(() => ['all', ...Array.from(new Set(leads.map(l => l.city).filter(Boolean))).sort()], [leads]);
+    const filtered = React.useMemo(() => {
+      return leads.filter(lead => {
+        const status = statuses[lead.name] || 'yeni';
+        if (cityFilter !== 'all' && lead.city !== cityFilter) return false;
+        if (statusFilter !== 'all' && status !== statusFilter) return false;
+        if (readinessFilter === 'ready-call' && !lead.phone) return false;
+        if (readinessFilter === 'needs-data' && !needsContactCompletion(lead)) return false;
+        if (readinessFilter === 'proposal-ready' && !(lead.ai_report && lead.ai_email && lead.matched_services?.length)) return false;
+        return true;
+      });
+    }, [leads, statuses, cityFilter, statusFilter, readinessFilter]);
     const sorted = React.useMemo(() => {
-      const arr = leads.slice();
+      const arr = filtered.slice();
       if (sort === 'score')    arr.sort((a, b) => b.scoring.score - a.scoring.score);
       if (sort === 'value')    arr.sort((a, b) => (b.estimated_value_tl||0) - (a.estimated_value_tl||0));
       if (sort === 'priority') arr.sort((a, b) => (b.sales_priority_score||0) - (a.sales_priority_score||0));
       return arr;
-    }, [leads, sort]);
+    }, [filtered, sort]);
 
     const totalPipeline = leads.reduce((a, l) => a + (l.estimated_value_tl||0), 0);
     const readyToContact = leads.filter(l => l.phone || l.address).length;
@@ -1393,9 +1408,24 @@
           <div>
             <div style={pv.pageEyebrow}>RAPORLAR</div>
             <h1 style={pv.pageTitle}>Lead rapor görünümü</h1>
-            <p style={pv.pageSub}>{leads.length} lead · Ulaşılabilir: {readyToContact} · Pipeline: ~{totalPipeline.toLocaleString('tr-TR')} ₺</p>
+            <p style={pv.pageSub}>{filtered.length} lead · Ulaşılabilir: {readyToContact} · Pipeline: ~{totalPipeline.toLocaleString('tr-TR')} ₺</p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} style={rv.select}>
+              {cities.map(city => <option key={city} value={city}>{city === 'all' ? 'Tum ilceler' : city}</option>)}
+            </select>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={rv.select}>
+              <option value="all">Tum durumlar</option>
+              <option value="yeni">Yeni</option>
+              <option value="contacted">Temasta</option>
+              <option value="converted">Kazanildi</option>
+            </select>
+            <select value={readinessFilter} onChange={e => setReadinessFilter(e.target.value)} style={rv.select}>
+              <option value="all">Tum hazirliklar</option>
+              <option value="ready-call">Hazir arama</option>
+              <option value="needs-data">Veri tamamlama</option>
+              <option value="proposal-ready">Teklif hazir</option>
+            </select>
             <span style={{ fontSize: 12, color: '#6B6B6B', fontFamily: '"JetBrains Mono"' }}>Sırala:</span>
             {[['score','Puan'],['value','Değer'],['priority','Öncelik']].map(([k,l]) => (
               <button key={k} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: sort===k ? '#0A0A0A' : '#fff', color: sort===k ? '#fff' : '#3A3A3A', fontSize: 12, cursor: 'pointer', fontWeight: sort===k ? 600 : 400 }} onClick={() => setSort(k)}>{l}</button>
@@ -1416,6 +1446,7 @@
                   <div style={{ fontFamily: '"Inter Tight"', fontSize: 16, fontWeight: 600, letterSpacing: -0.3 }}>{l.name}</div>
                   <div style={{ fontSize: 12.5, color: '#6B6B6B', marginTop: 4 }}>{l.city} · {l.scoring.grade} sınıfı</div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#FFF5EA', padding: '3px 9px', borderRadius: 99, color: '#A14C20' }}>{getPrimaryActionMeta(l).label}</span>
                     {(l.scoring.issues || []).slice(0, 3).map((t, ti) => (
                       <span key={ti} style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#F4F4F2', padding: '3px 9px', borderRadius: 99, color: '#3A3A3A' }}>{t}</span>
                     ))}
@@ -1433,6 +1464,10 @@
       </div>
     );
   }
+
+  const rv = {
+    select: { padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: '#fff', color: '#3A3A3A', fontSize: 12, fontFamily: '"JetBrains Mono"', outline: 'none' },
+  };
 
   // ── App ────────────────────────────────────────────────────────────────────
 
