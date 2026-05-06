@@ -165,13 +165,46 @@
   }
 
   function startLeadAction(lead) {
-    const action = lead.phone ? 'call_made' : 'email_sent';
+    const nextAction = lead.next_action || 'Sonraki aksiyon başlatıldı';
+    const needsContactCompletion = /telefon|adres/i.test(nextAction) || (!lead.phone && !lead.address);
+
+    if (needsContactCompletion) {
+      openExternal(lead.maps_url || lead.website?.website_url || lead.social?.instagram_url);
+      return addOutreach(
+        lead.name,
+        'data_enrichment_started',
+        new Date().toISOString(),
+        nextAction
+      ).then(() => ({ feedback: 'Veri tamamlama aksiyonu kaydedildi.' }));
+    }
+
+    if (lead.phone) {
+      return addOutreach(
+        lead.name,
+        'call_made',
+        new Date().toISOString(),
+        nextAction
+      ).then(() => ({ feedback: 'Arama aksiyonu kaydedildi.' }));
+    }
+
+    if (lead.ai_email) {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(lead.ai_email).catch(() => {});
+      }
+      return addOutreach(
+        lead.name,
+        'draft_prepared',
+        new Date().toISOString(),
+        'Hazır taslak panoya kopyalandı'
+      ).then(() => ({ feedback: 'Mail taslağı panoya kopyalandı.' }));
+    }
+
     return addOutreach(
       lead.name,
-      action,
+      'outreach_review_started',
       new Date().toISOString(),
-      lead.next_action || 'Sonraki aksiyon başlatıldı'
-    );
+      nextAction
+    ).then(() => ({ feedback: 'Aksiyon kaydedildi.' }));
   }
 
   function openFixContext(lead, issue) {
@@ -229,6 +262,9 @@
   }
 
   const ACTIONS = {
+    data_enrichment_started: { label: 'Veri Tamamlama Başladı', icon: '🧭', status: null },
+    draft_prepared:     { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
+    outreach_review_started: { label: 'Aksiyon İnceleniyor', icon: '🗂️', status: null },
     email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
     reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
     call_made:         { label: 'Arama Yapıldı',      icon: '📞', status: 'contacted' },
@@ -256,7 +292,7 @@
     if (!last) return st === 'contacted' ? 'emailed' : 'new';
     const map = { email_sent: 'emailed', reply_received: 'replied', call_made: 'called',
                   meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
-    return map[last.action] || 'emailed';
+    return map[last.action] || (st === 'contacted' ? 'emailed' : 'new');
   }
 
   function issueToSeverity(text) {
@@ -767,8 +803,8 @@
 
     function handlePrimaryAction() {
       setBusy(true);
-      startLeadAction(lead).then(() => {
-        setFeedback(lead.phone ? 'Arama aksiyonu kaydedildi.' : 'Mail aksiyonu kaydedildi.');
+      startLeadAction(lead).then(result => {
+        setFeedback((result && result.feedback) || 'Aksiyon kaydedildi.');
       }).catch(() => {
         setFeedback('Aksiyon yerelde işlendi.');
       }).finally(() => {
