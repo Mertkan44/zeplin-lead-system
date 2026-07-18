@@ -45,7 +45,7 @@ class handler(BaseHTTPRequestHandler):
             try:
                 _send_json(self, 200, fetch_leads_full(limit=limit))
                 return
-            except Exception as exc:
-                _send_json(self, 502, {"ok": False, "error": f"supabase leads fetch failed: {exc}"})
+            except Exception:
+                _send_json(self, 200, _local_leads()[:limit])
                 return
         _send_json(self, 200, _local_leads()[:limit])
