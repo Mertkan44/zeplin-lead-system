@@ -159,6 +159,19 @@
     });
   }
 
+  function fetchAdminJSON(url, options) {
+    const opts = { credentials: 'same-origin', ...(options || {}) };
+    opts.headers = { 'Content-Type': 'application/json', ...((options || {}).headers || {}) };
+    return fetch(url, opts).then(res => {
+      if (!res.ok) {
+        return res.json().catch(() => ({})).then(data => {
+          throw new Error(data.error || `request_failed_${res.status}`);
+        });
+      }
+      return res.json();
+    });
+  }
+
   function openExternal(url) {
     if (!url) return;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -437,6 +450,7 @@
       audit:     <><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
       raporlar:  <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12v4"/><path d="M12 8v8"/><path d="M16 14v2"/></>,
       hizmetler: <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4M10 14h4"/></>,
+      admin:     <><path d="M12 3l8 4v5c0 5-3.4 8.5-8 9-4.6-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-5"/></>,
       settings:  <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
     };
     return (
@@ -452,6 +466,7 @@
       { key: 'raporlar',  ic: 'leads',     label: 'Leadler' },
       { key: 'pipeline',  ic: 'pipeline',  label: 'Pipeline' },
       { key: 'hizmetler', ic: 'hizmetler', label: 'Hizmetler' },
+      { key: 'admin',     ic: 'admin',     label: 'Admin' },
     ];
     const currentView = view === 'detail' ? 'raporlar' : view;
 
@@ -1581,6 +1596,226 @@
     select: { padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: '#fff', color: '#3A3A3A', fontSize: 12, fontFamily: '"JetBrains Mono"', outline: 'none' },
   };
 
+  // ── Admin View ────────────────────────────────────────────────────────────
+
+  function AdminView() {
+    const [auth, setAuth] = React.useState({ loading: true, authenticated: false, configured: true });
+    const [password, setPassword] = React.useState('');
+    const [query, setQuery] = React.useState('restoran');
+    const [city, setCity] = React.useState('Istanbul Kadıköy');
+    const [maxResults, setMaxResults] = React.useState(10);
+    const [deepResearch, setDeepResearch] = React.useState(true);
+    const [aiMode, setAiMode] = React.useState('smart');
+    const [jobs, setJobs] = React.useState([]);
+    const [tokens, setTokens] = React.useState(null);
+    const [feedback, setFeedback] = React.useState('');
+    const [busy, setBusy] = React.useState(false);
+
+    const estimatedTokens = maxResults * (deepResearch ? 9000 : 5200);
+    const estimatedCost = (estimatedTokens / 1000000 * 0.9).toFixed(4);
+
+    function refreshAdmin() {
+      return fetchAdminJSON('/api/admin_search')
+        .then(data => {
+          setJobs(data.jobs || []);
+          setTokens(data.token_summary || null);
+        })
+        .catch(err => setFeedback(err.message));
+    }
+
+    React.useEffect(() => {
+      fetchAdminJSON('/api/auth')
+        .then(data => {
+          setAuth({ loading: false, authenticated: Boolean(data.authenticated), configured: data.configured !== false });
+          if (data.authenticated) refreshAdmin();
+        })
+        .catch(() => setAuth({ loading: false, authenticated: false, configured: true }));
+    }, []);
+
+    function login(e) {
+      e.preventDefault();
+      setBusy(true);
+      setFeedback('');
+      fetchAdminJSON('/api/auth', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      })
+        .then(() => {
+          setPassword('');
+          setAuth({ loading: false, authenticated: true, configured: true });
+          return refreshAdmin();
+        })
+        .catch(err => setFeedback(err.message))
+        .finally(() => setBusy(false));
+    }
+
+    function logout() {
+      fetchAdminJSON('/api/auth', { method: 'DELETE' }).finally(() => {
+        setAuth({ loading: false, authenticated: false, configured: true });
+        setJobs([]);
+        setTokens(null);
+      });
+    }
+
+    function createJob(e) {
+      e.preventDefault();
+      setBusy(true);
+      setFeedback('');
+      fetchAdminJSON('/api/admin_search', {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          city,
+          max_results: Number(maxResults),
+          deep_research: deepResearch,
+          ai_mode: aiMode,
+        }),
+      })
+        .then(data => {
+          setFeedback(`Search job #${data.job.id} kuyruğa alındı. Tahmini ${data.estimate.estimated_tokens.toLocaleString('tr-TR')} token.`);
+          return refreshAdmin();
+        })
+        .catch(err => setFeedback(err.message))
+        .finally(() => setBusy(false));
+    }
+
+    if (auth.loading) {
+      return <div style={av.root}><div style={av.empty}>Admin oturumu kontrol ediliyor.</div></div>;
+    }
+
+    if (!auth.configured) {
+      return (
+        <div style={av.root}>
+          <div style={av.panel}>
+            <div style={pv.pageEyebrow}>ADMIN SETUP</div>
+            <h1 style={pv.pageTitle}>Giriş ayarı eksik</h1>
+            <p style={av.text}>Vercel Environment Variables içine ADMIN_PASSWORD ve SESSION_SECRET eklenmeli.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!auth.authenticated) {
+      return (
+        <div style={av.root}>
+          <form style={av.loginCard} onSubmit={login}>
+            <div style={pv.pageEyebrow}>ADMIN LOGIN</div>
+            <h1 style={pv.pageTitle}>Zeplin Admin</h1>
+            <p style={av.text}>Yeni search, token bütçesi ve pipeline işleri için giriş yap.</p>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Admin şifresi"
+              style={av.input}
+            />
+            {feedback && <div style={av.feedback}>{feedback}</div>}
+            <button style={av.primaryBtn} disabled={busy || !password.trim()}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</button>
+          </form>
+        </div>
+      );
+    }
+
+    return (
+      <div style={av.root}>
+        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={pv.pageEyebrow}>ADMIN</div>
+            <h1 style={pv.pageTitle}>Search operasyonu</h1>
+            <p style={pv.pageSub}>Yeni lead taraması, DeepSeek bütçesi ve Supabase job kuyruğu.</p>
+          </div>
+          <button style={ld.btnGhost} onClick={logout}>Çıkış</button>
+        </div>
+
+        <div style={av.grid}>
+          <form style={av.panel} onSubmit={createJob}>
+            <div style={ld.eyebrow}>YENİ SEARCH</div>
+            <div style={ld.cardTitle}>Admin tarama başlat</div>
+            <label style={av.label}>Arama tipi</label>
+            <input value={query} onChange={e => setQuery(e.target.value)} style={av.input} placeholder="restoran, mağaza, kuaför" />
+            <label style={av.label}>Bölge</label>
+            <input value={city} onChange={e => setCity(e.target.value)} style={av.input} placeholder="Istanbul Kadıköy" />
+            <div style={av.row}>
+              <div style={{ flex: 1 }}>
+                <label style={av.label}>Sonuç</label>
+                <input type="number" min="1" max="30" value={maxResults} onChange={e => setMaxResults(e.target.value)} style={av.input} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={av.label}>AI modu</label>
+                <select value={aiMode} onChange={e => setAiMode(e.target.value)} style={av.input}>
+                  <option value="smart">Smart</option>
+                  <option value="flash">Flash</option>
+                  <option value="pro">Pro</option>
+                </select>
+              </div>
+            </div>
+            <label style={av.checkRow}>
+              <input type="checkbox" checked={deepResearch} onChange={e => setDeepResearch(e.target.checked)} />
+              <span>Deep research açık</span>
+            </label>
+            <div style={av.estimate}>
+              <div><strong>{estimatedTokens.toLocaleString('tr-TR')}</strong><span> tahmini token</span></div>
+              <div><strong>${estimatedCost}</strong><span> tahmini maliyet</span></div>
+            </div>
+            {feedback && <div style={av.feedback}>{feedback}</div>}
+            <button style={av.primaryBtn} disabled={busy || !query.trim() || !city.trim()}>{busy ? 'Kuyruğa alınıyor…' : 'Search job oluştur'}</button>
+          </form>
+
+          <div style={av.sideStack}>
+            <div style={av.panel}>
+              <div style={ld.eyebrow}>TOKEN</div>
+              <div style={ld.cardTitle}>DeepSeek kullanımı</div>
+              <div style={av.metricRow}><span>Reserve</span><strong>{(tokens?.estimated_tokens || 0).toLocaleString('tr-TR')}</strong></div>
+              <div style={av.metricRow}><span>Gerçek</span><strong>{(tokens?.actual_tokens || 0).toLocaleString('tr-TR')}</strong></div>
+              <div style={av.metricRow}><span>Tahmini maliyet</span><strong>${Number(tokens?.estimated_cost_usd || 0).toFixed(4)}</strong></div>
+            </div>
+
+            <div style={av.panel}>
+              <div style={ld.eyebrow}>SON İŞLER</div>
+              <div style={ld.cardTitle}>Search kuyruğu</div>
+              <div style={av.jobs}>
+                {jobs.length === 0 && <div style={av.muted}>Henüz job yok.</div>}
+                {jobs.map(job => (
+                  <div key={job.id} style={av.jobRow}>
+                    <div>
+                      <div style={av.jobTitle}>#{job.id} {job.query} · {job.city}</div>
+                      <div style={av.muted}>{job.max_results} lead · {job.ai_mode} · {Number(job.estimated_tokens || 0).toLocaleString('tr-TR')} token</div>
+                    </div>
+                    <span style={av.jobStatus}>{job.status}</span>
+                  </div>
+                ))}
+              </div>
+              <button style={ld.btnGhost} onClick={refreshAdmin}>Yenile</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const av = {
+    root:      { flex: 1, minWidth: 0, background: '#FAFAF9', overflowY: 'auto', fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A' },
+    empty:     { padding: 40, color: '#6B6B6B' },
+    grid:      { display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 18, padding: '24px 32px 40px' },
+    sideStack: { display: 'flex', flexDirection: 'column', gap: 18 },
+    panel:     { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22 },
+    loginCard: { width: 420, margin: '80px auto', background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 24 },
+    text:      { fontSize: 13, color: '#6B6B6B', lineHeight: 1.5, margin: '12px 0 18px' },
+    label:     { display: 'block', fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, margin: '16px 0 6px' },
+    input:     { width: '100%', padding: '10px 12px', border: '1px solid #ECECEC', borderRadius: 9, background: '#FAFAF9', color: '#0A0A0A', outline: 'none', fontSize: 13 },
+    row:       { display: 'flex', gap: 10 },
+    checkRow:  { display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 13, color: '#3A3A3A' },
+    estimate:  { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 },
+    feedback:  { marginTop: 14, padding: '10px 12px', borderRadius: 9, background: '#F4F4F2', color: '#3A3A3A', fontSize: 12.5 },
+    primaryBtn:{ width: '100%', marginTop: 16, padding: '11px 14px', borderRadius: 9, border: 'none', background: '#0A0A0A', color: '#fff', fontWeight: 600, cursor: 'pointer' },
+    metricRow: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F4F4F2', fontSize: 13 },
+    jobs:      { display: 'flex', flexDirection: 'column', gap: 8, margin: '14px 0' },
+    jobRow:    { display: 'flex', justifyContent: 'space-between', gap: 12, padding: 12, border: '1px solid #ECECEC', borderRadius: 10, background: '#FAFAF9' },
+    jobTitle:  { fontSize: 13, fontWeight: 600 },
+    jobStatus: { alignSelf: 'flex-start', padding: '4px 8px', borderRadius: 99, background: '#0A0A0A', color: '#fff', fontSize: 10.5, fontFamily: '"JetBrains Mono"' },
+    muted:     { fontSize: 11.5, color: '#9A9A9A', marginTop: 4 },
+  };
+
   // ── App ────────────────────────────────────────────────────────────────────
 
   function App() {
@@ -1663,6 +1898,8 @@
           return <HizmetlerView leads={leadRows} />;
         case 'raporlar':
           return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
+        case 'admin':
+          return <AdminView />;
         default:
           return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenReports={openReports} onOpenSearch={openSearch}/>;
       }

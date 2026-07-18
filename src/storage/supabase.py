@@ -211,3 +211,121 @@ def insert_run_log(
             json=row,
         )
         response.raise_for_status()
+
+
+def estimate_search_tokens(*, max_results: int, deep_research: bool = True, ai_mode: str = "smart") -> dict[str, Any]:
+    per_lead = 9000 if deep_research else 5200
+    model_mix = "flash+pro" if ai_mode == "smart" else ai_mode
+    estimated_tokens = max(1, int(max_results)) * per_lead
+    estimated_cost_usd = round(estimated_tokens / 1_000_000 * 0.9, 4)
+    return {
+        "estimated_tokens": estimated_tokens,
+        "estimated_cost_usd": estimated_cost_usd,
+        "model_mix": model_mix,
+    }
+
+
+def create_search_job(
+    *,
+    query: str,
+    city: str,
+    max_results: int,
+    deep_research: bool,
+    ai_mode: str,
+    created_by: str,
+) -> dict[str, Any]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    estimate = estimate_search_tokens(max_results=max_results, deep_research=deep_research, ai_mode=ai_mode)
+    row = {
+        "query": query,
+        "city": city,
+        "max_results": max_results,
+        "deep_research": deep_research,
+        "ai_mode": ai_mode,
+        "status": "queued",
+        "created_by": created_by,
+        "estimated_tokens": estimate["estimated_tokens"],
+        "estimated_cost_usd": estimate["estimated_cost_usd"],
+        "meta": {"model_mix": estimate["model_mix"]},
+    }
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            _postgrest_url(config, "admin_search_jobs"),
+            headers=_headers(config, prefer="return=representation"),
+            json=row,
+        )
+        response.raise_for_status()
+        jobs = response.json()
+        job = jobs[0] if isinstance(jobs, list) and jobs else jobs
+        ledger = {
+            "job_id": job.get("id"),
+            "kind": "reservation",
+            "provider": "deepseek",
+            "model": estimate["model_mix"],
+            "estimated_tokens": estimate["estimated_tokens"],
+            "actual_tokens": None,
+            "estimated_cost_usd": estimate["estimated_cost_usd"],
+            "actual_cost_usd": None,
+            "meta": {"query": query, "city": city, "max_results": max_results},
+        }
+        ledger_response = client.post(
+            _postgrest_url(config, "ai_token_ledger"),
+            headers=_headers(config, prefer="return=minimal"),
+            json=ledger,
+        )
+        ledger_response.raise_for_status()
+        return job
+
+
+def fetch_search_jobs(limit: int = 20, *, status: str | None = None) -> list[dict[str, Any]]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = (
+        "select=id,query,city,max_results,deep_research,ai_mode,status,created_by,"
+        "estimated_tokens,estimated_cost_usd,result,meta,created_at,updated_at"
+        "&order=created_at.desc"
+        f"&limit={min(limit, 100)}"
+    )
+    if status:
+        query += f"&status=eq.{status}"
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "admin_search_jobs", query), headers=_headers(config))
+        response.raise_for_status()
+        return response.json()
+
+
+def update_search_job(job_id: int, *, status: str, result: dict[str, Any] | None = None) -> None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    row: dict[str, Any] = {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if result is not None:
+        row["result"] = result
+    with httpx.Client(timeout=20) as client:
+        response = client.patch(
+            _postgrest_url(config, "admin_search_jobs", f"id=eq.{job_id}"),
+            headers=_headers(config, prefer="return=minimal"),
+            json=row,
+        )
+        response.raise_for_status()
+
+
+def fetch_token_summary() -> dict[str, Any]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = "select=estimated_tokens,actual_tokens,estimated_cost_usd,actual_cost_usd,kind,created_at&order=created_at.desc&limit=500"
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "ai_token_ledger", query), headers=_headers(config))
+        response.raise_for_status()
+        rows = response.json()
+    return {
+        "estimated_tokens": sum(int(row.get("estimated_tokens") or 0) for row in rows),
+        "actual_tokens": sum(int(row.get("actual_tokens") or 0) for row in rows),
+        "estimated_cost_usd": round(sum(float(row.get("estimated_cost_usd") or 0) for row in rows), 4),
+        "actual_cost_usd": round(sum(float(row.get("actual_cost_usd") or 0) for row in rows), 4),
+        "entries": len(rows),
+    }

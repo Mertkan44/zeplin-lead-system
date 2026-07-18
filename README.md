@@ -20,6 +20,8 @@ and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 
 For Supabase persistence on the free plan, create a project, run `supabase/schema.sql`
 in the SQL editor, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.env`.
+For admin login and production search jobs, also set `ADMIN_PASSWORD` and
+`SESSION_SECRET` in Vercel Environment Variables.
 
 ## Common Commands
 
@@ -65,6 +67,12 @@ Sync the current local `leads_final.json` to Supabase:
 venv/bin/python scripts/sync_supabase.py
 ```
 
+Process queued admin search jobs:
+
+```bash
+venv/bin/python scripts/process_search_jobs.py --limit 1
+```
+
 Use the technical CLI for modular operations:
 
 ```bash
@@ -84,9 +92,13 @@ venv/bin/python -m http.server 8080 -d public
 
 ## Production Shape
 
-`src/dashboard/template.html` is the source template. `public/index.html` is generated from it by embedding `leads_final.json` as base64 JSON.
+`src/dashboard/template.html` is the source template. `public/index.html` is generated from it by embedding `leads_final.json` as base64 JSON. In production, the dashboard reads live data from Vercel API routes backed by Supabase.
 
-Pipeline actions currently persist in browser `localStorage`; the dashboard can export that outreach state as JSON. The next production step is moving status and outreach events to SQLite or a hosted database.
+Admin search runs as a queue-backed workflow. The Vercel API creates `admin_search_jobs`
+and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then runs
+`scripts/process_search_jobs.py` to execute the scraping/audit/AI pipeline and sync
+results back to Supabase. This avoids long Playwright browser jobs inside short-lived
+Vercel request handlers.
 
 The services matrix lives in `src/services.py`. Each service has a category, owner, sales angle, detectable signals, pricing range, and trigger list. `scripts/migrate_leads.py` writes the matched services plus the recommended package into `leads_final.json`, then `src/dashboard/build.py` embeds both leads and the full service catalog into the static dashboard.
 
