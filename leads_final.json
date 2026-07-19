@@ -11196,5 +11196,2146 @@
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
     "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+  },
+  {
+    "name": "Kadıköy Dayıoğlu Diş Polikliniği / Tandarts Reis Turkije",
+    "maps_url": "https://www.google.com/maps/place/Kad%C4%B1k%C3%B6y+Day%C4%B1o%C4%9Flu+Di%C5%9F+Poliklini%C4%9Fi+%2F+Tandarts+Reis+Turkije/data=!4m7!3m6!1s0x14cab867c3574731:0x579ab9c753b619c6!8m2!3d40.9903969!4d29.0244199!16s%2Fg%2F1tj2qp94!19sChIJMUdXw2e4yhQRxhm2U8e5mlc?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "(0216) 330 09 99",
+    "address": "Mühürdar Cad No:20 Fırat Pasajı kat:2 Kadıköy, 34700 Kadıköy/İstanbul",
+    "rating": 4.9,
+    "review_count": null,
+    "category": "Diş Hekimi",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.kadikoydis.com/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 992,
+      "website_loads": true,
+      "has_schema": true,
+      "has_og": true,
+      "meta_description": "Kadıköy’ün kalbinde, gülümsemenizin sağlığını ve estetiğini ön planda tutarak tüm diş tedavilerinizi titizlikle gerçekleştiriyoruz.",
+      "has_robots": true,
+      "has_sitemap": true,
+      "has_email_capture": true,
+      "has_whatsapp": true,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/dayiogludiskadikoy/",
+      "instagram_username": "dayiogludiskadikoy",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@kadikoy",
+        "tiktok_username": "kadikoy"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 69,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "SSL yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 3500,
+        "price_max": 9000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 520,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "http://www.kadikoydis.com/",
+        "title": "Kadıköy Dayıoğlu Diş Kliniği – Sağlık Dolu Gülüşler",
+        "meta_description": "Kadıköy’ün kalbinde, gülümsemenizin sağlığını ve estetiğini ön planda tutarak tüm diş tedavilerinizi titizlikle gerçekleştiriyoruz.",
+        "headings": [],
+        "internal_links": [
+          {
+            "label": "ANA SAYFA",
+            "url": "http://www.kadikoydis.com/"
+          },
+          {
+            "label": "KLİNİĞİMİZ",
+            "url": "http://www.kadikoydis.com/hakkimizda/"
+          },
+          {
+            "label": "RANDEVUYA GELİRKEN",
+            "url": "http://www.kadikoydis.com/randevuya-gelirken/"
+          },
+          {
+            "label": "SAĞLIK TURİZMİ",
+            "url": "http://www.kadikoydis.com/saglik-turizmi/"
+          },
+          {
+            "label": "HASTA YORUMLARI",
+            "url": "http://www.kadikoydis.com/patient-comments/"
+          },
+          {
+            "label": "EKİBİMİZ",
+            "url": "http://www.kadikoydis.com/ekibimiz/"
+          },
+          {
+            "label": "HİZMETLERİMİZ",
+            "url": "http://www.kadikoydis.com/hizmetlerimiz/"
+          },
+          {
+            "label": "DİJİTAL DİŞ HEKİMLİĞİ",
+            "url": "http://www.kadikoydis.com/dijital-dis-hekimligi/"
+          }
+        ],
+        "contact_signals": [
+          "phone",
+          "email",
+          "reservation",
+          "delivery"
+        ],
+        "content_sample": "Kadıköy Dayıoğlu Diş Kliniği – Sağlık Dolu Gülüşler Mühürdar Cad. No: 20 Kadıköy-İSTANBUL 0216 330 10 10 info@kadikoydis.com ANA SAYFA HAKKIMIZDA KLİNİĞİMİZ RANDEVUYA GELİRKEN SAĞLIK TURİZMİ HASTA YORUMLARI EKİBİMİZ HİZMETLERİMİZ DİJİTAL DİŞ HEKİMLİĞİ BLOG İLETİŞİM ANA SAYFA HAKKIMIZDA KLİNİĞİMİZ RANDEVUYA GELİRKEN SAĞLIK TURİZMİ HASTA YORUMLARI EKİBİMİZ HİZMETLERİMİZ DİJİTAL DİŞ HEKİMLİĞİ BLOG İLETİŞİM Tedaviler İMPLANT Diş çürüğü veya travma gibi herhangi bir nedenle kaybedilen diş dokusunun yerine uygulanan titanyum diş köküne diş implantı denmektedir. Diş implantı tedavisi, diş eksikliklerinin tedavisinde bilinen en iyi ve modern diş tedavi yöntemidir. Yeni ve teknolojik materyaller sayesinde günümüzde diş implantı tedavisi daha kolay, ağrısız ve hızlıca yapılabilmektedir. Yeni materyaller ile diş implantları çene kemiğine daha çabuk yapışmakta ve bu sayede diş implantı üzerine yapılan diş protezi uygulamaları kısa sürede yapılabilmektedir. Eksik dişleri tamamlamak için diş operasyonuyla yerleştirilen diş köklerinin yerini alan vida sistemine ‘diş implantı’ veya ‘dental implant’ denmektedir. Diş implantları dokulara kolayca uyum sağlayabilen ve kemik dostu da olarak bilinen tit"
+      }
+    },
+    "research_brief": "1. **Gözlem:** Kadıköy Dayıoğlu Diş, 4.9 puanlı ve sağlık turizmi sayfası olan prestijli bir klinik. Web sitesi SSL’siz (http) çalışıyor, Instagram/TikTok hesapları mevcut ancak etkileşim verisi yok.\n\n2. **Satış açısı:** SSL eksikliği, hasta güvenini ve randevu dönüşümünü zedeleyebilir. Klinik yüksek puanını dijital güvenle tamamlarsa yerel görünürlük ve uluslararası hasta akışı avantajı yakalar.\n\n3. **İlk temas bahanesi:** “Sitenizde SSL olmaması, özellikle randevu ve sağlık turizmi sayfalarında hasta güvenini riske atıyor. Bu konuda hızlı bir düzeltme önerisiyle mi görüşsek?”\n\n4. **Risk / bilinmeyen:** Yorum sayısı ve sosyal medya etkileşim verileri boş. Bu, mevcut hasta memnuniyetini kanıtlayamadığımız gibi randevu akışının nasıl işlediğini de bilmediğimiz anlamına geliyor.\n\n5. **Bir sonraki veri kontrolü:** Instagram ve TikTok profillerinin takipçi sayıları, son paylaşımlar ve hasta yorumları sayfasının içeriği.",
+    "ai_report": "Web sitenizde SSL sertifikası bulunmuyor. Kanıt: HTTP ile açılıyor, tarayıcı “güvenli değil” uyarısı veriyor. Etkisi: Hasta adayları kişisel bilgilerini paylaşmakta tereddüt eder, Google sıralamada düşürür. Önerilen aksiyon: Hemen SSL kurulumu yaparak siteyi HTTPS’e taşıyın.\n\nSite 992 ms’de açılıyor, mobil uyumlu ve iletişim butonları mevcut. Kanıt: WhatsApp ve randevu formu aktif. Etkisi: Kullanıcı deneyimi iyi, ancak kayıp potansiyel var. Önerilen aksiyon: Randevu akışını tek tıkla tamamlanacak şekilde sadeleştirin.\n\nInstagram hesabınız aktif, takipçi ve paylaşım sayısı bilinmiyor. Kanıt: @dayiogludiskadikoy kullanıcı adı mevcut. Etkisi: Düzenli içerik ve etkileşim olmadan takipçi kazanımı sınırlı. Önerilen aksiyon: Haftada 3-4 tedavi öncesi-sonrası görseli paylaşarak yerel görünürlüğü artırın.\n\nSite içeriği kapsamlı: hasta yorumları, ekibimiz ve hizmetler sayfası var. Kanıt: Hasta yorumları bölümü mevcut. Etkisi: Güven inşa eder, ancak güncel yorum eksikliği şüphe uyandırabilir. Önerilen aksiyon: Mevcut hastalardan düzenli yorum isteyin, Google My Business profiline yönlendirin.",
+    "ai_email": "Konu: Kadıköy Dayıoğlu Diş Polikliniği – SSL ile hasta güvenini artırma önerisi\n\nMerhaba Kadıköy Dayıoğlu Diş Polikliniği yetkilisi,\n\nSiteniz kadikoydis.com’u inceledim. İçerik, hız ve mobil uyum başarılı. Ancak sitenizde SSL sertifikası bulunmuyor. Bu durum, özellikle sağlık sektöründe hasta bilgilerinin güvenliği açısından güven sorunu yaratabilir. Ayrıca Google, SSL olmayan siteleri sıralamada geriye alıyor.\n\nBu sorunu kısa sürede çözerek hem yerel görünürlüğünüzü koruyabilir hem de randevu akışınızda hasta güvenini sağlayabilirsiniz. Zeplin Media olarak SSL & Güvenlik Kurulumu hizmeti sunuyoruz. Size özel Dijital Sağlık Onarımı paketimizle süreci hızlıca tamamlayabiliriz.\n\n15 dakikalık kısa bir görüşme ile sitenizi ve ihtiyaçlarınızı detaylı konuşmaya ne dersiniz?\n\nSaygılarımla,\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:16",
+    "recommended_package": {
+      "name": "Dijital Sağlık Onarımı",
+      "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "SSL & Güvenlik Kurulumu",
+      "included_services": [
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Web",
+      "stage": "Teknik çözüm",
+      "confidence": 70,
+      "evidence": [
+        "SSL yok"
+      ],
+      "categories": [
+        "Web & Teknik"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 59,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+  },
+  {
+    "name": "İstanbul Dentestetik Diş Polikliniği Kadıköy",
+    "maps_url": "https://www.google.com/maps/place/%C4%B0stanbul+Dentestetik+Di%C5%9F+Poliklini%C4%9Fi+Kad%C4%B1k%C3%B6y/data=!4m7!3m6!1s0x14cac79dc950036b:0x19770e2165d6d962!8m2!3d40.9734753!4d29.0622987!16s%2Fg%2F1tdt3sg6!19sChIJawNQyZ3HyhQRYtnWZSEOdxk?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "0537 957 20 37",
+    "address": "Göztepe, Tütüncü Mehmet Efendi Cd. No:17, 34730 Kadıköy/İstanbul",
+    "rating": 4.8,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.dentestetik.com.tr/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 505,
+      "website_loads": true,
+      "has_schema": true,
+      "has_og": true,
+      "meta_description": "İstanbul Kadıköy&#039;de faaliyet gösteren diş sağlığı polikliniğimiz implant, ortodonti, zirkonyum, gülüş estetik gibi güvenilir diş sağlığı çözümleri sunar.",
+      "has_robots": true,
+      "has_sitemap": false,
+      "has_email_capture": true,
+      "has_whatsapp": true,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/istanbuldentestetik/",
+      "instagram_username": "istanbuldentestetik",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": 25000,
+        "following": 225,
+        "post_count": 62,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@istanbul",
+        "tiktok_username": "istanbul"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 73,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "SSL yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 3500,
+        "price_max": 9000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 520,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "https://www.dentestetik.com.tr/",
+        "title": "Dentestetik Ağız ve Diş Sağlığı Polikliniği | Kadıköy Diş Kliniği",
+        "meta_description": "İstanbul Kadıköy'de faaliyet gösteren diş sağlığı polikliniğimiz implant, ortodonti, zirkonyum, gülüş estetik gibi güvenilir diş sağlığı çözümleri sunar.",
+        "headings": [
+          "Sağlıklı Dişler, Estetik Bir Gülüş.",
+          "Dr. Ahmet Ünal",
+          "Hastalarımızdan Yorumlar",
+          "Neden Bizi Tercih Etmelisiniz?",
+          "Hekimlerimiz",
+          "Blog Yazılarımız",
+          "Hakkımızda",
+          "Kurumsal"
+        ],
+        "internal_links": [
+          {
+            "label": "KURUMSAL",
+            "url": "http://www.dentestetik.com.tr/"
+          },
+          {
+            "label": "Hakkımızda",
+            "url": "https://www.dentestetik.com.tr/hakkimizda/"
+          },
+          {
+            "label": "Video Galeri",
+            "url": "https://www.dentestetik.com.tr/video-galeri/"
+          },
+          {
+            "label": "İmplant Tedavisi",
+            "url": "https://www.dentestetik.com.tr/tedaviler/implant-tedavisi/"
+          },
+          {
+            "label": "All on 4 ve All on 6 İmplant",
+            "url": "https://www.dentestetik.com.tr/tedaviler/all-on-4-ve-all-on-6-implant-uygulamalari/"
+          },
+          {
+            "label": "Sinüs Lifting",
+            "url": "https://www.dentestetik.com.tr/tedaviler/sinus-lifting/"
+          },
+          {
+            "label": "Kemik Augmentasyonu ve Grefti",
+            "url": "https://www.dentestetik.com.tr/tedaviler/kemik-augmentasyonu-ve-kemik-grefti/"
+          },
+          {
+            "label": "ESTETİK",
+            "url": "https://www.dentestetik.com.tr/estetik-uygulamalar/"
+          }
+        ],
+        "contact_signals": [
+          "reservation",
+          "delivery",
+          "whatsapp"
+        ],
+        "content_sample": "Dentestetik Ağız ve Diş Sağlığı Polikliniği | Kadıköy Diş Kliniği Tütüncü Mehmet Efendi Cad. No:17 Göztepe / İSTANBUL +90 (216) 356 2323 KURUMSAL Hakkımızda Video Galeri İMPLANT İmplant Tedavisi All on 4 ve All on 6 İmplant Sinüs Lifting Kemik Augmentasyonu ve Grefti ESTETİK Gülüş Tasarımı Porselen Lamine Diş Eti Estetiği Dental Facelift Diş Beyazlatma (Bleaching) Dental Veneers Dijital Diş Hekimliği Diş Eti Estetiği Hareketli Protezler İnley ve Onley Dolgu TEDAVİLER Kanal Tedavisi Cerrahi Diş Çekimi Diş Çekimi Bruksizm (Diş Sıkma) Dental Köprü Diş Dolgusu BLOG İLETİŞİM Randevu Al KURUMSAL Hakkımızda Video Galeri İMPLANT İmplant Tedavisi All on 4 ve All on 6 İmplant Sinüs Lifting Kemik Augmentasyonu ve Grefti ESTETİK Gülüş Tasarımı Porselen Lamine Diş Eti Estetiği Dental Facelift Diş Beyazlatma (Bleaching) Dental Veneers Dijital Diş Hekimliği Diş Eti Estetiği Hareketli Protezler İnley ve Onley Dolgu TEDAVİLER Kanal Tedavisi Cerrahi Diş Çekimi Diş Çekimi Bruksizm (Diş Sıkma) Dental Köprü Diş Dolgusu BLOG İLETİŞİM Sağlıklı Dişler, Estetik Bir Gülüş. 40 yılı aşkın deneyimimizle İstanbul Kadıköy'de, en güncel teknolojileri kullanarak ağız ve diş sağlığınız için güvenilir çözümler sunuy"
+      }
+    },
+    "research_brief": "1. **Gözlem:** Kadıköy’de 4.8 puanlı diş kliniği. Web sitesi hızlı, mobil uyumlu ve randevu/WhatsApp entegrasyonu var. Ancak SSL sertifikası yok. Instagram’da 25 bin takipçi mevcut.\n\n2. **Satış açısı:** SSL eksikliği hasta güvenini ve yerel arama sıralamasını riske atıyor. “Güvenli Değil” uyarısı randevu dönüşümlerini düşürebilir. Hızlı müdahale ile bu sorun giderilirse, site otoritesi ve hasta sadakati artar.\n\n3. **İlk temas bahanesi:** “Web siteniz hızlı ve içerikleriniz başarılı. Hastalarınızın güvenini tam sağlamak için SSL kurulumuyla dönüşümleri artırabiliriz. Üstelik rakipleriniz bu adımı çoktan attı.”\n\n4. **Risk / bilinmeyen:** Instagram etkileşim oranı ve blog güncelliği bilinmiyor. Diğer sosyal platformlar (Facebook vb.) incelenmemiş. SSL dışında başka güvenlik açığı olabilir.\n\n5. **Bir sonraki veri kontrolü:** Instagram etkileşim oranı, blog paylaşım sıklığı, rakiplerin SSL durumu ve Google My Business profili.",
+    "ai_report": "- Web siteniz SSL sertifikasına sahip değil. Bu, hastalarınızın kişisel bilgilerini paylaşırken güven endişesi yaşamasına neden olabilir. Özellikle randevu formu gibi hassas veri girişlerinde güven kaybı, dönüşüm oranını düşürür. Önerim: SSL kurulumunu hemen tamamlayarak sitenizi güvenli hale getirmeniz.\n\n- Instagram hesabınızda 25.000 takipçiye karşın yalnızca 62 gönderi var. Bu, takipçilerinizle düzenli bağ kuramadığınızı gösteriyor; etkileşim düşük kalır, potansiyel hasta aklınızda kalmaz. Önerim: Haftada en az 3-4 tedavi öncesi-sonrası, hasta yorumu ve bilgilendirici içerik paylaşarak etkileşimi artırmanız.\n\n- Google üzerinde 4.8 puanınız var ancak hiçbir yorum görünmüyor. Yorum eksikliği, yeni hastalar için güvensizlik yaratır ve karar sürecini yavaşlatır. Önerim: Memnun hastalarınızdan Google My Business’a yorum bırakmalarını isteyin; yerel görünürlüğünüz de artacak.\n\n- Web siteniz 505 ms’de yükleniyor, mobil uyumlu ve şema işaretlemeleri mevcut. Bu iyi bir temel, ancak SSL eksikliği SEO sıralamanızı ve güven algısını olums",
+    "ai_email": "Konu: Web sitenizdeki güvenlik açığı hakkında\n\nMerhaba,\n\nSitenizi incelerken SSL sertifikanızın olmadığını gördüm. Sağlık hizmetlerinde hasta bilgilerinin güvenliği önemli bir konu. SSL olmayan siteler hem ziyaretçilerde güven sorunu oluşturur hem de Google sıralamasında dezavantaj yaratır. Mevcut siteniz hızlı yükleniyor ve mobil uyumlu, bu olumlu bir başlangıç. Tek eksiğiniz SSL kurulumu.\n\nBu sorunu çözmek için \"Dijital Sağlık Onarımı\" paketimizle SSL kurulumunu hızlıca tamamlıyoruz. 15 dakikalık kısa bir görüşme ile mevcut durumu değerlendirebiliriz.\n\nGörüşmek dileğiyle,\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:17",
+    "recommended_package": {
+      "name": "Dijital Sağlık Onarımı",
+      "summary": "Güvenli site hızlı müdahale ile başlanabilir; 1 hizmet sinyali bulundu.",
+      "primary_service": "SSL & Güvenlik Kurulumu",
+      "included_services": [
+        "SSL & Güvenlik Kurulumu"
+      ],
+      "owner": "Web",
+      "stage": "Teknik çözüm",
+      "confidence": 70,
+      "evidence": [
+        "SSL yok"
+      ],
+      "categories": [
+        "Web & Teknik"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 59,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+  },
+  {
+    "name": "Özel İDentik Ağız Ve Diş Sağlığı Polikliniği | Bağdat Caddesi Dental Clinic",
+    "maps_url": "https://www.google.com/maps/place/%C3%96zel+%C4%B0Dentik+A%C4%9F%C4%B1z+Ve+Di%C5%9F+Sa%C4%9Fl%C4%B1%C4%9F%C4%B1+Poliklini%C4%9Fi+%7C+Ba%C4%9Fdat+Caddesi+Dental+Clinic/data=!4m7!3m6!1s0x14cab91e845b3ab9:0x4d9aa5ce76ed9da9!8m2!3d40.9856576!4d29.0391695!16s%2Fg%2F11sh2pqq71!19sChIJuTpbhB65yhQRqZ3tds6lmk0?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "0539 433 68 45",
+    "address": "Zühtüpaşa, Bağdat Cad. 23/A, 34724 Kadıköy/İstanbul",
+    "rating": 4.9,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.identik.com.tr/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 1564,
+      "website_loads": true,
+      "has_schema": false,
+      "has_og": false,
+      "meta_description": null,
+      "has_robots": true,
+      "has_sitemap": true,
+      "has_email_capture": true,
+      "has_whatsapp": false,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/identikclinic/",
+      "instagram_username": "identikclinic",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": 2185,
+        "following": 11,
+        "post_count": 64,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@ozel",
+        "tiktok_username": "ozel"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 61,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "SSL yok",
+        "Schema.org yok",
+        "WhatsApp butonu yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu",
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "WhatsApp Business entegrasyonu"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp",
+          "no_og"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "crm_pipeline_setup",
+        "name": "CRM Pipeline & Takip Sistemi",
+        "category": "İletişim & CRM",
+        "desc": "Lead formu, WhatsApp, e-posta, etiketleme ve satış takip panosu kurulumu",
+        "offer": "Satış takip altyapısı",
+        "owner": "CRM",
+        "sales_angle": "Kaçan talepleri tek ekranda toplar, takip disiplinini ölçülebilir yapar.",
+        "detects": "WhatsApp, e-posta toplama veya dönüşüm takip sinyali yok.",
+        "price_min": 15000,
+        "price_max": 40000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "whatsapp_business",
+        "name": "WhatsApp Business Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
+        "offer": "WhatsApp dönüşüm hattı",
+        "owner": "CRM",
+        "sales_angle": "Siteden veya profilden gelen ilgiyi hızlı mesaja dönüştürür.",
+        "detects": "Web sitesinde WhatsApp veya hızlı iletişim butonu yok.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 3500,
+        "price_max": 9000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 94811,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "https://identik.com.tr/",
+        "title": "iDentik – iDentik Ağız ve Diş Sağlığı Polikliniği",
+        "meta_description": null,
+        "headings": [
+          "Diş Sağlığında Dijital Dönem",
+          "Gülüşünüz Bizim Önceliğimiz!",
+          "Sağlıklı Gülüş, Kendinden Emin Yaşam",
+          "Tedavilerimiz Mükemmel Sonuçlar",
+          "Uzman Kadromuz",
+          "Hızlı Randevu",
+          "İletişim"
+        ],
+        "internal_links": [
+          {
+            "label": "Doktorlarımız",
+            "url": "http://www.identik.com.tr/"
+          },
+          {
+            "label": "Detaylar",
+            "url": "http://www.identik.com.tr/about-us/dr-ebubekir-sacli/"
+          },
+          {
+            "label": "Detaylar",
+            "url": "http://www.identik.com.tr/about-us/dr-busra-abusalih/"
+          },
+          {
+            "label": "Detaylar",
+            "url": "http://www.identik.com.tr/about-us/dr-ali-ihsan-ata/"
+          },
+          {
+            "label": "Detaylar",
+            "url": "http://www.identik.com.tr/about-us/dr-neslihan-kizilirmak/"
+          },
+          {
+            "label": "Protez Diş Tedavisi",
+            "url": "http://www.identik.com.tr/protez-dis-tedavisi/"
+          },
+          {
+            "label": "Üste Dön",
+            "url": "http://www.identik.com.tr/#top"
+          }
+        ],
+        "contact_signals": [
+          "phone",
+          "email",
+          "reservation",
+          "delivery",
+          "whatsapp"
+        ],
+        "content_sample": "iDentik – iDentik Ağız ve Diş Sağlığı Polikliniği +90 539 433 68 45 7/24 İletişim Hattı Pazartesi - Pazar 24 Saat Açık Hakkımızda Sağlık Turizmi Doktorlarımız Dr. Ebubekir SAÇLI Dr. Buşra ABUSALİH Dr. Ali İhsan ATA Dr. Neslihan KIZILIRMAK Tedavilerimiz Lamine İmplant Zirkonyum Estetik Dolgu Ortodonti Kanal Tedavisi Protez Diş Tedavisi Diş Beyazlatma Hızlı Randevu Galeri İletişim Diş Sağlığında Dijital Dönem Zirkonyum Yüksek dayanıklılık ve estetik uyumu birleştiren zirkonyum kaplamalarla doğal görünümlü dişler tasarlıyoruz. İmplant Eksik dişlerin yerine çene kemiğine yerleştirilen implantlarla kalıcı ve güçlü çözümler sunuyoruz. Tüm Tedavilerimiz Gülüşünüz Bizim Önceliğimiz! Lamine Estetik diş hekimliğinde doğal görünüm sağlayan ince porselen yüzeylerle gülüş estetiğini yeniden şekillendiriyoruz. Kanal Tedavisi Diş kök kanalındaki enfeksiyonu temizleyerek doğal dişi koruyan ileri endodontik tedavi uyguluyoruz. Tüm Tedavilerimiz Sağlıklı Gülüş, Kendinden Emin Yaşam Protez Diş Tedavisi Eksik dişleri fonksiyonel ve estetik protezlerle tamamlayarak ağız sağlığını bütünüyle restore ediyoruz. Estetik Dolgu Diş dokusunu kompozit materyallerle doğal renk ve formuna en yakın şekilde estetik"
+      }
+    },
+    "research_brief": "**1. Gözlem**  \nÖzel iDentik, Kadıköy Bağdat Caddesi’nde 4,9 puanlı, şık bir diş kliniği. Web sitesi yavaş değil ama SSL, Schema.org ve WhatsApp butonu eksik. Instagram’da 2.185 takipçi var, içerik üretimi düşük. Yorum sayısı bilinmiyor.  \n\n**2. Satış açısı**  \nFiyat hassasiyeti düşük, marka bilinirliği ve güven ön planda. Eksik teknik altyapı (SSL, Schema) hem Google’da hem AI aramalarda görünürlüğünü sınırlıyor. WhatsApp bağlantısı olmaması randevu dönüşümünü düşürüyor. “Growth Sprint” paketiyle bu açıkları kapatıp hasta kazanımını artırabiliriz.  \n\n**3. İlk temas bahanesi**  \n“Bağdat Caddesi’ndeki bu başarılı kliniğiniz için web sitenizde SSL olmaması hastaların güvenini etkileyebilir. Randevu taleplerinizi WhatsApp ile anında almanızı sağlayacak ücretsiz bir analiz hazırladık.”  \n\n**4. Risk / bilinmeyen**  \nYorum sayısı belirsiz – yüksek puanın temeli sorgulanabilir. Şu an yoğun olabilir, ihtiyaç hissetmeyebilir. Hastaların randevu akışı ve mevcut dönüşüm oranı hakkında veri yok.  \n\n**5. Bir sonraki veri kontrolü**  \nGoogle Haritalar’daki yorum sayısını, hasta yoğunluğunu ve rakiplerin teknik seviyesini kontrol et. Randevu almayı deneyerek süreci test et.",
+    "ai_report": "Web sitenizde SSL sertifikası bulunmuyor. Bu, hasta bilgilerinin güvenliğini riske atar ve Google sıralamanızı olumsuz etkiler. Çözüm olarak ücretsiz Let's Encrypt sertifikası kurabiliriz.\n\nŞema işaretlemesi (Schema.org) eksik. Bu nedenle Google, yerel aramalarda randevu butonu, puan ve konum bilgilerinizi zengin sonuç olarak gösteremiyor. Yerel işletme şeması eklenmeli.\n\nSosyal medya paylaşım meta etiketleri (Open Graph) yok. İçerikleriniz Instagram veya WhatsApp’ta paylaşıldığında görsel ve başlık hatalı görünür, trafik dönüşmez. Her sayfaya OG etiketi eklenmeli.\n\nWhatsApp Business butonu siteye entegre değil. Mevcut telefon hattınız var ancak anlık mesajlaşma desteği yok. Bu, randevu almak isteyen hastalar için ek adım yaratır. Hızlı iletişim için WhatsApp butonu eklenmeli.\n\nInstagram hesabınızda etkileşim verisi görünmüyor (beğeni/yorum yok). 2185 takipçi var ancak düzenli etkileşim olmadan sosyal kanıt zayıflar. Haftada 2-3 öncesi-sonrası veya hasta yorumu paylaşarak katılım artırılabilir.\n\nSite yükleme süresi 1.56 saniye. Bu, mobil kullanıcıların %53’ünün 3 saniyeden sonra siteyi terk ettiği verisine göre riskli. Görseller sıkıştırılmalı, önbellekleme etkinleştirilmeli.",
+    "ai_email": "Konu: Özel iDentik için web sitesi görünürlük fırsatları\n\nMerhaba,\n\nBağdat Caddesi’ndeki kliniğinizin dijital varlığını inceledim. Web sitenizde SSL sertifikası ve Schema.org yapısal verisi bulunmuyor. Bu iki eksiklik, hem Google’da yerel sıralamanızı hem de hastaların güvenini olumsuz etkileyebilir.\n\nBu sorunları düzeltmek ve AI aramalarda önerilme şansınızı artırmak için \"Growth Sprint\" paketimiz uygun görünüyor. Teknik SEO ve görünürlük temeliyle başlayabiliriz.\n\n15 dakikalık kısa bir görüşme ile mevcut durumu ve çözüm adımlarını konuşabiliriz. Uygun bir zamanınız var mı?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:18",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 7 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
+        "Google Ads Yönetimi",
+        "Landing Page & Dönüşüm Optimizasyonu"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 85,
+      "evidence": [
+        "Schema.org yok",
+        "Open Graph yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "AI Görünürlük",
+        "Büyüme & Reklam",
+        "İletişim & CRM"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 93,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+  },
+  {
+    "name": "Güçlü Ağız ve Diş Sağlığı Polikliniği",
+    "maps_url": "https://www.google.com/maps/place/G%C3%BC%C3%A7l%C3%BC+A%C4%9F%C4%B1z+ve+Di%C5%9F+Sa%C4%9Fl%C4%B1%C4%9F%C4%B1+Poliklini%C4%9Fi/data=!4m7!3m6!1s0x14cab80c680736cf:0x558f8618825bb2a8!8m2!3d40.9990417!4d29.0387427!16s%2Fg%2F11tjlc5p85!19sChIJzzYHaAy4yhQRqLJbghiGj1U?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "(0216) 545 44 34",
+    "address": "Acıbadem, Acıbadem Cd. No:94-96, 34718 Kadıköy/İstanbul",
+    "rating": 4.8,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": false,
+      "website_url": null,
+      "has_ssl": false,
+      "is_mobile_friendly": false,
+      "load_time_ms": null,
+      "website_loads": false,
+      "has_schema": false,
+      "has_og": false,
+      "meta_description": null,
+      "has_robots": false,
+      "has_sitemap": false,
+      "has_email_capture": false,
+      "has_whatsapp": false,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@guclu",
+        "tiktok_username": "guclu"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 10,
+      "max_score": 100,
+      "grade": "D",
+      "issues": [
+        "Web sitesi yok",
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "Web sitesi tasarımı",
+        "Instagram yönetimi"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og",
+          "no_website"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok",
+          "Web sitesi yok"
+        ],
+        "confidence": 95
+      },
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "email_marketing",
+        "name": "E-posta Pazarlama Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "E-posta listesi oluşturma, otomasyon, kampanya yönetimi",
+        "offer": "Müşteri listesi ve kampanya otomasyonu",
+        "owner": "CRM",
+        "sales_angle": "Ziyaretçiyi tek seferlik trafik olmaktan çıkarıp tekrar pazarlanabilir kitleye çevirir.",
+        "detects": "Web sitesinde e-posta toplama formu yok.",
+        "price_min": 9000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_email_capture"
+        ],
+        "evidence": [
+          "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_email_capture",
+          "no_whatsapp",
+          "no_og"
+        ],
+        "evidence": [
+          "E-posta formu yok",
+          "WhatsApp butonu yok",
+          "Open Graph yok"
+        ],
+        "confidence": 95
+      },
+      {
+        "slug": "web_design",
+        "name": "Web Sitesi Tasarımı",
+        "category": "Web & Teknik",
+        "desc": "Kurumsal, mobil uyumlu, hızlı ve lead odaklı web sitesi",
+        "offer": "Lead odaklı web yenileme paketi",
+        "owner": "Web",
+        "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
+        "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
+        "price_min": 35000,
+        "price_max": 90000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_website",
+          "not_mobile"
+        ],
+        "evidence": [
+          "Web sitesi yok",
+          "Mobil uyum zayıf"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "crm_pipeline_setup",
+        "name": "CRM Pipeline & Takip Sistemi",
+        "category": "İletişim & CRM",
+        "desc": "Lead formu, WhatsApp, e-posta, etiketleme ve satış takip panosu kurulumu",
+        "offer": "Satış takip altyapısı",
+        "owner": "CRM",
+        "sales_angle": "Kaçan talepleri tek ekranda toplar, takip disiplinini ölçülebilir yapar.",
+        "detects": "WhatsApp, e-posta toplama veya dönüşüm takip sinyali yok.",
+        "price_min": 15000,
+        "price_max": 40000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp",
+          "no_email_capture"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok",
+          "E-posta formu yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "whatsapp_business",
+        "name": "WhatsApp Business Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
+        "offer": "WhatsApp dönüşüm hattı",
+        "owner": "CRM",
+        "sales_angle": "Siteden veya profilden gelen ilgiyi hızlı mesaja dönüştürür.",
+        "detects": "Web sitesinde WhatsApp veya hızlı iletişim butonu yok.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 3500,
+        "price_max": 9000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 173519,
+    "research": {
+      "website": {
+        "status": "missing",
+        "url": null,
+        "title": null,
+        "meta_description": null,
+        "headings": [],
+        "internal_links": [],
+        "contact_signals": [],
+        "content_sample": null
+      }
+    },
+    "research_brief": "1. Gözlem\nKadıköy Acıbadem’de yer alan klinik, 4.8 puanla fiziksel güven sinyali verse de dijital varlığı neredeyse sıfır. Web sitesi, SSL, Schema.org, Open Graph, Instagram, WhatsApp ve e-posta yakalama yok. Yalnızca TikTok hesabı var ancak etkileşim bilgisi null. Score 10/100, en acil ihtiyaç AI aramalarda görünürlük. Tahmini paket değeri 173.519 TL.\n\n2. Satış açısı\nBölgedeki potansiyel hastalar \"Acıbadem diş kliniği\" yazdığında bu klinik çıkmıyor. Yüksek memnuniyet puanı dijitalde görünmediği için randevuya dönüşmüyor. Web + teknik SEO + AI görünürlük paketiyle yerel aramalarda ilk sıralara yerleşmek, fark yaratacak en kısa yol.\n\n3. İlk temas bahanesi\n\"Google’da sizi arayan Acıbadem’deki hastalar kliniğinizi göremiyor. Puanınız çok iyi ama web siteniz olmadığı için aramalarda kayboluyorsunuz. Bunu düzeltmek için bir başlangıç paketimiz var, pat diye görünür olmanızı sağlıyor.\"\n\n4. Risk / bilinmeyen\nTikTok hesabının gerçekten kullanılıp kullanılmadığı ve içerik kalitesi belirsiz. Google Haritalar’daki yorum sayısı ve randevu akışının kaynağı (telefon mu internet mi) bilinmiyor. Karar verici kişi ve mevcut bir ajans çalışması olup olmadığı net değil.\n\n5. Bir sonraki veri kontrolü\nTikTok profili içerik örnekleri ve etkileşimleri taranmalı. Google Haritalar işletme profili incelenmeli, yorum sayısı ve yanıt durumu kontrol edilmeli. Rakip kliniklerin dijital skorları karşılaştırılmalı. Doğrudan ulaşılabilecek yetkili ismi ve telefonuna bakılmalı.",
+    "ai_report": "- 4.8 puan almanıza rağmen web siteniz yok; schema ve Open Graph etiketleri de eksik. Bu durum Kadıköy’deki potansiyel hastaların sizi arama sonuçlarında bulmasını engelliyor. Mobil uyumlu, randevu formlu bir siteyle anında görünür olabilirsiniz.\n\n- Instagram hesabınız bulunmadığı için tedavi öncesi-sonrası güven inşası yapılamıyor. Düzenli paylaşımlarla yerel bilinirliği ve hasta yorum akışını yönetmeye hemen başlayabiliriz.\n\n- E-posta yakalama ve WhatsApp bağlantısı olmadığından, site olsa bile anlık iletişim kurulamıyor. E-posta pop-up ve WhatsApp butonu entegre ederek kesintisiz randevu talebi toplayabiliriz.\n\n- TikTok’ta yalnızca @guclu kullanıcı adı var, içerik yok. Kadıköy’ün genç kitlesine kısa eğitici videolarla ulaşıp doğrudan randevu trafiği yaratabilirsiniz.\n\n- Yüksek puanınız, yorum sayısı belirsiz olduğu için Google Haritalar’da etkili değil. Schema işaretlemesi ve yorum yönetimiyle harita sıralamasını güçlendirip güven sinyalini artırabiliriz.",
+    "ai_email": "Konu: Dijital görünürlükte fark edilmeyen bir fırsat\n\nMerhaba,\n\nGüçlü Ağız ve Diş Sağlığı Polikliniği'nin Kadıköy'deki konumu ve 4.8 puanı etkileyici. Ancak dijital ayak izinize baktığımda, potansiyel hastaların sizi bulmasını zorlaştıran iki eksik gördüm: web sitesi ve Instagram hesabı.\n\nBu eksiklikler, AI destekli aramalarda ve sosyal platformlarda önerilme şansınızı düşürüyor. Growth Sprint paketimiz, web sitesi kurulumu, teknik SEO, Instagram yönetimi ve hedefli reklamlarla bu boşluğu kapatmanıza yardımcı olabilir.\n\n15 dakikalık kısa bir görüşme ile mevcut durumu ve çözüm önerilerini paylaşabilirim. Uygun bir zamanınız var mı?\n\nSaygılarımla,\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:19",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "AI aramalarda önerilme paketi ile başlanabilir; 11 hizmet sinyali bulundu.",
+      "primary_service": "AI Arama & GEO Görünürlüğü",
+      "included_services": [
+        "AI Arama & GEO Görünürlüğü",
+        "SEO & Teknik Optimizasyon",
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 95,
+      "evidence": [
+        "Schema.org yok",
+        "Open Graph yok",
+        "Web sitesi yok",
+        "Instagram yok"
+      ],
+      "categories": [
+        "AI Görünürlük",
+        "Web & Teknik",
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 100,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+  },
+  {
+    "name": "Dentince - Kadıköy Gülüş Tasarımı - İmplant",
+    "maps_url": "https://www.google.com/maps/place/Dentince+-+Kad%C4%B1k%C3%B6y+G%C3%BCl%C3%BC%C5%9F+Tasar%C4%B1m%C4%B1+-+%C4%B0mplant/data=!4m7!3m6!1s0x14cac78fa7dad795:0xde5e3ccc112abf59!8m2!3d40.9881148!4d29.0443317!16s%2Fg%2F1wk3pwbd!19sChIJldfap4_HyhQRWb8qEcw8Xt4?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "(0216) 345 21 83",
+    "address": "Egitim Mahallesi fahrettin kerim gökay caddesi no 107-109A, 34722 Kadıköy/İstanbul",
+    "rating": 4.9,
+    "review_count": null,
+    "category": "Diş Hekimi",
+    "website": {
+      "has_website": true,
+      "website_url": "https://dentince.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 1243,
+      "website_loads": true,
+      "has_schema": false,
+      "has_og": true,
+      "meta_description": "Dentince gülüş tasarımı, implant , diş estetiği alanlarında İstanbul Kadıköy&#039;de faaliyet gösteren diş kliniğidir. Doktorlarımız Murat İnce ve Deniz İnce&#039;dir.",
+      "has_robots": false,
+      "has_sitemap": true,
+      "has_email_capture": true,
+      "has_whatsapp": true,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/dentincedispoliklinigi/",
+      "instagram_username": "dentincedispoliklinigi",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": 40000,
+        "following": 987,
+        "post_count": 1296,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@dentince",
+        "tiktok_username": "dentince"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 77,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Schema.org yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 87000,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "https://dentince.com/",
+        "title": "Dentince | Ağız ve Diş Sağlığı Polikliniği, Kadıköy - İstanbul",
+        "meta_description": "Dentince gülüş tasarımı, implant , diş estetiği alanlarında İstanbul Kadıköy'de faaliyet gösteren diş kliniğidir. Doktorlarımız Murat İnce ve Deniz İnce'dir.",
+        "headings": [
+          "Dentince | Ağız ve Diş Sağlığı Polikliniği, Kadıköy - İstanbul",
+          "Dentince Dental Clinic",
+          "Dentince Luxury Clinic",
+          "Tedaviler",
+          "Dentince Teknolojisi",
+          "Doktorlarımız",
+          "Hasta Yorumları",
+          "Services"
+        ],
+        "internal_links": [
+          {
+            "label": "Ana Sayfa",
+            "url": "https://dentince.com/"
+          },
+          {
+            "label": "Hakkımızda",
+            "url": "https://dentince.com/hakkimizda"
+          },
+          {
+            "label": "Doktorlarımız",
+            "url": "https://dentince.com/doktorlarimiz"
+          },
+          {
+            "label": "Dentince Teknolojisi",
+            "url": "https://dentince.com/dentince-teknolojisi"
+          },
+          {
+            "label": "Anlaşmalı Kurumlar",
+            "url": "https://dentince.com/anlasmali-kurumlar"
+          },
+          {
+            "label": "Basında Biz",
+            "url": "https://dentince.com/basinda-biz"
+          },
+          {
+            "label": "Estetik Diş Hekimliği",
+            "url": "https://dentince.com/tedaviler/estetik-dis-hekimligi"
+          },
+          {
+            "label": "Protetik Diş Hekimliği",
+            "url": "https://dentince.com/tedaviler/protezler"
+          }
+        ],
+        "contact_signals": [
+          "phone",
+          "email",
+          "reservation",
+          "whatsapp"
+        ],
+        "content_sample": "Dentince | Ağız ve Diş Sağlığı Polikliniği, Kadıköy - İstanbul Ana Sayfa Kurumsal Hakkımızda Doktorlarımız Dentince Teknolojisi Anlaşmalı Kurumlar Basında Biz Tedaviler Estetik Diş Hekimliği Protetik Diş Hekimliği Dijital Diş Hekimliği Dolgular İmplant Tedavileri Ortodonti Periodontoloji ve Diş Eti Tedavileri Pedodonti - Çocuk Diş Hekimliği Dental Tanı ve Radyoloji Endodonti - Kanal Tedavisi Ağız ve Çene Cerrahisi Diş Hekimliğinde Ozon Tedavisi Galeri Galeri Videolar Blog İletişim EN AR DE FR MENU Ana Sayfa Kurumsal Hakkımızda Doktorlarımız Dentince Teknolojisi Anlaşmalı Kurumlar Basında Biz Tedaviler Estetik Diş Hekimliği Protetik Diş Hekimliği Ortodonti Dolgular İmplant Tedavileri Endodonti - Kanal Tedavisi Periodontoloji ve Diş Eti Tedavileri Ağız ve Çene Cerrahisi Dental Tanı ve Radyoloji Pedodonti - Çocuk Diş Hekimliği Dijital Diş Hekimliği Galeri Galeri Videolar Blog İletişim EN AR DE FR x DENTİNCE Hakkımızda Dentince Teknolojisi Doktorlarımız Anlaşmalı Kurumlar Basında Biz Tedavilerimiz Estetik Diş Hekimliği Protetik Diş Hekimliği Ortodonti Dolgular İmplant Tedavileri Endodonti - Kanal Tedavisi Periodontoloji ve Diş Eti Tedavileri Ağız ve Çene Cerrahisi Dental Tanı ve Radyol"
+      }
+    },
+    "research_brief": "1. **Gözlem:** Dentince Kadıköy, 4.9 puan ve 40 bin Instagram takipçisiyle güçlü bir yerel marka. Web sitesi teknik olarak sağlam (SSL, mobil, hızlı) ancak **schema.org** eksik. Hasta yorum sayısı (review_count) verisi yok. Bu, Google’da zengin sonuç ve AI aramalarda önerilme avantajını kaçırdığını gösteriyor.\n\n2. **Satış açısı:** Schema.org entegrasyonuyla Google’da yıldız, fiyat ve SSS gibi zengin snippet’ler alabilir; yerel SEO’da rakiplerinin önüne geçer. Aynı anda AI aramalarda (Gemini, SGE) önerilme şansı artar. Mevcut güçlü sosyal kanıt (4.9 puan, 40K takipçi) bu teknik iyileştirmeyle daha görünür hale gelir.\n\n3. **İlk temas bahanesi:** “Dentince’nin Google’da ve AI aramalarda öne çıkmasını engelleyen küçük bir teknik detay tespit ettik: schema.org yok. Bu eklenirse, mevcut hasta memnuniyetiniz (4.9 puan) arama sonuçlarında doğrudan görünür. 5 dakikalık bir keşifle nasıl uygulanacağını gösterebilir miyim?”\n\n4. **Risk / bilinmeyen:** Review_count null – yorum yönetimi yapılmıyor olabilir veya veri toplama kanalı zayıf. Schema.org eksikliği rekabetçi Kadıköy pazarında organik trafik kaybına yol açıyor olabilir. Web sitesini kimin geliştirdiği ve güncelleme süreci bilinmiyor.\n\n5. **Bir sonraki veri kontrolü:** Rakiplerin (örneğin Kadıköy’deki diğer diş klinikleri) schema.org durumu, review_count ve Google ortalama puanları. Dentince’nin Google Business profili güncel mi, yorumlar burada toplanıyor mu?",
+    "ai_report": "Sitenizde schema.org işaretlemesi yok. Bu, Google’ın kliniğinizi “diş hekimi”, “implant” gibi sorgularda zengin sonuç olarak göstermesini engelliyor. Etkisi, yerel aramalarda ve AI asistanlarda (Siri, Google Asistan) görünürlüğünüz düşüyor. Önerim: LocalBusiness ve DentalService şemalarını ekleyin; bu, organik tıklanma oranınızı ve randevu talebini artırır.\n\nGoogle puanınız 4.9 ama yorum sayınız görünmüyor. Yorum olmadan bu yüksek puan güven sinyali vermez; potansiyel hasta kararsız kalır. Aksiyon: Mevcut hastalarınızdan Google’da yorum bırakmalarını isteyin. Haftada 5-10 yorum, yerel sıralamada da size avantaj sağlar.\n\nInstagram’da 40.000 takipçiniz var ama etkileşim oranı belli değil. Yüksek takipçiye rağmen düşük etkileşim, organik erişimi ve randevu dönüşümünü sınırlar. Öneri: Son 30 günlük beğeni/yorum verisini analiz edin; takipçi kalitesini ölçün. İçeriklerin",
+    "ai_email": "Konu: Dentince Kadıköy için yerel görünürlük fırsatı\n\nMerhaba,\n\nWeb sitenizi inceledim. Kadıköy’deki yüksek puanınız ve Instagram’daki güçlü takipçi kitleniz dikkat çekici. Ancak sitemizde Schema.org yapılandırması bulunmuyor. Bu, Google ve AI arama motorlarının sizi işletme türüne göre doğru şekilde önermesini zorlaştırabilir.\n\nBu konuda kısa bir teknik iyileştirme ile yerel görünürlüğünüzü artırmanız mümkün. Growth Sprint paketimiz, bu boşluğu kapatmanıza ve aynı zamanda AI aramalarda önerilmenize yardımcı olabilir.\n\n15 dakikalık bir görüşme ile durumu netleştirebilir miyiz? Size nasıl bir fark yaratabileceğimizi anlatmak isterim.\n\nSaygılarımla,\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:20",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 3 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
+        "Google Ads Yönetimi"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 70,
+      "evidence": [
+        "Schema.org yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "AI Görünürlük",
+        "Büyüme & Reklam"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 79,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+  },
+  {
+    "name": "Klinik+1 Ağız ve Diş Sağlığı Polikliniği-Clinic Plus One",
+    "maps_url": "https://www.google.com/maps/place/Klinik%2B1+A%C4%9F%C4%B1z+ve+Di%C5%9F+Sa%C4%9Fl%C4%B1%C4%9F%C4%B1+Poliklini%C4%9Fi-Clinic+Plus+One/data=!4m7!3m6!1s0x14cac7790a5550c7:0xdda9787b83af8abf!8m2!3d40.9624021!4d29.0869037!16s%2Fg%2F11qms1_4xk!19sChIJx1BVCnnHyhQRv4qvg3t4qd0?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "0532 449 99 84",
+    "address": "Suadiye, Emin Ali Paşa Cd. no:27/A, 34740 Kadıköy/İstanbul",
+    "rating": 4.9,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": true,
+      "website_url": "http://www.klinikartibir.com/",
+      "has_ssl": false,
+      "is_mobile_friendly": true,
+      "load_time_ms": 3444,
+      "website_loads": true,
+      "has_schema": true,
+      "has_og": true,
+      "meta_description": "Klinik +1 ailesi olarak, Kliniğimizde uyguladığımız diş tedavileri hakkında detaylı bilgi almak için lütfen bizimle iletişime geçiniz. Sağlık Ağızda başlar.",
+      "has_robots": true,
+      "has_sitemap": true,
+      "has_email_capture": false,
+      "has_whatsapp": true,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@klinik1",
+        "tiktok_username": "klinik1"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 49,
+      "max_score": 100,
+      "grade": "C",
+      "issues": [
+        "SSL yok",
+        "Site yavaş (3444ms)",
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "SSL kurulumu",
+        "Site hız optimizasyonu",
+        "E-posta toplama formu",
+        "Instagram yönetimi"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "slow_site"
+        ],
+        "evidence": [
+          "Site yavaş"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "email_marketing",
+        "name": "E-posta Pazarlama Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "E-posta listesi oluşturma, otomasyon, kampanya yönetimi",
+        "offer": "Müşteri listesi ve kampanya otomasyonu",
+        "owner": "CRM",
+        "sales_angle": "Ziyaretçiyi tek seferlik trafik olmaktan çıkarıp tekrar pazarlanabilir kitleye çevirir.",
+        "detects": "Web sitesinde e-posta toplama formu yok.",
+        "price_min": 9000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_email_capture"
+        ],
+        "evidence": [
+          "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_email_capture",
+          "slow_site"
+        ],
+        "evidence": [
+          "E-posta formu yok",
+          "Site yavaş"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "web_design",
+        "name": "Web Sitesi Tasarımı",
+        "category": "Web & Teknik",
+        "desc": "Kurumsal, mobil uyumlu, hızlı ve lead odaklı web sitesi",
+        "offer": "Lead odaklı web yenileme paketi",
+        "owner": "Web",
+        "sales_angle": "Müşteri ilk temasında güven veren hızlı ve mobil uyumlu bir vitrin.",
+        "detects": "Web sitesi yok, mobil uyum zayıf veya site çok yavaş.",
+        "price_min": 35000,
+        "price_max": 90000,
+        "monthly": false,
+        "matched_triggers": [
+          "slow_site"
+        ],
+        "evidence": [
+          "Site yavaş"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "crm_pipeline_setup",
+        "name": "CRM Pipeline & Takip Sistemi",
+        "category": "İletişim & CRM",
+        "desc": "Lead formu, WhatsApp, e-posta, etiketleme ve satış takip panosu kurulumu",
+        "offer": "Satış takip altyapısı",
+        "owner": "CRM",
+        "sales_angle": "Kaçan talepleri tek ekranda toplar, takip disiplinini ölçülebilir yapar.",
+        "detects": "WhatsApp, e-posta toplama veya dönüşüm takip sinyali yok.",
+        "price_min": 15000,
+        "price_max": 40000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_email_capture"
+        ],
+        "evidence": [
+          "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "ssl_security",
+        "name": "SSL & Güvenlik Kurulumu",
+        "category": "Web & Teknik",
+        "desc": "HTTPS, güvenli bağlantı, tarayıcı uyarıları",
+        "offer": "Güvenli site hızlı müdahale",
+        "owner": "Web",
+        "sales_angle": "Tarayıcı uyarılarını kaldırıp müşteri güvenini hızlıca toparlar.",
+        "detects": "HTTPS/SSL eksikliği.",
+        "price_min": 3500,
+        "price_max": 9000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_ssl"
+        ],
+        "evidence": [
+          "SSL yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 121769,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "https://www.klinikartibir.com/",
+        "title": "Klinik +1 Özel Diş Kliniği - Sağlıklı Dişler Güzel Gülüşler",
+        "meta_description": "Klinik +1 ailesi olarak, Kliniğimizde uyguladığımız diş tedavileri hakkında detaylı bilgi almak için lütfen bizimle iletişime geçiniz. Sağlık Ağızda başlar.",
+        "headings": [
+          "Diş Kliniği Tedavileri Nelerdir ?",
+          "Diş Temizliği",
+          "Gülüş Tasarımı",
+          "Kanal Tedavisi",
+          "Şeffaf Plak",
+          "İstanbul Diş Kliniği",
+          "Ekibimizle Tanışın",
+          "Genel Koordinatör"
+        ],
+        "internal_links": [
+          {
+            "label": "Skip to content",
+            "url": "http://www.klinikartibir.com/#content"
+          },
+          {
+            "label": "Ana Sayfa",
+            "url": "https://www.klinikartibir.com/"
+          },
+          {
+            "label": "Hakkımızda",
+            "url": "http://www.klinikartibir.com/"
+          },
+          {
+            "label": "Kurumsal Bilgi",
+            "url": "https://www.klinikartibir.com/klinik-1-hakkinda/"
+          },
+          {
+            "label": "Medya",
+            "url": "https://www.klinikartibir.com/medya/"
+          },
+          {
+            "label": "Anlaşmalı Kurumlar",
+            "url": "https://www.klinikartibir.com/anlasmali-kurumlar/"
+          },
+          {
+            "label": "Diş Eti Estetiği – Gülüşünüze Değer Katın",
+            "url": "https://www.klinikartibir.com/dis-eti-estetigi/"
+          },
+          {
+            "label": "Diş Beyazlatma",
+            "url": "https://www.klinikartibir.com/dis-beyazlatma/"
+          }
+        ],
+        "contact_signals": [
+          "phone",
+          "reservation",
+          "whatsapp"
+        ],
+        "content_sample": "Klinik +1 Özel Diş Kliniği - Sağlıklı Dişler Güzel Gülüşler Skip to content +90 532 449 99 84 Facebook Icon-instagram-1 Youtube Ana Sayfa Hakkımızda Kurumsal Bilgi Medya Anlaşmalı Kurumlar Tedaviler Diş Eti Estetiği – Gülüşünüze Değer Katın Diş Beyazlatma Diş Teli (Ortodonti) Diş temizliği (Diş Taşı Temizleme) Diş Dolgusu Gömülü Diş Çekimi Gülüş Tasarımı Implant Kanal Tedavisi Kompozit Lamine Lamine Diş Porselen Kaplama Şeffaf Plak Ortodonti (invisalign) Zirkonyum Diş Kaplama Çocuk Tedavileri Çocuk Diş Kırılması Çocuk Diş Dolgusu Çocuk Kanal Tedavisi Çocuk Sabit-Hareketli Yer Tutucu Çocuk Diş Renklenme ve Diş Temizliği Süt Diş Çekimi Çocuk Amputasyon Tedavisi Çocuklarda Ağız Kokusu Ekibimiz Furkan Engin (Genel Koor.) Dr. Dt. Zehra Mutlu Dr.Dt. Jerina Güleç Dt. Mert Gerek Dr. Dt. Esra Yamaner Blog İletişim Ana Sayfa Hakkımızda Kurumsal Bilgi Medya Anlaşmalı Kurumlar Tedaviler Diş Eti Estetiği – Gülüşünüze Değer Katın Diş Beyazlatma Diş Teli (Ortodonti) Diş temizliği (Diş Taşı Temizleme) Diş Dolgusu Gömülü Diş Çekimi Gülüş Tasarımı Implant Kanal Tedavisi Kompozit Lamine Lamine Diş Porselen Kaplama Şeffaf Plak Ortodonti (invisalign) Zirkonyum Diş Kaplama Çocuk Tedavileri Çocuk Diş Kır"
+      }
+    },
+    "research_brief": "**1. Gözlem**\nKlinik+1, Suadiye’de konumlanmış, 4.9 puana sahip bir diş kliniği. Yorum sayısı verisi boş; bu durum Google profil hacminin düşük olabileceğine işaret ediyor. İnternet sitesi var, ancak HTTPS çalışmıyor ve 3.4 saniye yükleniyor. Sitede WhatsApp ve rezervasyon sinyali mevcut, e-posta yakalama yok. Instagram hesabı bulunmazken TikTok’ta aktif oldukları görülüyor. Sitede geniş tedavi sayfası, ekip tanıtımı ve blog alanı var; içerik kası henüz zayıf değil.\n\n**2. Satış açısı**\nYüksek 4.9 puanına rağmen düşük görünürlük ve teknik boşluklar, kliniğin potansiyel hasta trafiğini web sitesine ve iletişim kanallarına çevirmediğini gösteriyor. SSL eksikliği ve yavaş site; SEO sıralamalarına, mobil hasta güvenine ve hemen çıkma oranına doğrudan zarar veriyor. Instagram yokluğu, özellikle estetik odaklı hizmetlerde yerel sosyal kanıtı ve yeniden hedefleme havuzunu boş bırakıyor. Bu boşlukların her biri kayıp randevuya karşılık geliyor.\n\n**3. İlk temas bahanesi**\n“Kadıköy’de diş kliniği sitelerini incelerken sitenizin şifreleme uyarısı verdiğini ve 3 saniyeden uzun açıldığını fark ettim. Bu durum Google’daki yerinizi ve mobil ziyaretçilerin randevuya dönüşünü düşürüyor olabilir. Çözümüne dair deneyimimizi paylaşmak isterim.”\n\n**4. Risk / bilinmeyen**\nInstagram’ın “yok” olması bilinçli bir tercih mi, yoksa yönetim kaynağı eksikliği mi bilinmiyor. TikTok’ta aktifler ama içerik kalitesi ve dönüşüme etkisi ölçülmemiş. Web sitesi yavaş olsa da mevcut hasta akışının çoğu doğrudan telefon ya da harita yorumlarıyla geliyor olabilir; bu durumda siteye yatırımın aciliyetini anlatmak için ek veri gerekir.\n\n**5. Bir sonraki veri kontrolü**\nKlinik+1’in Google İşletme Profili’ndeki yorum hacmi, fotoğraf güncelleme sıklığı ve rakiplerin Instagram aktifliği kontrol edilmeli. Ayrıca Kadıköy içinde “diş kliniği” sorgusunda harita sıralaması ve organik konumu taranarak kayıp trafik potansiyeli netleştirilmeli.",
+    "ai_report": "• Mevcut siteniz Mobil Uyumlu raporu veriyor ancak SSL sertifikası bulunmuyor. Kadıköy gibi bilinçli bir bölgede bu durum, siteye giren potansiyel hastalarda güven sorunu yaratıp hemen çıkma oranını artırır. SSL kurulumuyla adres çubuğunda “güvenli” ibaresi görünmeli.\n\n• Site açılış hızınız 3.4 saniye ile standartların üzerinde. Bu yavaşlık, Google’daki yerel arama sıralamanızı olumsuz etkiliyor ve mobil kullanıcıların sayfayı terk etmesine yol açıyor. Teknik SEO ve görsel optimizasyonuyla hızın 2 saniyenin altına indirilmesi, randevu kaybını engeller.\n\n• İşletmenizin TikTok’ta aktif olduğunu görüyoruz ancak Kadıköy’deki hedef kitlenizin yoğun olduğu Instagram’da bir varlığınız yok. Bu eksiklik, “gülüş tasarımı” gibi görsel gücü yüksek tedavilerinizin geniş kitleye ulaşmasını engelliyor. Instagram profili açılıp düzenli vaka paylaşımı yapılmalı.\n\n• Web sitenizde tedavi bilgileri detaylı ancak e-posta yakalama formu bulunmuyor. Sizi ziyaret edip hemen randevu almayan potansiyel hastaları kaybediyorsunuz. Sitenize eklenecek bir bülten veya bilgi formu, düzenli hatırlatmalarla kayıp randevuları tekrar kazanmanızı sağlar.",
+    "ai_email": "Konu: Klinik+1'in dijital görünürlüğü için küçük bir fırsat\n\nMerhaba,\n\nKlinik+1’in web sitesini inceledim. Suadiye’deki 4.9 puanlı kliniğiniz hasta memnuniyetinde güçlü bir konumda. Ancak sitenizde SSL sertifikası bulunmuyor ve yüklenme süresi 3.4 saniye. Bu iki faktör, hem ziyaretçi güvenini hem de Google sıralamanızı doğrudan etkiliyor.\n\nTeknik SEO ve hız optimizasyonu ile başlayan Growth Sprint paketimiz, bu sorunları çözerken Instagram hesabı eksikliğiniz için sosyal medya yönetimini de kapsıyor.\n\n15 dakikalık kısa bir görüşme ile klinik için uygun adımları konuşabiliriz. Uygun bir zamanınız varsa bildirin.\n\nSaygılarımla,\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:21",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 8 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi",
+        "E-posta Pazarlama Kurulumu"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 85,
+      "evidence": [
+        "Site yavaş",
+        "Instagram yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "İçerik & Sosyal",
+        "Büyüme & Reklam",
+        "İletişim & CRM"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 100,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+  },
+  {
+    "name": "Baytak Ağız ve Diş Sağlığı Polikliniği Erenköy Şube",
+    "maps_url": "https://www.google.com/maps/place/Baytak+A%C4%9F%C4%B1z+ve+Di%C5%9F+Sa%C4%9Fl%C4%B1%C4%9F%C4%B1+Poliklini%C4%9Fi+Erenk%C3%B6y+%C5%9Eube/data=!4m7!3m6!1s0x14cac7f661766e6f:0x43d2ebb9279aa58e!8m2!3d40.9769924!4d29.0794809!16s%2Fg%2F11tb_fcz1d!19sChIJb252YfbHyhQRjqWaJ7nr0kM?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "(0216) 720 00 00",
+    "address": "Sahrayıcedit Mah. Şemsettin Günaltay Cad, Erenköy, Minibüs Caddesi No:228/1, 34734 Kadıköy/İstanbul",
+    "rating": 4.8,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": true,
+      "website_url": "https://www.yasarbaytakdispoliklinigi.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 316,
+      "website_loads": true,
+      "has_schema": false,
+      "has_og": false,
+      "meta_description": "Diş hekimliğinin tüm branşlarında kendi alanında uzman hekimlerden oluşan kadromuz ile hizmetinizdeyiz.",
+      "has_robots": false,
+      "has_sitemap": true,
+      "has_email_capture": true,
+      "has_whatsapp": true,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": true,
+      "instagram_url": "https://www.instagram.com/yasarbaytakdispoliklinigi/",
+      "instagram_username": "yasarbaytakdispoliklinigi",
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": 1697,
+        "following": 50,
+        "post_count": 9,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@baytak",
+        "tiktok_username": "baytak"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 74,
+      "max_score": 100,
+      "grade": "B",
+      "issues": [
+        "Schema.org yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_og"
+        ],
+        "evidence": [
+          "Open Graph yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 90750,
+    "research": {
+      "website": {
+        "status": "ok",
+        "url": "https://www.yasarbaytakdispoliklinigi.com/",
+        "title": "Yaşar Baytak Diş Polikliniği | Anasayfa | yasarbaytakdispoliklinigi.com",
+        "meta_description": "Diş hekimliğinin tüm branşlarında kendi alanında uzman hekimlerden oluşan kadromuz ile hizmetinizdeyiz.",
+        "headings": [
+          "Görüntüleme Cihazlarımız",
+          "Randevu alın"
+        ],
+        "internal_links": [
+          {
+            "label": "ANASAYFA",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/index.html"
+          },
+          {
+            "label": "HAKKIMIZDA",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/hakkimizda.html"
+          },
+          {
+            "label": "HEKİMLERİMİZ",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/hekimlerimiz.html"
+          },
+          {
+            "label": "HİZMETLER",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/"
+          },
+          {
+            "label": "Estetik Diş Hekimliği",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/estetik-dis-hekimligi.html"
+          },
+          {
+            "label": "Cerrahi ve İmplantoloji",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/cerrahi-ve-implantoloji.html"
+          },
+          {
+            "label": "Diş Tedavileri",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/dis-tedavileri.html"
+          },
+          {
+            "label": "Çocuk ve Hamilelerde Diş Sağlığı",
+            "url": "https://www.yasarbaytakdispoliklinigi.com/cocuk-hamile-dis-sagligi.html"
+          }
+        ],
+        "contact_signals": [
+          "phone",
+          "email",
+          "reservation"
+        ],
+        "content_sample": "Yaşar Baytak Diş Polikliniği | Anasayfa | yasarbaytakdispoliklinigi.com Toggle navigation TIKLA ARA ANASAYFA HAKKIMIZDA HEKİMLERİMİZ HİZMETLER Estetik Diş Hekimliği Gülüş Tasarımı Inley Onley Diş Restorasyonları Laminate Veneer, Empress Tam Estetik Kuronlar Porselen Dolgular Diş Beyazlatma Ortodonti Cerrahi ve İmplantoloji İmplant Gömük 20 Yaş Dişleri Diş Eti Estetiği Çene Kistleri Kemik ve Yumuşak Doku Takviyesi (Ogmentasyon) Lazerli Diş Tedavileri Diş Röntgenleri Diş Tedavileri Dolgu Kanal Tedavisi Tam Protez, Kancalı Diş Protezleri Hassas Bağlantılı Protezler Çene Eklemi Hastalıkları (TME) Diş Eti Hastalıkları Çocuk ve Hamilelerde Diş Sağlığı Diş Hekimi İle İlk Tanışma Süt Dişleri Diş Çürüğünden Korunma Ağız Bakımı ve Fırça Seçimi Diş Teli (Ortodonti) Hamilelikte Diş Hekimi Kontrolü Acil Durumlar İLETİŞİM YARDIM ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ VE DİŞ SAĞLIĞI POLİKLİNİĞİ ÖZEL YAŞAR BAYTAK AĞIZ "
+      }
+    },
+    "research_brief": "1. **Gözlem**  \nWeb sitesi hızlı (316 ms), SSL ve mobil uyumlu. WhatsApp ve email yakalama aktif. Schema.org ve Open Graph yok (tetikleyici). Instagram 1.697 takipçi, 9 gönderi. Google’da 4.8 puan ama yorum sayısı belirtilmemiş. Değerlendirme 74/100 (B). Growth Sprint paketi önerilmiş, 90.750 TL tahmini değer.\n\n2. **Satış açısı**  \nKlinik dijital temele sahip ama AI aramalarda görünmez durumda (schema eksik). Yerel diş kliniği için randevu akışı ve güven kritik. “Zaten iyi bir yerde duruyorsunuz, AI aramalarda önerilme oranınızı da artıralım” mesajı güçlü olur.\n\n3. **İlk temas bahanesi**  \n“Merhaba, web sitenizi inceledim. Schema.org yapılandırmanız olmadığı için AI aramalarda (Google AI, ChatGPT) önerilme şansınız düşük. Bu konuda ücretsiz bir hızlı değerlendirme ile başlayalım mı?”\n\n4. **Risk / bilinmeyen**  \nYorum sayısı null: gerçek hasta memnuniyeti ölçülemiyor. Instagram’da sadece 9 gönderi: sosyal kanıt zayıf olabilir. Web sitesi içeriğinde tekrarlayan metin bloğu var, profesyonel algıyı zedeleyebilir.\n\n5. **Bir sonraki veri kontrolü**  \nGoogle Business Profile’daki yorumlar, güncellik ve ortalama değerlendirme sayısı. TikTok hesabının içeriği ve etkileşim durumu.",
+    "ai_report": "Site yükleniyor (316 ms) ve mobil uyumlu, fakat teknik eksikler var. Sayfa kodunda Schema.org (örneğin LocalBusiness, Dentist) bulunmuyor. Etkisi: Google ve yapay zeka asistanları (AI Overviews, Siri) işletmenizi hizmet olarak algılayamaz; yerel aramada eksik kalırsınız. Aksiyon: 48 saat içinde firma bilgisi, çalışma saatleri, branş listesi ve yorum yıldızını içeren bir Schema şeması ekleyin.\n\nInstagram’da takipçi sayınız 1.697 olsa da paylaşılan sadece 9 gönderi var ve etkileşim (beğeni/yorum) verisi analiz edilemiyor. Etkisi: Düşük içerik sayısı potansiyel hastalarda “güncel değil” izlenimi bırakabilir ve randevu almak için tereddüt yaratabilir. Aksiyon: Haftada 2 kez tedavi öncesi-sonrası görseli veya hasta memnuniyeti videosu paylaşarak aktif profilden randevu talebi oluşturun.\n\nWeb sitesinde WhatsApp butonu ve iletişim bilgileri mevcut, fakat Open Graph meta etiketleri (paylaşım önizlemesi) yok. Bir hasta sitenizi paylaştığında görsel, başlık ve açıklama kayboluyor. Etkisi: Sosyal medyada tanıtım gücü azalır, hasta adayları linke tıklamaz. Aksiyon: Randevu sayfası ve blog yazılarına OG etiketi ekleyerek paylaşım görünürlüğünü artırın.\n\nGoogle Yorum puanınız 4.8, fakat yorum sayısı belirtilmemiş. Düşük yorum sayısı yüksek puanın güvenilirliğini zayıflatabilir. Etkisi: Arama sonuçlarında yorum sayısı düşükse tıklama oranı azalır. Aksiyon: Her randevu sonrası kısa bir SMS yönlendirmesi ile hasta yorumu isteyin; hedef 50 yorum üstü.\n\nRekabetçi Erenköy bölgesinde “diş kliniği + Erenköy” aramalarında üst sıralarda çıkmak için yerel içerik eksik. Etkisi: Rakipleriniz daha fazla görünürlük kazanıyor. Aksiyon: “Erenköy implant fiyatları” gibi lokasyon bazlı sayfalar hazırlayıp meta açıklamaya ekleyin.",
+    "ai_email": "Konu: Dijital görünürlüğünüz için 2 teknik eksik tespit ettik\n\nMerhaba,\n\nSitenizi inceledim. Google’da ve sosyal medyada tam görünmenizi engelleyen iki eksik var: Schema.org işaretlemesi ve Open Graph etiketleri bulunmuyor. Bu, yerel aramalarda ve randevu taleplerinde sizi geride bırakabilir.\n\nBu eksikleri gidermek için kapsamlı bir çözüm sunuyoruz: Growth Sprint paketimizle teknik SEO, AI aramalarda önerilme, Google Ads ve randevu sayfası optimizasyonunu bir arada sağlıyoruz. Amacınız daha fazla hasta mı? Doğru adrestesiniz.\n\n15 dakikalık kısa bir görüşmede mevcut durumu ve önerilerimizi konuşalım. Uygun bir zamanınız var mı?\n\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:21",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 4 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
+        "Google Ads Yönetimi",
+        "Landing Page & Dönüşüm Optimizasyonu"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 85,
+      "evidence": [
+        "Schema.org yok",
+        "Open Graph yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "AI Görünürlük",
+        "Büyüme & Reklam"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 87,
+    "next_action": "Satış mailini gönder",
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+  },
+  {
+    "name": "Kadıköy - Diş Kliniği | Dt. Erdem Can & Kanal Tedavisi Uzmanı Ezgi Orhan | Moda & Caferağa",
+    "maps_url": "https://www.google.com/maps/place/Kad%C4%B1k%C3%B6y+-+Di%C5%9F+Klini%C4%9Fi+%7C+Dt.+Erdem+Can+%26+Kanal+Tedavisi+Uzman%C4%B1+Ezgi+Orhan+%7C+Moda+%26+Cafera%C4%9Fa/data=!4m7!3m6!1s0x14cab9061ce8dec7:0x6c392c992cdbd006!8m2!3d40.9865022!4d29.027859!16s%2Fg%2F11j7bd6019!19sChIJx97oHAa5yhQRBtDbLJksOWw?authuser=0&hl=tr&rclk=1",
+    "query": "diş kliniği",
+    "city": "Istanbul Kadıköy",
+    "sector": "health",
+    "phone": "0531 231 24 34",
+    "address": "Caferağa, Gen. Asım Gündüz Caddesi No:78 K:1 D:1, 34734 Kadıköy/İstanbul",
+    "rating": 5.0,
+    "review_count": null,
+    "category": "Diş Kliniği",
+    "website": {
+      "has_website": true,
+      "website_url": "https://dishekimiezgiorhan.com/",
+      "has_ssl": true,
+      "is_mobile_friendly": true,
+      "load_time_ms": 332,
+      "website_loads": false,
+      "has_schema": false,
+      "has_og": false,
+      "meta_description": null,
+      "has_robots": false,
+      "has_sitemap": false,
+      "has_email_capture": false,
+      "has_whatsapp": false,
+      "has_analytics": null,
+      "tiktok_url": null
+    },
+    "social": {
+      "has_instagram": false,
+      "instagram_url": null,
+      "instagram_username": null,
+      "has_facebook": false,
+      "facebook_url": null,
+      "stats": {
+        "followers": null,
+        "following": null,
+        "post_count": null,
+        "avg_likes": null,
+        "avg_comments": null,
+        "engagement_rate": null
+      },
+      "tiktok": {
+        "has_tiktok": true,
+        "tiktok_url": "https://www.tiktok.com/@kadikoydis",
+        "tiktok_username": "kadikoydis"
+      }
+    },
+    "delivery": {
+      "has_yemeksepeti": null,
+      "yemeksepeti_url": null,
+      "has_getir": null,
+      "getir_url": null
+    },
+    "scoring": {
+      "score": 49,
+      "max_score": 100,
+      "grade": "C",
+      "issues": [
+        "Schema.org yok",
+        "WhatsApp butonu yok",
+        "Instagram yok"
+      ],
+      "opportunities": [
+        "Google SEO yapılandırması",
+        "Sosyal paylaşım meta etiketleri",
+        "E-posta toplama formu",
+        "WhatsApp Business entegrasyonu",
+        "Instagram yönetimi"
+      ]
+    },
+    "matched_services": [
+      {
+        "slug": "seo_schema",
+        "name": "SEO & Teknik Optimizasyon",
+        "category": "Web & Teknik",
+        "desc": "Schema.org, meta etiketler, site hızı, Core Web Vitals ve AI arama okunurluğu",
+        "offer": "Teknik SEO ve AI görünürlük temeli",
+        "owner": "SEO",
+        "sales_angle": "Google'ın işletmeyi ve sayfaları daha doğru anlamasını sağlar.",
+        "detects": "Schema.org, Open Graph, hız veya teknik görünürlük eksiği.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "ai_search_visibility",
+        "name": "AI Arama & GEO Görünürlüğü",
+        "category": "AI Görünürlük",
+        "desc": "LLM okunurluğu, yapılandırılmış içerik, soru-cevap sayfaları ve entity güçlendirme",
+        "offer": "AI aramalarda önerilme paketi",
+        "owner": "SEO",
+        "sales_angle": "Markanın sadece Google'da değil, AI cevaplarında da anlaşılır olmasını hedefler.",
+        "detects": "Schema.org, Open Graph veya web varlığı zayıf.",
+        "price_min": 18000,
+        "price_max": 50000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema",
+          "no_og"
+        ],
+        "evidence": [
+          "Schema.org yok",
+          "Open Graph yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "social_management",
+        "name": "Sosyal Medya Yönetimi",
+        "category": "İçerik & Sosyal",
+        "desc": "Instagram & TikTok içerik üretimi, planlama, etkileşim yönetimi",
+        "offer": "Aylık sosyal medya yönetimi",
+        "owner": "Sosyal",
+        "sales_angle": "Düzenli içerik ve etkileşimle yerel talebi sıcak tutar.",
+        "detects": "Instagram yok, düşük takipçi, düşük etkileşim veya TikTok yok.",
+        "price_min": 18000,
+        "price_max": 55000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "meta_ads_management",
+        "name": "Meta Ads & Retargeting Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Instagram/Facebook reklamları, yeniden hedefleme, kreatif test ve lead kampanyaları",
+        "offer": "Sosyal reklam büyüme sistemi",
+        "owner": "Performance",
+        "sales_angle": "Organik görünürlüğü reklam testleriyle satış niyetine dönüştürür.",
+        "detects": "Instagram zayıf, takipçi tabanı düşük veya etkileşim düşük.",
+        "price_min": 10000,
+        "price_max": 30000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_instagram"
+        ],
+        "evidence": [
+          "Instagram yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "google_ads",
+        "name": "Google Ads Yönetimi",
+        "category": "Büyüme & Reklam",
+        "desc": "Arama reklamları, yerel kampanyalar, dönüşüm optimizasyonu",
+        "offer": "Yerel talep kampanyası",
+        "owner": "Performance",
+        "sales_angle": "Hazır talebi telefon, rota ve rezervasyon aksiyonuna çevirir.",
+        "detects": "Düşük yorum, zayıf puan veya teknik SEO eksiği.",
+        "price_min": 8000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_schema"
+        ],
+        "evidence": [
+          "Schema.org yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "email_marketing",
+        "name": "E-posta Pazarlama Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "E-posta listesi oluşturma, otomasyon, kampanya yönetimi",
+        "offer": "Müşteri listesi ve kampanya otomasyonu",
+        "owner": "CRM",
+        "sales_angle": "Ziyaretçiyi tek seferlik trafik olmaktan çıkarıp tekrar pazarlanabilir kitleye çevirir.",
+        "detects": "Web sitesinde e-posta toplama formu yok.",
+        "price_min": 9000,
+        "price_max": 25000,
+        "monthly": true,
+        "matched_triggers": [
+          "no_email_capture"
+        ],
+        "evidence": [
+          "E-posta formu yok"
+        ],
+        "confidence": 70
+      },
+      {
+        "slug": "landing_page_cro",
+        "name": "Landing Page & Dönüşüm Optimizasyonu",
+        "category": "Web & Teknik",
+        "desc": "Kampanya sayfası, CTA akışı, teklif formu, hız ve dönüşüm ölçümü",
+        "offer": "Satış sayfası dönüşüm paketi",
+        "owner": "Web",
+        "sales_angle": "Reklam veya organik trafiğin boşa akmasını engeller.",
+        "detects": "Form, WhatsApp, Open Graph veya hız sinyali eksik.",
+        "price_min": 25000,
+        "price_max": 65000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_email_capture",
+          "no_whatsapp",
+          "no_og"
+        ],
+        "evidence": [
+          "E-posta formu yok",
+          "WhatsApp butonu yok",
+          "Open Graph yok"
+        ],
+        "confidence": 95
+      },
+      {
+        "slug": "crm_pipeline_setup",
+        "name": "CRM Pipeline & Takip Sistemi",
+        "category": "İletişim & CRM",
+        "desc": "Lead formu, WhatsApp, e-posta, etiketleme ve satış takip panosu kurulumu",
+        "offer": "Satış takip altyapısı",
+        "owner": "CRM",
+        "sales_angle": "Kaçan talepleri tek ekranda toplar, takip disiplinini ölçülebilir yapar.",
+        "detects": "WhatsApp, e-posta toplama veya dönüşüm takip sinyali yok.",
+        "price_min": 15000,
+        "price_max": 40000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp",
+          "no_email_capture"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok",
+          "E-posta formu yok"
+        ],
+        "confidence": 85
+      },
+      {
+        "slug": "whatsapp_business",
+        "name": "WhatsApp Business Kurulumu",
+        "category": "İletişim & CRM",
+        "desc": "WhatsApp Business API, otomatik yanıtlar, müşteri iletişim hattı",
+        "offer": "WhatsApp dönüşüm hattı",
+        "owner": "CRM",
+        "sales_angle": "Siteden veya profilden gelen ilgiyi hızlı mesaja dönüştürür.",
+        "detects": "Web sitesinde WhatsApp veya hızlı iletişim butonu yok.",
+        "price_min": 8000,
+        "price_max": 22000,
+        "monthly": false,
+        "matched_triggers": [
+          "no_whatsapp"
+        ],
+        "evidence": [
+          "WhatsApp butonu yok"
+        ],
+        "confidence": 70
+      }
+    ],
+    "estimated_value_tl": 167791,
+    "research": {
+      "website": {
+        "status": "error",
+        "url": "https://dishekimiezgiorhan.com/",
+        "title": null,
+        "meta_description": null,
+        "headings": [],
+        "internal_links": [],
+        "contact_signals": [],
+        "content_sample": null,
+        "error": "Client error '403 Forbidden' for url 'https://dishekimiezgiorhan.com/'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+      }
+    },
+    "research_brief": "**1. Gözlem**  \nKlinik Moda gibi yüksek talepli bir bölgede konumlanmış; 5.0 puana sahip ancak hiç yorum yok. Web sitesi 403 hatası veriyor, tamamen erişime kapalı. Schema, Open Graph, WhatsApp ve e‑posta yakalama bulunmuyor. Instagram yok, sadece TikTok hesabı mevcut. Dijital varlık puanı 100 üzerinden 49.\n\n**2. Satış açısı**  \nErişilemeyen site ve eksik sosyal kanıt, bölgedeki rekabette ciddi hasta kaybına yol açar. Uzmanlık vurgusu (kanal tedavisi) güçlü bir farklılaştırıcı ancak dijitalde yansıtılmıyor. Teknik SEO, AI görünürlük ve sosyal medya paketiyle hem randevu akışı hem yerel güven hızla yükseltilebilir.\n\n**3. İlk temas bahanesi**  \n“Sitenizi incelerken erişim sorunuyla karşılaştım; Moda’da sizi arayan bir hastanın aynı hatayı alması güveni zedeler ve rakiplere yönlendirir. Kısa bir SEO ve sosyal kanıt analiziyle başlayalım; uzmanlığınızı Google’a ve AI aramalara taşıyabiliriz.”\n\n**4. Risk / bilinmeyen**  \n403 engelinin nedeni bilinmiyor (sunucu, güvenlik duvarı vb.). TikTok hesabının aktifliği ve hasta dönüşüm performansı belirsiz. Hekimlerin dijital yatırıma bakışı ve bütçe sınırı henüz net değil.\n\n**5. Bir sonraki veri kontrolü**  \nWeb sitesi erişim kaynağı netleştirilmeli, TikTok içerik sıklığı ve etkileşimi incelenmeli, Google Business Profile’daki yorum eksikliği doğrulanmalı, klinik aranarak dijital öncelikleri öğrenilmeli.",
+    "ai_report": "• **Web sitesi erişime kapalı.** Site 403 Forbidden hatası veriyor, sayfa yüklenmiyor. Potansiyel hastalar kliniğinize dair bilgi alamıyor, bu doğrudan randevu kaybı demek. Hemen hosting/admin panelinizden erişimi açtırıp çalışır hale getirmelisiniz.\n\n• **Arama motoru yapılandırması (Schema.org) yok.** Google’da yıldız puanı, adres, çalışma saatleri gibi zengin sonuçlar gösteremiyorsunuz. Tıklanma oranı rakiplerin gerisinde kalır. LocalBusiness schema eklemeli, arama görünürlüğünü hemen yükseltmelisiniz.\n\n• **Instagram hesabı bulunmuyor.** Sektörde hasta güveni ve yerel keşif için en etkili kanal Instagram. TikTok hesabı olmasına rağmen Instagram’ın yokluğu erişim ve sosyal kanıt kaybına yol açıyor. Profil oluşturup Moda‑Caferağa odaklı içerik stratejisine başlanmalı.\n\n• **WhatsApp iletişim butonu sitenizde yok.** Hasta adayları randevu için anında mesaj atamıyor, bu da dönüşümü baltalıyor. WhatsApp Business butonu ekleyerek mobil ziyaretçilerden daha hızlı dönüş alabilirsiniz.\n\n• **E‑posta yakalama formu yok.** Müşteri listesi oluşturamıyor, hatırlatma veya kampanya iletişimi yapamıyorsunuz. Bu, sürekli randevu akışının önünde büyük engel. Siteye basit bir form entegre edip CRM temeli atmalısınız.",
+    "ai_email": "Konu: Kadıköy Diş Kliniğiniz için Dijital Görünürlük Fırsatı\n\nMerhaba Dt. Erdem Can ve Uzm. Ezgi Orhan,\n\nKadıköy'deki kliniğinizin sitesini ve dijital varlığını inceledim. Web siteniz yüklenmiyor, arama motorlarında görünürlük için gerekli Schema.org ve Open Graph etiketleri eksik. Ayrıca Instagram hesabınız bulunmuyor.\n\nBu eksiklikler, potansiyel hastaların size ulaşmasını zorlaştırabilir. Growth Sprint paketimizle teknik SEO altyapınızı kurar, AI aramalarda önerilmenizi sağlar ve sosyal medya yönetimi ile yerel görünürlüğünüzü artırırız.\n\n15 dakikalık kısa bir görüşme ile kliniğinize özel bir plan çıkarabiliriz. Uygun olduğunuz bir zamanı bana bildirin.\n\nSaygılarımla,\nMertkan | Zeplin Media",
+    "last_analyzed": "2026-07-19 15:22",
+    "recommended_package": {
+      "name": "Growth Sprint",
+      "summary": "Teknik SEO ve AI görünürlük temeli ile başlanabilir; 9 hizmet sinyali bulundu.",
+      "primary_service": "SEO & Teknik Optimizasyon",
+      "included_services": [
+        "SEO & Teknik Optimizasyon",
+        "AI Arama & GEO Görünürlüğü",
+        "Sosyal Medya Yönetimi",
+        "Meta Ads & Retargeting Yönetimi"
+      ],
+      "owner": "SEO",
+      "stage": "Teklif",
+      "confidence": 95,
+      "evidence": [
+        "Schema.org yok",
+        "Open Graph yok",
+        "Instagram yok"
+      ],
+      "categories": [
+        "Web & Teknik",
+        "AI Görünürlük",
+        "İçerik & Sosyal",
+        "Büyüme & Reklam"
+      ]
+    },
+    "schema_version": 2,
+    "data_quality": {
+      "has_contact": true,
+      "has_maps_rating": true,
+      "has_service_match": true,
+      "has_ai": true,
+      "has_audit_depth": true
+    },
+    "sales_priority_score": 100,
+    "next_action": "Öncelikli arama yap",
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
   }
 ]
