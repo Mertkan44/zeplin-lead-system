@@ -83,6 +83,13 @@ SUPABASE_SERVICE_ROLE_KEY
 DEEPSEEK_API_KEY
 ```
 
+You can load those from local `.env` without printing secret values:
+
+```bash
+gh auth login
+bash scripts/setup_github_actions_secrets.sh
+```
+
 Use the technical CLI for modular operations:
 
 ```bash
