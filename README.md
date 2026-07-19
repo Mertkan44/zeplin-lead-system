@@ -23,7 +23,8 @@ in the SQL editor, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.
 For admin login and production search jobs, also set `ADMIN_PASSWORD` and
 `SESSION_SECRET` in Vercel Environment Variables.
 Run `supabase/migrations/004_roles_assignments.sql` to enable admin/sales roles,
-panel users, and lead assignments.
+panel users, and lead assignments. Run `supabase/migrations/005_team_profiles.sql`
+to add profile titles and avatars.
 
 ## Common Commands
 
@@ -80,6 +81,12 @@ Create panel users in Supabase:
 ```bash
 venv/bin/python scripts/create_user.py --email satis1@zeplinmedia.com --name "Satis 1" --role sales --password "temporary-password"
 venv/bin/python scripts/create_user.py --email admin@zeplinmedia.com --name "Admin" --role admin --password "temporary-password"
+```
+
+Seed the default Zeplin team:
+
+```bash
+venv/bin/python scripts/seed_team_users.py --password "temporary-password"
 ```
 
 Role-ready backend endpoints:

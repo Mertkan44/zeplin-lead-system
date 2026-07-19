@@ -70,7 +70,13 @@ class handler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "user": {"email": user_email, "name": user.get("name"), "role": user.get("role")},
+                    "user": {
+                        "email": user_email,
+                        "name": user.get("name"),
+                        "role": user.get("role"),
+                        "title": user.get("title"),
+                        "avatar_url": user.get("avatar_url"),
+                    },
                     "summary": _summary(leads, assignments),
                     "leads": leads,
                     "assignments": assignments,

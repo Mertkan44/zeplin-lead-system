@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 from src.auth import make_password_hash, normalize_email, require_admin
 from src.http_api import read_json, send_json, send_options
 from src.storage.supabase import (
+    fetch_app_user_by_email,
     fetch_app_users,
     is_enabled as supabase_enabled,
     set_app_user_active,
@@ -54,6 +55,8 @@ class handler(BaseHTTPRequestHandler):
         email = normalize_email(payload.get("email"))
         name = _clean_text(payload.get("name") or email)
         role = _clean_text(payload.get("role") or "sales", max_len=20)
+        title = _clean_text(payload.get("title") or ("Patron" if role == "admin" else "Çalışan"))
+        avatar_url = _clean_text(payload.get("avatar_url"), max_len=240)
         password = payload.get("password")
         active = bool(payload.get("active", True))
         if not email or "@" not in email:
@@ -70,6 +73,8 @@ class handler(BaseHTTPRequestHandler):
                 email=email,
                 name=name,
                 role=role,
+                title=title,
+                avatar_url=avatar_url,
                 password_hash=make_password_hash(password),
                 active=active,
             )
@@ -97,6 +102,28 @@ class handler(BaseHTTPRequestHandler):
         try:
             if "active" in payload:
                 set_app_user_active(email, bool(payload["active"]))
+            fields = {"name", "role", "title", "avatar_url", "password"}
+            if any(field in payload for field in fields):
+                current = fetch_app_user_by_email(email)
+                if not current:
+                    send_json(self, 404, {"ok": False, "error": "user not found"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                    return
+                role = _clean_text(payload.get("role") or current.get("role") or "sales", max_len=20)
+                if role not in {"admin", "sales"}:
+                    send_json(self, 400, {"ok": False, "error": "role must be admin or sales"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                    return
+                user = upsert_app_user(
+                    email=email,
+                    name=_clean_text(payload.get("name") or current.get("name") or email),
+                    role=role,
+                    title=_clean_text(payload.get("title") or current.get("title") or ("Patron" if role == "admin" else "Çalışan")),
+                    avatar_url=_clean_text(payload.get("avatar_url") or current.get("avatar_url"), max_len=240),
+                    password_hash=make_password_hash(payload["password"]) if payload.get("password") else None,
+                    active=bool(payload.get("active", current.get("active", True))),
+                )
+                user.pop("password_hash", None)
+                send_json(self, 200, {"ok": True, "user": user}, allow_methods="GET, POST, PATCH, OPTIONS")
+                return
             send_json(self, 200, {"ok": True}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
             send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")

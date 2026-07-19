@@ -76,13 +76,22 @@ def _sign(payload_b64: str) -> str:
     return _b64(digest)
 
 
-def create_session_cookie(email: str | None = None, *, role: str = "admin", name: str | None = None) -> str:
+def create_session_cookie(
+    email: str | None = None,
+    *,
+    role: str = "admin",
+    name: str | None = None,
+    title: str | None = None,
+    avatar_url: str | None = None,
+) -> str:
     now = int(time.time())
     role = role if role in USER_ROLES else "sales"
     payload = {
         "sub": normalize_email(email) or normalize_email(env("ADMIN_EMAIL")) or "admin",
         "role": role,
         "name": name or None,
+        "title": title or None,
+        "avatar_url": avatar_url or None,
         "iat": now,
         "exp": now + SESSION_TTL_SECONDS,
     }
@@ -169,12 +178,14 @@ def authenticate_user(email: str | None, password: str | None, requested_role: s
                 "email": row.get("email"),
                 "name": row.get("name"),
                 "role": row.get("role") or "sales",
+                "title": row.get("title"),
+                "avatar_url": row.get("avatar_url"),
             }
 
     admin_email = normalize_email(env("ADMIN_EMAIL")) or "admin"
     admin_role_ok = not requested_role or requested_role == "admin"
     admin_email_ok = not normalized_email or normalized_email == admin_email or normalized_email == "admin"
     if admin_role_ok and admin_email_ok and verify_admin_password(password):
-        return {"email": admin_email, "name": "Admin", "role": "admin"}
+        return {"email": admin_email, "name": "Admin", "role": "admin", "title": "Patron", "avatar_url": None}
 
     return None

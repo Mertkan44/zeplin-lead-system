@@ -101,6 +101,8 @@ create table if not exists public.app_users (
   email text not null unique,
   name text not null,
   role text not null default 'sales' check (role in ('admin', 'sales')),
+  title text,
+  avatar_url text,
   password_hash text not null,
   active boolean not null default true,
   created_at timestamptz not null default now(),

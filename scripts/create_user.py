@@ -14,6 +14,8 @@ def main() -> None:
     parser.add_argument("--email", required=True)
     parser.add_argument("--name", required=True)
     parser.add_argument("--role", choices=["admin", "sales"], default="sales")
+    parser.add_argument("--title")
+    parser.add_argument("--avatar-url")
     parser.add_argument("--password", required=True)
     parser.add_argument("--inactive", action="store_true")
     args = parser.parse_args()
@@ -22,6 +24,8 @@ def main() -> None:
         email=normalize_email(args.email),
         name=args.name,
         role=args.role,
+        title=args.title or ("Patron" if args.role == "admin" else "Çalışan"),
+        avatar_url=args.avatar_url,
         password_hash=make_password_hash(args.password),
         active=not args.inactive,
     )

@@ -33,6 +33,8 @@ class handler(BaseHTTPRequestHandler):
                         "email": user.get("sub"),
                         "name": user.get("name"),
                         "role": user.get("role"),
+                        "title": user.get("title"),
+                        "avatar_url": user.get("avatar_url"),
                     }
                     if user
                     else None
@@ -55,14 +57,26 @@ class handler(BaseHTTPRequestHandler):
         if not user:
             send_json(self, 401, {"ok": False, "error": "invalid password"})
             return
-        cookie = create_session_cookie(user["email"], role=user["role"], name=user.get("name"))
+        cookie = create_session_cookie(
+            user["email"],
+            role=user["role"],
+            name=user.get("name"),
+            title=user.get("title"),
+            avatar_url=user.get("avatar_url"),
+        )
         send_json(
             self,
             200,
             {
                 "ok": True,
                 "authenticated": True,
-                "user": {"email": user["email"], "name": user.get("name"), "role": user["role"]},
+                "user": {
+                    "email": user["email"],
+                    "name": user.get("name"),
+                    "role": user["role"],
+                    "title": user.get("title"),
+                    "avatar_url": user.get("avatar_url"),
+                },
             },
             allow_methods="GET, POST, DELETE, OPTIONS",
             set_cookie=cookie,

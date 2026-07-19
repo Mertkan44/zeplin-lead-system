@@ -200,7 +200,7 @@ def fetch_app_user_by_email(email: str) -> dict[str, Any] | None:
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
     query = (
-        "select=id,email,name,role,password_hash,active,created_at,updated_at"
+        "select=id,email,name,role,title,avatar_url,password_hash,active,created_at,updated_at"
         f"&email=eq.{_eq(email.lower())}"
         "&limit=1"
     )
@@ -216,7 +216,7 @@ def fetch_app_users(limit: int = 100) -> list[dict[str, Any]]:
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
     query = (
-        "select=id,email,name,role,active,created_at,updated_at"
+        "select=id,email,name,role,title,avatar_url,active,created_at,updated_at"
         "&order=created_at.asc"
         f"&limit={min(limit, 200)}"
     )
@@ -231,6 +231,8 @@ def upsert_app_user(
     email: str,
     name: str,
     role: str,
+    title: str | None = None,
+    avatar_url: str | None = None,
     password_hash: str | None = None,
     active: bool = True,
 ) -> dict[str, Any]:
@@ -244,6 +246,8 @@ def upsert_app_user(
         "email": email.strip().lower(),
         "name": name.strip(),
         "role": role,
+        "title": title.strip() if title else None,
+        "avatar_url": avatar_url.strip() if avatar_url else None,
         "active": active,
         "updated_at": now,
     }
