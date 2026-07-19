@@ -73,6 +73,16 @@ Process queued admin search jobs:
 venv/bin/python scripts/process_search_jobs.py --limit 1
 ```
 
+In production, `.github/workflows/process-search-jobs.yml` checks Supabase every
+30 minutes and processes one queued admin search job. Add these GitHub Actions
+secrets before relying on the automatic worker:
+
+```bash
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+DEEPSEEK_API_KEY
+```
+
 Use the technical CLI for modular operations:
 
 ```bash

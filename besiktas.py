@@ -4,6 +4,7 @@ Belirtilen ilçeden işletme tara, audit et, AI raporu üret, dashboard'a ekle.
 import argparse
 import asyncio
 import json
+import os
 import subprocess
 from playwright.async_api import async_playwright
 from datetime import datetime
@@ -29,7 +30,7 @@ MAX_RESULTS = 5
 async def scrape(query, city, max_results):
     results = []
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=["--no-sandbox"])
         page = await browser.new_page()
         search = f"{query} {city}".replace(' ', '+')
         print(f"🔍 {search}")
@@ -78,6 +79,7 @@ async def run(
     force_ai: bool,
 ):
     failures = []
+    show_browser = os.getenv("ZEPLIN_SHOW_BROWSER") == "1"
     # 1. Scrape
     raw = await scrape(query, city, max_results)
     print(f"\n📋 {len(raw)} işletme bulundu:")
@@ -86,7 +88,7 @@ async def run(
     # 2. Audit
     audited = []
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, args=["--no-sandbox"])
+        browser = await p.chromium.launch(headless=not show_browser, args=["--no-sandbox"])
         ctx = await browser.new_context(
             user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 800},
