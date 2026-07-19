@@ -22,6 +22,8 @@ For Supabase persistence on the free plan, create a project, run `supabase/schem
 in the SQL editor, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.env`.
 For admin login and production search jobs, also set `ADMIN_PASSWORD` and
 `SESSION_SECRET` in Vercel Environment Variables.
+Run `supabase/migrations/004_roles_assignments.sql` to enable admin/sales roles,
+panel users, and lead assignments.
 
 ## Common Commands
 
@@ -71,6 +73,22 @@ Process queued admin search jobs:
 
 ```bash
 venv/bin/python scripts/process_search_jobs.py --limit 1
+```
+
+Create panel users in Supabase:
+
+```bash
+venv/bin/python scripts/create_user.py --email satis1@zeplinmedia.com --name "Satis 1" --role sales --password "temporary-password"
+venv/bin/python scripts/create_user.py --email admin@zeplinmedia.com --name "Admin" --role admin --password "temporary-password"
+```
+
+Role-ready backend endpoints:
+
+```text
+GET/POST/DELETE /api/auth
+GET/POST/PATCH /api/users          # admin only
+GET/POST/PATCH /api/assignments    # admin assigns, users update assignment status
+GET /api/workspace                 # role-shaped dashboard payload
 ```
 
 In production, `.github/workflows/process-search-jobs.yml` checks Supabase every

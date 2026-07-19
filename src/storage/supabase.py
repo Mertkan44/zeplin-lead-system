@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -42,6 +43,10 @@ def _headers(config: SupabaseConfig, *, prefer: str | None = None) -> dict[str, 
 def _postgrest_url(config: SupabaseConfig, table: str, query: str = "") -> str:
     suffix = f"?{query}" if query else ""
     return f"{config.url}/rest/v1/{table}{suffix}"
+
+
+def _eq(value: str) -> str:
+    return quote(str(value), safe="")
 
 
 def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
@@ -100,15 +105,18 @@ def upsert_leads(leads: list[dict[str, Any]], *, chunk_size: int = 100) -> int:
     return total
 
 
+LEAD_STATUSES = {"yeni", "ready", "missing_info", "contacted", "follow_up", "converted", "lost"}
+
+
 def set_lead_status(name: str, status: str) -> None:
-    if status not in {"yeni", "contacted", "converted"}:
-        raise ValueError("status must be yeni, contacted, or converted")
+    if status not in LEAD_STATUSES:
+        raise ValueError("status is invalid")
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
     with httpx.Client(timeout=20) as client:
         response = client.patch(
-            _postgrest_url(config, "leads", f"name=eq.{name}"),
+            _postgrest_url(config, "leads", f"name=eq.{_eq(name)}"),
             headers=_headers(config, prefer="return=minimal"),
             json={"status": status, "updated_at": datetime.now(timezone.utc).isoformat()},
         )
@@ -185,6 +193,199 @@ def fetch_outreach_events(limit: int = 500) -> list[dict[str, Any]]:
         response = client.get(_postgrest_url(config, "outreach_events", query), headers=_headers(config))
         response.raise_for_status()
         return response.json()
+
+
+def fetch_app_user_by_email(email: str) -> dict[str, Any] | None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = (
+        "select=id,email,name,role,password_hash,active,created_at,updated_at"
+        f"&email=eq.{_eq(email.lower())}"
+        "&limit=1"
+    )
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "app_users", query), headers=_headers(config))
+        response.raise_for_status()
+        rows = response.json()
+    return rows[0] if rows else None
+
+
+def fetch_app_users(limit: int = 100) -> list[dict[str, Any]]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = (
+        "select=id,email,name,role,active,created_at,updated_at"
+        "&order=created_at.asc"
+        f"&limit={min(limit, 200)}"
+    )
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "app_users", query), headers=_headers(config))
+        response.raise_for_status()
+        return response.json()
+
+
+def upsert_app_user(
+    *,
+    email: str,
+    name: str,
+    role: str,
+    password_hash: str | None = None,
+    active: bool = True,
+) -> dict[str, Any]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    if role not in {"admin", "sales"}:
+        raise ValueError("role must be admin or sales")
+    now = datetime.now(timezone.utc).isoformat()
+    row: dict[str, Any] = {
+        "email": email.strip().lower(),
+        "name": name.strip(),
+        "role": role,
+        "active": active,
+        "updated_at": now,
+    }
+    if password_hash:
+        row["password_hash"] = password_hash
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            _postgrest_url(config, "app_users", "on_conflict=email"),
+            headers=_headers(config, prefer="resolution=merge-duplicates,return=representation"),
+            json=row,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        return rows[0] if isinstance(rows, list) and rows else rows
+
+
+def set_app_user_active(email: str, active: bool) -> None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    with httpx.Client(timeout=20) as client:
+        response = client.patch(
+            _postgrest_url(config, "app_users", f"email=eq.{_eq(email.lower())}"),
+            headers=_headers(config, prefer="return=minimal"),
+            json={"active": active, "updated_at": datetime.now(timezone.utc).isoformat()},
+        )
+        response.raise_for_status()
+
+
+def fetch_lead_assignments(
+    *,
+    user_email: str | None = None,
+    lead_name: str | None = None,
+    status: str | None = None,
+    limit: int = 500,
+) -> list[dict[str, Any]]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = (
+        "select=id,lead_name,user_email,status,due_at,assigned_by,assigned_at,updated_at,meta"
+        "&order=updated_at.desc"
+        f"&limit={min(limit, 1000)}"
+    )
+    if user_email:
+        query += f"&user_email=eq.{_eq(user_email.lower())}"
+    if lead_name:
+        query += f"&lead_name=eq.{_eq(lead_name)}"
+    if status:
+        query += f"&status=eq.{_eq(status)}"
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
+        response.raise_for_status()
+        return response.json()
+
+
+def fetch_lead_assignment_by_id(assignment_id: int) -> dict[str, Any] | None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    query = (
+        "select=id,lead_name,user_email,status,due_at,assigned_by,assigned_at,updated_at,meta"
+        f"&id=eq.{assignment_id}"
+        "&limit=1"
+    )
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
+        response.raise_for_status()
+        rows = response.json()
+    return rows[0] if rows else None
+
+
+def upsert_lead_assignment(
+    *,
+    lead_name: str,
+    user_email: str,
+    assigned_by: str,
+    due_at: str | None = None,
+    status: str = "active",
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    if status not in {"active", "done", "snoozed", "archived"}:
+        raise ValueError("assignment status is invalid")
+    row = {
+        "lead_name": lead_name,
+        "user_email": user_email.strip().lower(),
+        "assigned_by": assigned_by.strip().lower(),
+        "due_at": due_at,
+        "status": status,
+        "meta": meta or {},
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            _postgrest_url(config, "lead_assignments", "on_conflict=lead_name,user_email"),
+            headers=_headers(config, prefer="resolution=merge-duplicates,return=representation"),
+            json=row,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        return rows[0] if isinstance(rows, list) and rows else rows
+
+
+def update_lead_assignment(assignment_id: int, *, status: str, meta: dict[str, Any] | None = None) -> None:
+    if status not in {"active", "done", "snoozed", "archived"}:
+        raise ValueError("assignment status is invalid")
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    row: dict[str, Any] = {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if meta is not None:
+        row["meta"] = meta
+    with httpx.Client(timeout=20) as client:
+        response = client.patch(
+            _postgrest_url(config, "lead_assignments", f"id=eq.{assignment_id}"),
+            headers=_headers(config, prefer="return=minimal"),
+            json=row,
+        )
+        response.raise_for_status()
+
+
+def attach_assignments_to_leads(
+    leads: list[dict[str, Any]],
+    assignments: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_lead: dict[str, list[dict[str, Any]]] = {}
+    for assignment in assignments:
+        by_lead.setdefault(assignment.get("lead_name") or "", []).append(assignment)
+    enriched = []
+    for lead in leads:
+        row = dict(lead)
+        items = by_lead.get(row.get("name") or "", [])
+        row["assignments"] = items
+        active = next((item for item in items if item.get("status") == "active"), None)
+        if active:
+            row["assigned_to"] = active.get("user_email")
+            row["assignment_due_at"] = active.get("due_at")
+        enriched.append(row)
+    return enriched
 
 
 def insert_run_log(

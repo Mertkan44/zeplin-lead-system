@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from src.auth import require_auth
 from src.storage.supabase import (
     fetch_outreach_events,
     insert_outreach_event,
@@ -56,6 +57,11 @@ class handler(BaseHTTPRequestHandler):
             _send_json(self, 502, {"ok": False, "error": f"supabase outreach fetch failed: {exc}"})
 
     def do_POST(self):
+        try:
+            require_auth(self)
+        except PermissionError:
+            _send_json(self, 401, {"ok": False, "error": "login required"})
+            return
         if not supabase_enabled():
             _send_json(self, 503, {"ok": False, "error": "supabase is not configured"})
             return

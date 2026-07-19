@@ -7,13 +7,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import (
+    authenticate_user,
     auth_configured,
     clear_session_cookie,
     create_session_cookie,
-    current_admin,
-    verify_admin_password,
+    current_user,
 )
-from src.config import env
 from src.http_api import read_json, send_json, send_options
 
 
@@ -22,14 +21,23 @@ class handler(BaseHTTPRequestHandler):
         send_options(self, allow_methods="GET, POST, DELETE, OPTIONS")
 
     def do_GET(self):
-        admin = current_admin(self)
+        user = current_user(self)
         send_json(
             self,
             200,
             {
-                "authenticated": bool(admin),
+                "authenticated": bool(user),
                 "configured": auth_configured(),
-                "admin": {"email": admin.get("sub")} if admin else None,
+                "user": (
+                    {
+                        "email": user.get("sub"),
+                        "name": user.get("name"),
+                        "role": user.get("role"),
+                    }
+                    if user
+                    else None
+                ),
+                "admin": {"email": user.get("sub")} if user and user.get("role") == "admin" else None,
             },
             allow_methods="GET, POST, DELETE, OPTIONS",
         )
@@ -43,14 +51,19 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)})
             return
-        if not verify_admin_password(payload.get("password")):
+        user = authenticate_user(payload.get("email"), payload.get("password"), payload.get("role"))
+        if not user:
             send_json(self, 401, {"ok": False, "error": "invalid password"})
             return
-        cookie = create_session_cookie(payload.get("email") or env("ADMIN_EMAIL", "admin"))
+        cookie = create_session_cookie(user["email"], role=user["role"], name=user.get("name"))
         send_json(
             self,
             200,
-            {"ok": True, "authenticated": True},
+            {
+                "ok": True,
+                "authenticated": True,
+                "user": {"email": user["email"], "name": user.get("name"), "role": user["role"]},
+            },
             allow_methods="GET, POST, DELETE, OPTIONS",
             set_cookie=cookie,
         )
