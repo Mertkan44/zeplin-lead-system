@@ -195,6 +195,66 @@ def fetch_outreach_events(limit: int = 500) -> list[dict[str, Any]]:
         return response.json()
 
 
+def reset_sales_activity() -> dict[str, int | bool]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+
+    now = datetime.now(timezone.utc).isoformat()
+    result: dict[str, int | bool] = {
+        "lead_statuses_reset": 0,
+        "outreach_events_deleted": 0,
+        "assignments_archived": 0,
+        "assignments_table_available": True,
+    }
+
+    with httpx.Client(timeout=30) as client:
+        outreach_count = client.get(
+            _postgrest_url(config, "outreach_events", "select=id"),
+            headers=_headers(config, prefer="count=exact"),
+        )
+        outreach_count.raise_for_status()
+        result["outreach_events_deleted"] = len(outreach_count.json())
+
+        delete_outreach = client.delete(
+            _postgrest_url(config, "outreach_events", "id=gt.0"),
+            headers=_headers(config, prefer="return=minimal"),
+        )
+        delete_outreach.raise_for_status()
+
+        lead_count = client.get(
+            _postgrest_url(config, "leads", "select=id"),
+            headers=_headers(config, prefer="count=exact"),
+        )
+        lead_count.raise_for_status()
+        result["lead_statuses_reset"] = len(lead_count.json())
+
+        reset_leads = client.patch(
+            _postgrest_url(config, "leads", "id=gt.0"),
+            headers=_headers(config, prefer="return=minimal"),
+            json={"status": "yeni", "updated_at": now},
+        )
+        reset_leads.raise_for_status()
+
+        assignment_count = client.get(
+            _postgrest_url(config, "lead_assignments", "select=id&status=eq.active"),
+            headers=_headers(config, prefer="count=exact"),
+        )
+        if assignment_count.status_code in {404, 400}:
+            result["assignments_table_available"] = False
+        else:
+            assignment_count.raise_for_status()
+            result["assignments_archived"] = len(assignment_count.json())
+            archive_assignments = client.patch(
+                _postgrest_url(config, "lead_assignments", "status=eq.active"),
+                headers=_headers(config, prefer="return=minimal"),
+                json={"status": "archived", "updated_at": now},
+            )
+            archive_assignments.raise_for_status()
+
+    return result
+
+
 def fetch_app_user_by_email(email: str) -> dict[str, Any] | None:
     config = supabase_config()
     if not config:

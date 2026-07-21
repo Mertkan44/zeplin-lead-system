@@ -29,8 +29,16 @@
     var BOOTSTRAP_LEADS = JSON.parse(atob('__DATA__'));
     var leads    = BOOTSTRAP_LEADS.slice();
     var services = JSON.parse(atob('__SERVICES__'));
-    var STATUS_KEY   = 'zeplin_lead_statuses_v2';
-    var OUTREACH_KEY = 'zeplin_outreach_v1';
+    var STATUS_KEY   = 'zeplin_lead_statuses_v4';
+    var OUTREACH_KEY = 'zeplin_outreach_v2';
+    try {
+      [
+        'zeplin_lead_statuses_v1',
+        'zeplin_lead_statuses_v2',
+        'zeplin_lead_statuses_v3',
+        'zeplin_outreach_v1',
+      ].forEach(key => localStorage.removeItem(key));
+    } catch(e) {}
     var remoteStatuses = {};
     var outreachEvents = [];
     var apiReady = false;
@@ -564,15 +572,15 @@
     const readiness = computeReadinessBuckets(leads);
     const dailyTasks = React.useMemo(() => getDailyTasks(leads, statuses), [leads, statuses]);
     const tabs   = [
-      ['Tümü', counts.total], ['Yeni', counts.yeni], ['Contacted', counts.contacted],
-      ['Converted', counts.converted], ['Düşük skor', counts.low],
+      ['Tümü', counts.total], ['Yeni', counts.yeni], ['Temasta', counts.contacted],
+      ['Kazanıldı', counts.converted], ['Düşük skor', counts.low],
     ];
 
     const filteredLeads = React.useMemo(() => {
       if (activeTab === 'Tümü')       return leads;
       if (activeTab === 'Yeni')       return leads.filter(l => (statuses[l.name] || 'yeni') === 'yeni');
-      if (activeTab === 'Contacted')  return leads.filter(l => statuses[l.name] === 'contacted');
-      if (activeTab === 'Converted')  return leads.filter(l => statuses[l.name] === 'converted');
+      if (activeTab === 'Temasta')    return leads.filter(l => statuses[l.name] === 'contacted');
+      if (activeTab === 'Kazanıldı')  return leads.filter(l => statuses[l.name] === 'converted');
       if (activeTab === 'Düşük skor') return leads.filter(l => l.scoring && l.scoring.score < 50);
       return leads;
     }, [leads, statuses, activeTab]);
@@ -598,7 +606,7 @@
             <kbd style={vp.kbd}>⌘K</kbd>
           </button>
           <div style={vp.topRight}>
-            <div style={vp.statusChip}><span style={vp.pulseDot}/><span>BOT AKTİF · son 2 dk</span></div>
+            <div style={vp.statusChip}><span style={vp.pulseDot}/><span>VERİ HAZIR · canlı</span></div>
             <div style={vp.user}>
               <div style={vp.avatar}>MA</div>
               <div>
@@ -746,7 +754,7 @@
           </div>
         </section>
 
-        <div style={vp.note}>Güvenlik notu — Takım kullanımı için sıradaki aşama: kullanıcı yetkileri, kalıcı veritabanı ve audit log. Şu an pipeline aksiyonları bu tarayıcıda saklanır.</div>
+        <div style={vp.note}>Güvenlik notu — Lead verisi Supabase üzerinden okunur. Pipeline aksiyonları kalıcı veritabanına yazılır; tarayıcı yalnızca geçici yedek tutar.</div>
 
         {/* Two col */}
         <section style={vp.twoCol}>
