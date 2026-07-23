@@ -3,21 +3,57 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Zeplin Media · Lead Cockpit</title>
+  <title>Zeplin Media · Lead Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100vh; background: #FAFAF9; }
-    body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-    #root { min-height: 100vh; display: flex; }
+    :root, [data-theme="dark"] {
+      --accent: #c5f24a; --accent-ink: #12140a;
+      --bg: #0a0a0b; --panel: #141418; --panel2: #17171c; --raised: #1c1c22;
+      --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
+      --tx: #f3f3f0; --sub: #93938f; --muted: #5c5c5a;
+      --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.06), transparent 60%);
+      --r: 26px; --rs: 18px;
+    }
+    [data-theme="light"] {
+      --accent: #c5f24a; --accent-ink: #12140a;
+      --bg: #faf9f4; --panel: #ffffff; --panel2: #f3f1e9; --raised: #efece0;
+      --line: #e9e4d6; --line2: #ddd6c2;
+      --tx: #0c0b08; --sub: #4a4535; --muted: #8b856f;
+      --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.14), transparent 60%);
+    }
+    html, body { min-height: 100vh; background: var(--bg); }
+    body { font-family: 'Instrument Sans', system-ui, sans-serif; color: var(--tx); -webkit-font-smoothing: antialiased; background: var(--glow), var(--bg); transition: background-color .2s, color .2s; }
+    #root { min-height: 100vh; display: flex; flex-direction: column; }
     button { font-family: inherit; }
-    textarea { font-family: inherit; }
+    textarea, input, select { font-family: inherit; }
     a { text-decoration: none; color: inherit; }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 99px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     .pipe-card.dragging { opacity: 0.4; }
-    .pipe-col.drag-over { background: #F0F0EE; }
+    .pipe-col.drag-over { background: var(--raised); }
+    .ll-row:hover { background: var(--raised); }
+    .hide-sb { scrollbar-width: none; -ms-overflow-style: none; }
+    .hide-sb::-webkit-scrollbar { display: none; }
+    @keyframes zspin { to { transform: rotate(360deg); } }
+    @media (max-width: 1080px) {
+      .tb-search-label { display: none !important; }
+      .tb-nav-item { padding: 9px 11px !important; font-size: 12px !important; }
+    }
   </style>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('zeplin_theme');
+        document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    })();
+  </script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -296,7 +332,7 @@
   };
 
   const PIPE_STAGES = [
-    { key: 'new',      label: 'Yeni',              color: '#9A9A9A', actions: [] },
+    { key: 'new',      label: 'Yeni',              color: '#93938f', actions: [] },
     { key: 'enrich',   label: 'Veri Tamamlama',    color: '#ffb36b', actions: ['data_enrichment_started'] },
     { key: 'draft',    label: 'Taslak Hazır',      color: '#76a6ff', actions: ['draft_prepared'] },
     { key: 'contacted',label: 'Temasta',           color: '#b9a8ff', actions: ['call_made', 'email_sent', 'reply_received'] },
@@ -448,505 +484,553 @@
     };
   }
 
-  // ── Shared Sidebar ─────────────────────────────────────────────────────────
+  // ── Shared design-system helpers (Lead Workspace look) ─────────────────────
 
-  function SideIc({ name }) {
-    const paths = {
-      cockpit:   <><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></>,
-      leads:     <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></>,
-      pipeline:  <><path d="M3 6h18"/><path d="M5 12h14"/><path d="M8 18h8"/></>,
-      audit:     <><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
-      raporlar:  <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12v4"/><path d="M12 8v8"/><path d="M16 14v2"/></>,
-      hizmetler: <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4M10 14h4"/></>,
-      admin:     <><path d="M12 3l8 4v5c0 5-3.4 8.5-8 9-4.6-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-5"/></>,
-      settings:  <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
-    };
+  function hexA(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+  }
+  const GRADE_COLORS = { A: '#b6f24a', B: '#ffcf4a', C: '#ff8f4a', D: '#7a7a78' };
+  function gradeColor(g) { return GRADE_COLORS[g] || '#93938f'; }
+  function gradeChipStyle(g) {
+    const c = gradeColor(g);
+    return { fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 7, color: c, background: hexA(c, 0.12), border: '1px solid ' + hexA(c, 0.28) };
+  }
+
+  const STATUS_META = {
+    yeni:      { label: 'Yeni',      fg: '#c5f24a', bg: 'rgba(197,242,74,0.1)',  bd: 'rgba(197,242,74,0.28)' },
+    contacted: { label: 'Görüşüldü', fg: '#ffcf4a', bg: 'rgba(255,207,74,0.1)',  bd: 'rgba(255,207,74,0.28)' },
+    converted: { label: 'Müşteri',   fg: '#b6f24a', bg: 'rgba(182,242,74,0.14)', bd: 'rgba(182,242,74,0.32)' },
+  };
+  function statusMeta(s) { return STATUS_META[s] || STATUS_META.yeni; }
+  function statusChipStyle(s) {
+    const m = statusMeta(s);
+    return { fontSize: 10.5, fontWeight: 600, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.04em', color: m.fg, background: m.bg, border: '1px solid ' + m.bd };
+  }
+
+  const FILTER_DEFS = [['hepsi','Hepsi'], ['a','A Sınıfı'], ['b','B/C/D'], ['web','Web Yok'], ['ig','Instagram Yok'], ['sicak','🔥 Sıcak']];
+  function filterLeads(leads, key) {
+    if (key === 'a')     return leads.filter(l => l.scoring.grade === 'A');
+    if (key === 'b')     return leads.filter(l => l.scoring.grade !== 'A');
+    if (key === 'web')   return leads.filter(l => !l.website?.has_website);
+    if (key === 'ig')    return leads.filter(l => !l.social?.has_instagram);
+    if (key === 'sicak') return leads.filter(l => (l.sales_priority_score || 0) >= 85);
+    return leads;
+  }
+
+  function FilterPills({ active, onChange, count }) {
     return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        {paths[name]}
-      </svg>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {FILTER_DEFS.map(([key, label]) => {
+            const a = active === key;
+            return <button key={key} onClick={() => onChange(key)} style={a ? fp.active : fp.idle}>{label}</button>;
+          })}
+        </div>
+        <span style={{ fontSize: 12.5, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{count} işletme</span>
+      </div>
+    );
+  }
+  const fp = {
+    idle:   { fontFamily: "'Instrument Sans'", fontSize: 12.5, fontWeight: 600, padding: '8px 15px', borderRadius: 999, cursor: 'pointer', border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--sub)' },
+    active: { fontFamily: "'Instrument Sans'", fontSize: 12.5, fontWeight: 600, padding: '8px 15px', borderRadius: 999, cursor: 'pointer', border: '1px solid transparent', background: 'var(--accent)', color: 'var(--accent-ink)' },
+  };
+
+  function ScoreRing({ score, grade, size = 56, stroke = 4 }) {
+    const r = (size - stroke) / 2;
+    const c = 2 * Math.PI * r;
+    const off = c * (1 - Math.min(Math.max(score || 0, 0), 100) / 100);
+    return (
+      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--line2)" strokeWidth={stroke}/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={gradeColor(grade)} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)' }}/>
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+          <span style={{ fontFamily: "'Space Grotesk'", fontSize: size >= 70 ? 22 : (size >= 50 ? 15 : 13), fontWeight: 700, color: 'var(--tx)' }}>{score}</span>
+        </div>
+      </div>
     );
   }
 
-  function Sidebar({ view, onNav, leadCount, onAutomationClick }) {
-    const navItems = [
-      { key: 'cockpit',   ic: 'cockpit',   label: 'Cockpit',   badge: leadCount },
-      { key: 'raporlar',  ic: 'leads',     label: 'Leadler' },
-      { key: 'pipeline',  ic: 'pipeline',  label: 'Pipeline' },
-      { key: 'hizmetler', ic: 'hizmetler', label: 'Hizmetler' },
-      { key: 'admin',     ic: 'admin',     label: 'Admin' },
+  function auditFor(l) {
+    const yes = { bg: 'rgba(182,242,74,0.16)', fg: '#b6f24a', mark: '✓' };
+    const no  = { bg: 'rgba(255,107,107,0.14)', fg: '#ff8f8f', mark: '✕' };
+    const row = (label, ok, note) => ({ label, note, ...(ok ? yes : no) });
+    const w = l.website || {}, s = l.social || {};
+    return [
+      row('Web Sitesi', !!w.has_website, w.has_website ? (w.website_url||'').replace(/^https?:\/\//,'').replace(/\/$/,'') : 'Yok'),
+      row('SSL', !!w.has_ssl, w.has_ssl ? 'Aktif' : 'Eksik'),
+      row('Mobil Uyum', !!w.is_mobile_friendly, w.is_mobile_friendly ? 'Uyumlu' : 'Değil'),
+      row('Site Hızı', !!(w.website_loads && w.load_time_ms), w.load_time_ms ? `${w.load_time_ms}ms` : '—'),
+      row('Instagram', !!s.has_instagram, s.has_instagram ? ('@'+(s.instagram_username||'instagram')) : 'Yok'),
+      row('TikTok', !!s.tiktok?.has_tiktok, s.tiktok?.has_tiktok ? 'Aktif' : 'Yok'),
     ];
+  }
+
+  function chipsFor(l) {
+    const base = { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 500, padding: '5px 11px', borderRadius: 999, whiteSpace: 'nowrap' };
+    const on  = { ...base, background: 'var(--panel2)', border: '1px solid var(--line)', color: 'var(--sub)' };
+    const off = { ...base, background: 'transparent', border: '1px dashed var(--line2)', color: 'var(--muted)' };
+    const w = l.website || {}, s = l.social || {};
+    const chips = [];
+    chips.push(w.has_website ? { label: (w.website_url||'').replace(/^https?:\/\//,'').replace(/\/$/,''), dot: true, style: on } : { label: 'Web yok', dot: false, style: off });
+    chips.push(s.has_instagram ? { label: '@'+(s.instagram_username||'instagram'), dot: true, style: on } : { label: 'Instagram yok', dot: false, style: off });
+    if (l.maps_url) chips.push({ label: 'Google Maps', dot: true, style: on });
+    return chips;
+  }
+
+  function computeWeekBuckets(leads) {
+    const now = new Date();
+    const buckets = new Array(8).fill(0);
+    leads.forEach(l => {
+      if (!l.last_analyzed) return;
+      const d = new Date(l.last_analyzed.replace(' ', 'T'));
+      if (isNaN(d)) return;
+      const diffDays = Math.floor((now - d) / 86400000);
+      const weekIdx = Math.floor(diffDays / 7);
+      if (weekIdx >= 0 && weekIdx < 8) buckets[7 - weekIdx] += 1;
+    });
+    return buckets;
+  }
+
+  function mostCommonCity(leads) {
+    const counts = {};
+    leads.forEach(l => { if (l.city) counts[l.city] = (counts[l.city]||0) + 1; });
+    const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    return entries.length ? entries[0][0] : '';
+  }
+
+  function exportLeadsCSV(leads) {
+    const cols = ['name','city','category','scoring.score','scoring.grade','estimated_value_tl','sales_priority_score','phone'];
+    const get = (obj, path) => path.split('.').reduce((o,k) => (o||{})[k], obj);
+    const header = ['İşletme','Şehir','Kategori','Skor','Sınıf','Tahmini Değer','Öncelik','Telefon'];
+    const rows = leads.map(l => cols.map(c => { const v = get(l, c); return v === undefined || v === null ? '' : String(v).replace(/"/g,'""'); }));
+    const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'zeplin-leadler.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Shared Topbar ──────────────────────────────────────────────────────────
+
+  function Topbar({ view, onNav, leadCount, onAutomationClick, onOpenSearch, theme, onToggleTheme, user, onLogout }) {
+    const navItems = [
+      { key: 'cockpit',   label: 'Workspace' },
+      { key: 'raporlar',  label: 'Leadler',   badge: leadCount },
+      { key: 'pipeline',  label: 'Pipeline' },
+      { key: 'analytics', label: 'Raporlar' },
+      { key: 'hizmetler', label: 'Hizmetler' },
+      { key: 'admin',     label: 'Admin' },
+    ].filter(n => n.key !== 'admin' || !user || user.role === 'admin');
     const currentView = view === 'detail' ? 'raporlar' : view;
+    const initials = (user?.name || user?.email || 'M').trim().charAt(0).toUpperCase();
 
     return (
-      <aside style={sb.sidebar}>
-        <div style={sb.brand}>
-          <div style={sb.logo}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-              <ellipse cx="12" cy="12" rx="10" ry="6" stroke="#0A0A0A" strokeWidth="1.5"/>
-              <path d="M22 12 L24 13 L22 14" stroke="#0A0A0A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="9" cy="12" r="1" fill="#0A0A0A"/>
-            </svg>
+      <header style={tb.bar}>
+        <div style={tb.brand}>
+          <div style={tb.logo}>
+            <img src="/logo-mark.png" alt="Zeplin Media" style={tb.logoImg}/>
           </div>
           <div>
-            <div style={sb.brandName}>Zeplin Media</div>
-            <div style={sb.brandSub}>Lead Intelligence</div>
+            <div style={tb.brandName}>Zeplin Media</div>
+            <div style={tb.brandSub}>Lead Workspace</div>
           </div>
         </div>
 
-        <nav style={sb.nav}>
+        <nav className="hide-sb tb-nav" style={tb.nav}>
           {navItems.map(n => {
             const active = currentView === n.key;
             return (
-              <a key={n.key} style={active ? sb.itemActive : sb.item} onClick={() => onNav(n.key)}>
-                <SideIc name={n.ic} />
-                <span style={{ flex: 1 }}>{n.label}</span>
+              <a key={n.key} className="tb-nav-item" style={active ? tb.itemActive : tb.item} onClick={() => onNav(n.key)}>
+                <span>{n.label}</span>
                 {n.badge !== undefined && (
-                  <span style={active ? sb.badgeActive : sb.badge}>{n.badge}</span>
+                  <span style={active ? tb.badgeActive : tb.badge}>{n.badge}</span>
                 )}
               </a>
             );
           })}
         </nav>
 
-        <div style={{ marginTop: 'auto' }}>
-          <div style={sb.upgradeCard}>
-            <div style={sb.upgradeEyebrow}>OTOMASYON</div>
-            <div style={sb.upgradeTitle}>Otomatik tarayıcı</div>
-            <div style={sb.upgradeBody}>15 dakikada bir tarama. Yeni leadler otomatik dosyalansın.</div>
-            <button style={sb.upgradeBtn} onClick={onAutomationClick}>Etkinleştir →</button>
-          </div>
-        </div>
-      </aside>
+        <div style={{ flex: 1 }}/>
+
+        <button style={tb.search} onClick={onOpenSearch}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span className="tb-search-label">Lead, firma veya hizmet ara</span>
+        </button>
+        <button title={theme === 'light' ? 'Karanlık moda geç' : 'Aydınlık moda geç'} style={tb.iconBtn} onClick={onToggleTheme}>
+          {theme === 'light'
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="var(--sub)" strokeWidth="1.8"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+        </button>
+        <button title="Otomasyonu etkinleştir" style={tb.iconBtn} onClick={onAutomationClick}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L5 13h6l-1 9 8-11h-6l1-9z" fill="var(--accent)" stroke="var(--accent)" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={tb.avatar} onClick={onLogout} title={user ? `${user.name || user.email} · Çıkış yap` : 'Çıkış yap'}>{initials}</div>
+      </header>
     );
   }
 
-  const sb = {
-    sidebar:      { width: 244, minHeight: '100vh', padding: '24px 18px', borderRight: '1px solid #ECECEC', display: 'flex', flexDirection: 'column', gap: 22, background: '#fff', position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', flexShrink: 0 },
-    brand:        { display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px' },
-    logo:         { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, background: '#FAFAF9', border: '1px solid #ECECEC', flexShrink: 0 },
-    brandName:    { fontFamily: '"Inter Tight"', fontWeight: 700, fontSize: 15, letterSpacing: -0.2 },
-    brandSub:     { fontSize: 11, color: '#9A9A9A', marginTop: 1 },
-    nav:          { display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 },
-    item:         { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, color: '#6B6B6B', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
-    itemActive:   { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: '#0A0A0A', color: '#fff', cursor: 'pointer', fontSize: 13.5, fontWeight: 500 },
-    badge:        { fontSize: 10.5, background: '#F4F4F2', color: '#3A3A3A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
-    badgeActive:  { fontSize: 10.5, background: '#C6F24E', color: '#0A0A0A', padding: '2px 7px', borderRadius: 99, fontFamily: '"JetBrains Mono"', fontWeight: 600 },
-    upgradeCard:  { background: '#FAFAF9', border: '1px solid #ECECEC', borderRadius: 14, padding: 16 },
-    upgradeEyebrow:{ fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, color: '#6B6B6B' },
-    upgradeTitle: { fontFamily: '"Inter Tight"', fontWeight: 600, fontSize: 15, marginTop: 8, letterSpacing: -0.2 },
-    upgradeBody:  { fontSize: 12, color: '#6B6B6B', marginTop: 6, lineHeight: 1.45 },
-    upgradeBtn:   { marginTop: 12, padding: '8px 12px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer', width: '100%' },
+  const tb = {
+    bar:          { display: 'flex', alignItems: 'center', gap: 14, padding: '14px 26px', borderBottom: '1px solid var(--line)', flexShrink: 0, position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)' },
+    brand:        { display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 },
+    logo:         { width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 12, background: 'var(--panel2)', border: '1px solid var(--line)', flexShrink: 0, overflow: 'hidden' },
+    logoImg:      { width: '84%', height: '84%', objectFit: 'contain' },
+    brandName:    { fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 14.5, letterSpacing: -0.2, color: 'var(--tx)' },
+    brandSub:     { fontSize: 11, color: 'var(--muted)', marginTop: 1 },
+    nav:          { display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5, overflowX: 'auto', flexShrink: 1 },
+    item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
+    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, background: '#000', color: 'var(--tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
+    badge:        { fontSize: 10.5, background: 'var(--raised)', color: 'var(--sub)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
+    badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
+    search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
+    iconBtn:      { width: 40, height: 40, borderRadius: 999, background: 'var(--panel)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 },
+    avatar:       { width: 38, height: 38, borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, flexShrink: 0 },
   };
 
-  // ── Sub-components (cockpit) ───────────────────────────────────────────────
+  // ── Workspace view (matches Lead Workspace design 1:1) ─────────────────────
 
-  function SH({ eyebrow, title, right }) {
+  function IconCal() {
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="var(--sub)" strokeWidth="2"/><path d="M3 9h18M8 3v4M16 3v4" stroke="var(--sub)" strokeWidth="2" strokeLinecap="round"/></svg>;
+  }
+  function IconPlus({ color = '#12140a' }) {
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke={color} strokeWidth="2.4" strokeLinecap="round"/></svg>;
+  }
+  function IconTrend() {
+    return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12l4 4 6-8" stroke="#12140a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  }
+  function IconStar() {
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 4.9L19 9.8l-4.1 3.1L16 18l-4-2.7L8 18l1.1-5.1L5 9.8l5.1-1.9L12 3z" fill="var(--accent)"/></svg>;
+  }
+  function IconMail({ color = 'var(--accent)' }) {
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="3" stroke={color} strokeWidth="2"/><path d="M4 7l8 6 8-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  }
+  function IconCall() {
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5c0 9 6 15 15 15l-1-4-4-1-2 2c-2-1-4-3-5-5l2-2-1-4-4-1z" fill="#12140a"/></svg>;
+  }
+  function IconDots() {
+    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>;
+  }
+
+  function SelectedPanel({ lead, onOpenDetail }) {
+    const [reportOpen, setReportOpen] = React.useState(true);
+    const [emailOpen, setEmailOpen]   = React.useState(false);
+    const [copied, setCopied]         = React.useState(false);
+
+    React.useEffect(() => { setReportOpen(true); setEmailOpen(false); }, [lead.name]);
+
+    const audit = auditFor(lead);
+    const ms  = (lead.matched_services || [])[0] || {};
+    const pkg = lead.recommended_package;
+    const hasPackage = Boolean(pkg) && (lead.matched_services || []).length > 0;
+
+    function copyEmail() {
+      if (!lead.ai_email) return;
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(lead.ai_email).catch(() => {});
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+
     return (
-      <div style={vp.sectionHeader}>
-        <div>
-          <div style={vp.eyebrowSm}>{eyebrow}</div>
-          <h2 style={vp.h2}>{title}</h2>
+      <div style={wp.panelInner}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
+          <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={onOpenDetail}>
+            <div style={wp.panelEyebrow}>Seçili Lead</div>
+            <div style={wp.panelName}>{lead.name}</div>
+            <div style={wp.panelSub}>{lead.category || lead.sector || 'İşletme'} · {lead.city}</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+            <ScoreRing score={lead.scoring.score} grade={lead.scoring.grade} size={78} stroke={5}/>
+            <span style={gradeChipStyle(lead.scoring.grade)}>Sınıf {lead.scoring.grade}</span>
+          </div>
         </div>
-        {right}
+
+        <div style={wp.metricsGrid}>
+          <div style={wp.metricBox}>
+            <div style={wp.metricLabel}>Tahmini Değer</div>
+            <div style={wp.metricValue}>{lead.estimated_value_tl > 0 ? `~${fmt(lead.estimated_value_tl)} ₺` : '—'}</div>
+          </div>
+          <div style={wp.metricBox}>
+            <div style={wp.metricLabel}>Satış Önceliği</div>
+            <div style={{ ...wp.metricValue, color: 'var(--accent)' }}>{lead.sales_priority_score || 0}<span style={{ fontSize: 12, color: 'var(--muted)' }}>/100</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div style={wp.sectionLabel}>Dijital Denetim</div>
+          <div style={wp.auditGrid}>
+            {audit.map(a => (
+              <div key={a.label} style={wp.auditRow}>
+                <span style={{ ...wp.auditMark, background: a.bg, color: a.fg }}>{a.mark}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={wp.auditLabel}>{a.label}</div>
+                  <div style={wp.auditNote}>{a.note}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {(lead.matched_services || []).length > 0 && (
+          <div>
+            <div style={wp.sectionLabel}>Eşleşen Hizmetler</div>
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              {lead.matched_services.map(s => <span key={s.slug} style={wp.svcChip}>{s.name}</span>)}
+            </div>
+          </div>
+        )}
+
+        {hasPackage ? (
+          <div style={wp.pkgBox}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={wp.pkgEyebrow}>Önerilen Paket</span>
+              {pkg.stage && <span style={wp.pkgStage}>{pkg.stage}</span>}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={wp.pkgName}>{pkg.name}</div>
+                <div style={wp.pkgPrice}>
+                  {ms.monthly ? `${fmt(ms.price_min)} ₺/ay` : `${(ms.price_min||0).toLocaleString('tr-TR')}–${(ms.price_max||0).toLocaleString('tr-TR')} ₺`}
+                  {pkg.confidence ? ` · %${pkg.confidence} güven` : ''}
+                </div>
+              </div>
+              <button style={wp.pkgBtn} onClick={onOpenDetail}>Teklif Oluştur</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ ...wp.pkgBox, background: 'var(--panel2)' }}>
+            <span style={wp.pkgEyebrow}>Önerilen Paket</span>
+            <div style={{ fontSize: 13, color: 'var(--sub)', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
+          </div>
+        )}
+
+        {lead.ai_report && (
+          <div>
+            <button style={wp.toggleBtn} onClick={() => setReportOpen(o => !o)}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconStar/> AI Raporu</span>
+              <span style={{ fontSize: 18, color: 'var(--sub)' }}>{reportOpen ? '−' : '+'}</span>
+            </button>
+            {reportOpen && <div style={wp.togglePanel}>{lead.ai_report}</div>}
+          </div>
+        )}
+
+        {lead.ai_email && (
+          <div>
+            <button style={wp.toggleBtn} onClick={() => setEmailOpen(o => !o)}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconMail/> Satış Maili</span>
+              <span style={{ fontSize: 18, color: 'var(--sub)' }}>{emailOpen ? '−' : '+'}</span>
+            </button>
+            {emailOpen && <div style={wp.togglePanel}>{lead.ai_email}</div>}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 9 }}>
+          {lead.phone
+            ? <a href={`tel:${lead.phone.replace(/\s+/g,'')}`} style={wp.callBtn}><IconCall/> Ara</a>
+            : <span style={{ ...wp.callBtn, opacity: 0.4, pointerEvents: 'none' }}><IconCall/> Ara</span>}
+          {lead.ai_email
+            ? <button style={wp.mailBtn} onClick={copyEmail}><IconMail color="currentColor"/> {copied ? 'Kopyalandı' : 'Mail Gönder'}</button>
+            : <span style={{ ...wp.mailBtn, opacity: 0.4, pointerEvents: 'none' }}><IconMail color="currentColor"/> Mail Gönder</span>}
+          <button style={wp.moreBtn} onClick={onOpenDetail} title="Detaylı görünüm">
+            <IconDots/>
+          </button>
+        </div>
       </div>
     );
   }
 
-  function KpiHead({ label, hint }) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, color: '#3A3A3A' }}>{label}</div>
-        <div style={{ fontSize: 10.5, fontFamily: '"JetBrains Mono"', color: '#3A3A3A', background: 'rgba(0,0,0,0.06)', padding: '2px 7px', borderRadius: 6 }}>{hint}</div>
-      </div>
-    );
-  }
+  function CockpitMain({ leads, statuses, onSelect, onOpenAdmin }) {
+    const [filter, setFilter] = React.useState('hepsi');
+    const [selectedName, setSelectedName] = React.useState(leads[0]?.name);
 
-  // ── Cockpit Main Content ───────────────────────────────────────────────────
+    React.useEffect(() => {
+      if (!leads.some(l => l.name === selectedName)) setSelectedName(leads[0]?.name);
+    }, [leads]);
 
-  function CockpitMain({ leads, statuses, onSelect, onOpenReports, onOpenSearch }) {
-    const [activeTab, setActiveTab] = React.useState('Tümü');
+    const filtered = React.useMemo(() => filterLeads(leads, filter), [leads, filter]);
+    const selected = leads.find(l => l.name === selectedName) || leads[0];
+    const selIdx   = leads.indexOf(selected);
 
-    const kpi    = computeKPIs(leads);
-    const counts = computeTabCounts(leads, statuses);
-    const readiness = computeReadinessBuckets(leads);
-    const dailyTasks = React.useMemo(() => getDailyTasks(leads, statuses), [leads, statuses]);
-    const tabs   = [
-      ['Tümü', counts.total], ['Yeni', counts.yeni], ['Temasta', counts.contacted],
-      ['Kazanıldı', counts.converted], ['Düşük skor', counts.low],
+    const totalVal  = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
+    const avgScore  = Math.round(leads.reduce((s, l) => s + (l.scoring?.score || 0), 0) / (leads.length || 1));
+    const gradeA    = leads.filter(l => l.scoring.grade === 'A').length;
+    const converted = leads.filter(l => statuses[l.name] === 'converted').length;
+    const weekBuckets = React.useMemo(() => computeWeekBuckets(leads), [leads]);
+    const weekMax = Math.max(...weekBuckets, 1);
+    const topCity = React.useMemo(() => mostCommonCity(leads), [leads]);
+    const dateStr = React.useMemo(() => new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), []);
+
+    const kpis = [
+      { label: 'Toplam Lead',   value: String(leads.length), delta: `+${weekBuckets[7]} bu hafta`, dot: 'var(--accent)' },
+      { label: 'Ort. Skor',     value: String(avgScore),     delta: '/ 100 puan',       dot: '#ffcf4a' },
+      { label: 'A Sınıfı Lead', value: String(gradeA),        delta: 'yüksek öncelik',   dot: '#b6f24a' },
+      { label: 'Dönüşen',       value: String(converted),     delta: 'müşteri oldu',     dot: '#7cc5ff' },
     ];
 
-    const filteredLeads = React.useMemo(() => {
-      if (activeTab === 'Tümü')       return leads;
-      if (activeTab === 'Yeni')       return leads.filter(l => (statuses[l.name] || 'yeni') === 'yeni');
-      if (activeTab === 'Temasta')    return leads.filter(l => statuses[l.name] === 'contacted');
-      if (activeTab === 'Kazanıldı')  return leads.filter(l => statuses[l.name] === 'converted');
-      if (activeTab === 'Düşük skor') return leads.filter(l => l.scoring && l.scoring.score < 50);
-      return leads;
-    }, [leads, statuses, activeTab]);
-
-    const topLead       = leads[0];
-    const queueLeads    = filteredLeads.slice(0, 4);
-    const miniLeads     = leads.slice(4);
-    const totalVal      = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
-    const criticalCount = leads.filter(l => l.scoring?.issues?.some(i => issueToSeverity(i) === 'Kritik')).length;
-    const lastDate      = topLead ? fmtDate(topLead.last_analyzed) : '—';
-    const pipelineMax   = Math.max(leads.length, 1);
-    const topLeadAction = topLead ? getPrimaryActionMeta(topLead) : null;
-
     return (
-      <main style={vp.main}>
-        {/* Topbar */}
-        <header style={vp.topbar}>
-          <button style={{ ...vp.search, cursor: 'pointer' }} onClick={onOpenSearch}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" strokeWidth="2">
-              <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-            </svg>
-            <span>Lead, firma veya hizmet ara</span>
-            <kbd style={vp.kbd}>⌘K</kbd>
-          </button>
-          <div style={vp.topRight}>
-            <div style={vp.statusChip}><span style={vp.pulseDot}/><span>VERİ HAZIR · canlı</span></div>
-            <div style={vp.user}>
-              <div style={vp.avatar}>MA</div>
+      <main style={wp.main}>
+        <div style={wp.headRow}>
+          <div>
+            <div style={wp.eyebrow}>{topCity || 'Genel'} · lead sahası</div>
+            <h1 style={wp.h1}>Lead Workspace</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={wp.dateChip}><IconCal/><span>{dateStr}</span></div>
+            <button style={wp.ctaBtn} onClick={onOpenAdmin}><IconPlus/> Yeni Tarama</button>
+          </div>
+        </div>
+
+        <div style={wp.kpiRow}>
+          <div style={wp.accentCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>Mert Aslan</div>
-                <div style={{ fontSize: 11, color: '#9A9A9A' }}>Sales Lead</div>
+                <div style={wp.accentLabel}>Tahmini Pipeline</div>
+                <div style={wp.accentValue}>~{fmt(totalVal)} ₺</div>
+                <div style={wp.accentSub}>{leads.length} aktif lead · {gradeA} A sınıfı</div>
               </div>
+              <div style={wp.accentIcon}><IconTrend/></div>
             </div>
-          </div>
-        </header>
-
-        {/* Hero */}
-        <section style={vp.hero}>
-          <div>
-            <div style={vp.eyebrow}><span style={vp.pulseDot}/>ZEPLİN OS · CANLI TARAMA</div>
-            <h1 style={vp.h1}>Lead Cockpit<span style={vp.h1Accent}>.</span></h1>
-            <p style={vp.lede}>
-              {leads.length} işletme tarandı. Bot{' '}
-              <em style={vp.em}>{kpi.packagedCount} lead</em> için satılabilir hizmet paketi çıkardı;{' '}
-              <em style={vp.em}>{criticalCount} işletmede</em> kritik açık var.
-            </p>
-            <div style={vp.heroMeta}>
-              <span>Son güncelleme</span><strong>{lastDate}</strong>
-              <span style={vp.sep}>·</span>
-              <span>Toplam pipeline</span><strong>~{fmt(totalVal)} ₺</strong>
-            </div>
-            <div style={vp.tabs}>
-              {tabs.map(([name, count]) => {
-                const active = activeTab === name;
-                return (
-                  <button key={name} onClick={() => setActiveTab(name)} style={active ? vp.tabActive : vp.tab}>
-                    {name}<span style={active ? vp.tabCountActive : vp.tabCount}>{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {topLead && (
-            <div style={vp.heroRight}>
-              <div style={vp.focusCard}>
-                <div style={vp.focusEyebrow}>BUGÜNÜN ODAĞI</div>
-                <div style={vp.focusTitle}>{topLead.name}</div>
-                <div style={vp.focusSub}>{topLead.category || topLead.sector || 'İşletme'} · {topLead.city}</div>
-                <div style={vp.focusStats}>
-                  <div><div style={vp.fsl}>Potansiyel</div><div style={vp.fsv}>{topLead.estimated_value_tl > 0 ? `~${fmt(topLead.estimated_value_tl)} ₺` : '—'}</div></div>
-                  <div><div style={vp.fsl}>Skor</div><div style={vp.fsv}>{topLead.scoring.score}<span style={vp.fsu}>/100</span></div></div>
-                  <div><div style={vp.fsl}>Sınıf</div><div style={vp.fsv}>{topLead.scoring.grade}</div></div>
-                </div>
-                {topLeadAction && <div style={vp.focusHint}>{topLeadAction.helper}</div>}
-                <div style={vp.focusActions}>
-                  <button style={vp.btnLime} onClick={() => onSelect(0)}>{topLeadAction ? topLeadAction.label : (topLead.next_action || 'Detay gör')} →</button>
-                  <button style={vp.btnGhostDark} onClick={onOpenReports}>Rapor</button>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section style={vp.opsGrid}>
-          <div style={vp.opsCard}>
-            <div style={vp.opsLabel}>Hazır arama</div>
-            <div style={vp.opsValue}>{readiness.readyToCall}</div>
-            <div style={vp.opsSub}>Telefon bilgisi tamam, direkt temas kurulabilir.</div>
-          </div>
-          <div style={vp.opsCard}>
-            <div style={vp.opsLabel}>Veri tamamlama</div>
-            <div style={vp.opsValue}>{readiness.needsData}</div>
-            <div style={vp.opsSub}>Telefon / adres eksiği yüzünden önce profil tamamlanmalı.</div>
-          </div>
-          <div style={vp.opsCard}>
-            <div style={vp.opsLabel}>Teklif hazır</div>
-            <div style={vp.opsValue}>{readiness.proposalReady}</div>
-            <div style={vp.opsSub}>Rapor, taslak ve paket eslesmesi birlikte hazır.</div>
-          </div>
-        </section>
-
-        <section style={vp.taskSection}>
-          <SH eyebrow="BUGÜNÜN GÖREVLERİ" title="Operasyon masası" right={<button style={vp.btnGhost} onClick={onOpenReports}>Pipeline'a git →</button>}/>
-          <div style={vp.taskGrid}>
-            {dailyTasks.map(({ lead, meta, reason }) => {
-              const globalIdx = leads.indexOf(lead);
-              return (
-                <article key={lead.name} style={vp.taskCard}>
-                  <div style={vp.taskTop}>
-                    <div>
-                      <div style={vp.taskEyebrow}>Öncelik {lead.sales_priority_score || '—'}</div>
-                      <div style={vp.taskTitle}>{lead.name}</div>
-                    </div>
-                    <div style={vp.taskScore}>{lead.scoring.score}</div>
-                  </div>
-                  <div style={vp.taskMeta}>{lead.city || '—'} · {lead.scoring.grade} sınıfı · {lead.estimated_value_tl > 0 ? `~${fmt(lead.estimated_value_tl)} ₺` : 'Potansiyel hesaplanmadi'}</div>
-                  <div style={vp.taskReason}>{reason}</div>
-                  <div style={vp.taskFooter}>
-                    <span style={vp.tagNeutral}>{meta.label}</span>
-                    <div style={vp.taskActions}>
-                      <button style={vp.btnGhost} onClick={() => triggerQuickLeadAction(lead)}>Hızlı aç</button>
-                      <button style={vp.btnPrimarySm} onClick={() => onSelect(globalIdx)}>Detaya git →</button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* KPI row */}
-        <section style={vp.kpiRow}>
-          <div style={{ ...vp.kpiCard, background: '#EAFBD3' }}>
-            <KpiHead label="Paketlenen fırsat" hint={`${kpi.packagedCount}/${leads.length}`}/>
-            <div style={vp.kpiBig}>%{kpi.packagedPct}</div>
-            <div style={vp.kpiBars}>{[5,7,6,9,8,11,10,12].map((v, i) => <div key={i} style={{ height: `${v*4}px`, flex: 1, background: '#0A0A0A', borderRadius: 2, opacity: 0.85 }}/>)}</div>
-            <div style={vp.kpiCap}>lead hizmete bağlandı</div>
-          </div>
-          <div style={{ ...vp.kpiCard, background: '#FFE9D9' }}>
-            <KpiHead label="Temas hazırlığı" hint={`${kpi.phoneCount}/${leads.length}`}/>
-            <div style={vp.kpiBig}>%{kpi.phonePct}</div>
-            <svg width="100%" height="52" viewBox="0 0 200 52">
-              {/* Arc: center (100,129) r=121 → endpoints (10,48) and (190,48), peak (100,8) */}
-              <path d="M10 48 A121 121 0 0 1 190 48" fill="none" stroke="#FFD3B0" strokeWidth="7" strokeLinecap="round"/>
-              {(() => {
-                const pct = Math.min(Math.max(kpi.phonePct, 0), 100) / 100;
-                if (pct <= 0) return null;
-                const cx = 100, cy = 129, r = 121;
-                const a0 = 222 * Math.PI / 180;
-                const a1 = 318 * Math.PI / 180;
-                const a  = a0 + pct * (a1 - a0);
-                const ex = (cx + r * Math.cos(a)).toFixed(1);
-                const ey = (cy + r * Math.sin(a)).toFixed(1);
-                return <path d={`M10 48 A121 121 0 0 1 ${ex} ${ey}`} fill="none" stroke="#FF6B3D" strokeWidth="7" strokeLinecap="round"/>;
-              })()}
-            </svg>
-            <div style={vp.kpiCap}>lead telefon bilgisi içeriyor</div>
-          </div>
-          <div style={{ ...vp.kpiCard, background: '#E8EEFF' }}>
-            <KpiHead label="AI dosyası" hint={`${kpi.aiCount}/${leads.length}`}/>
-            <div style={vp.kpiBig}>%{kpi.aiPct}</div>
-            <div style={vp.dotsRow}>{Array.from({ length: leads.length }).map((_, i) => <span key={i} style={{ width: 11, height: 11, borderRadius: 99, display: 'inline-block', background: i < kpi.aiCount ? '#3D5BFF' : '#C8D0FF' }}/>)}</div>
-            <div style={vp.kpiCap}>rapor ve mail hazır</div>
-          </div>
-          <div style={{ ...vp.kpiCard, background: '#FFE0E0' }}>
-            <KpiHead label="Audit derinliği" hint={`${kpi.auditCount}/${leads.length}`}/>
-            <div style={vp.kpiBig}>%{kpi.auditPct}</div>
-            <div style={vp.dotsRow}>{Array.from({ length: leads.length }).map((_, i) => <span key={i} style={{ width: 11, height: 11, borderRadius: 99, display: 'inline-block', background: i < kpi.auditCount ? '#E04545' : '#FFC0C0' }}/>)}</div>
-            <div style={vp.kpiCap}>teknik sinyalli</div>
-          </div>
-        </section>
-
-        <div style={vp.note}>Güvenlik notu — Lead verisi Supabase üzerinden okunur. Pipeline aksiyonları kalıcı veritabanına yazılır; tarayıcı yalnızca geçici yedek tutar.</div>
-
-        {/* Two col */}
-        <section style={vp.twoCol}>
-          <div>
-            <SH eyebrow="FOCUS QUEUE" title="Öncelik masası" right={<button style={vp.btnGhost} onClick={onOpenReports}>Tüm raporlar →</button>}/>
-            <div style={vp.queue}>
-              {queueLeads.length === 0
-                ? <div style={{ padding: 24, background: '#fff', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>Bu kategoride lead yok.</div>
-                : queueLeads.map((r, i) => {
-                    const globalIdx = leads.indexOf(r);
-                    const actionMeta = getPrimaryActionMeta(r);
-                    return (
-                      <article key={r.name} style={{ ...vp.queueRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
-                        <div style={vp.queueIdx}>
-                          <div style={vp.queueIdxNum}>{String(i+1).padStart(2,'0')}</div>
-                          <div style={vp.queueIdxScore}>{r.scoring.score}<span style={{ color: '#9A9A9A', fontSize: 12, fontWeight: 400 }}>/100</span></div>
-                        </div>
-                        <div>
-                          <h3 style={vp.queueTitle}>{r.name}</h3>
-                          <div style={vp.queueSub}>{r.city} · {r.scoring.grade} sınıfı · <strong>{r.estimated_value_tl > 0 ? `~${fmt(r.estimated_value_tl)} ₺` : '—'}</strong></div>
-                          <div style={vp.queueTags}>
-                            {r.next_action && <span style={vp.tagPrimary}>{r.next_action}</span>}
-                            <span style={vp.tagNeutral}>{actionMeta.label}</span>
-                            {(r.scoring.issues || []).slice(0, 2).map((t, ti) => <span key={ti} style={vp.tag}>{t}</span>)}
-                          </div>
-                        </div>
-                        <div style={vp.queueCta}>
-                          <div style={vp.queueCtaLabel}>Sıradaki aksiyon</div>
-                          <button style={vp.btnPrimarySm} onClick={e => { e.stopPropagation(); onSelect(globalIdx); }}>{actionMeta.label} →</button>
-                        </div>
-                      </article>
-                    );
-                  })
-              }
-            </div>
-          </div>
-
-          <aside style={vp.colSide}>
-            <SH eyebrow="PIPELINE" title="Satış sağlığı"/>
-            <div style={vp.healthCard}>
-              {[
-                { name: 'Yeni', val: counts.yeni, color: '#0A0A0A' },
-                { name: 'Temasta', val: counts.contacted, color: '#C6F24E' },
-                { name: 'Kazanıldı', val: counts.converted, color: '#FF6B3D' },
-              ].map(h => (
-                <div key={h.name} style={vp.healthRow}>
-                  <div style={vp.healthLabel}>{h.name}</div>
-                  <div style={vp.healthBarWrap}><div style={{ height: '100%', width: `${(h.val/pipelineMax)*100}%`, background: h.color, borderRadius: 99 }}/></div>
-                  <div style={vp.healthVal}>{h.val}</div>
-                </div>
+            <div style={wp.accentBars}>
+              {weekBuckets.map((n, i) => (
+                <div key={i} style={{ flex: 1, height: `${Math.max((n / weekMax) * 100, 8)}%`, background: i === 7 ? '#12140a' : 'rgba(18,20,10,0.22)', borderRadius: 5 }}/>
               ))}
             </div>
-
-            <SH eyebrow="HAFTALIK TEMPO" title="Ekip ritmi" right={<div style={vp.segCtl}><span style={vp.segActive}>Hafta</span><span style={{ padding: '4px 10px' }}>Ay</span></div>}/>
-            <div style={vp.chartCard}>
-              <div style={vp.chartBars}>
-                {[42,55,68,88,87,40,18].map((v, i) => (
-                  <div key={i} style={vp.barCol}>
-                    <div style={{ height: `${v}%`, width: '100%', borderRadius: 6, position: 'relative', minHeight: 6, background: (i===3||i===4) ? '#0A0A0A' : '#E8E8E6' }}>
-                      {(i===3||i===4) && <span style={vp.barLabel}>{v}</span>}
-                    </div>
-                    <div style={vp.barX}>{['PZT','SAL','ÇAR','PER','CUM','CMT','PAZ'][i]}</div>
-                  </div>
-                ))}
+          </div>
+          {kpis.map(k => (
+            <div key={k.label} style={wp.kpiCard}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <span style={wp.kpiLabel}>{k.label}</span>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: k.dot }}/>
+              </div>
+              <div>
+                <div style={wp.kpiValue}>{k.value}</div>
+                <div style={wp.kpiDelta}>{k.delta}</div>
               </div>
             </div>
+          ))}
+        </div>
 
-            <SH eyebrow="LEAD KUYRUĞU" title="Sıradakiler" right={<a style={vp.linkSm} onClick={onOpenReports}>Tümünü gör →</a>}/>
-            <div style={vp.miniList}>
-              {miniLeads.slice(0, 5).map((m, i) => {
-                const globalIdx = leads.indexOf(m);
+        <div style={wp.body}>
+          <div style={{ minWidth: 0 }}>
+            <FilterPills active={filter} onChange={setFilter} count={filtered.length}/>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {filtered.length === 0 && <div style={{ padding: 24, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r)', color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Bu filtrede lead yok.</div>}
+              {filtered.map(l => {
+                const gIdx = leads.indexOf(l);
+                const st = statuses[l.name] || 'yeni';
+                const isSelected = selected && selected.name === l.name;
+                const chips = chipsFor(l);
+                const issues = (l.scoring.issues || []).slice(0, 2);
+                const opps   = (l.scoring.opportunities || []).slice(0, 2);
                 return (
-                  <div key={i} style={{ ...vp.miniRow, cursor: 'pointer' }} onClick={() => onSelect(globalIdx)}>
-                    <div style={vp.miniIni}>{m.name.charAt(0)}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={vp.miniName}>{m.name}</div>
-                      <div style={vp.miniMeta}>Skor {m.scoring.score} · Öncelik {m.sales_priority_score || '—'}</div>
+                  <div key={l.name} onClick={() => setSelectedName(l.name)} style={{ ...wp.card, ...(isSelected ? wp.cardSelected : null) }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
+                          <span style={statusChipStyle(st)}>{statusMeta(st).label}</span>
+                          <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>{fmtDate(l.last_analyzed)}</span>
+                        </div>
+                        <div style={wp.cardName}>{l.name}</div>
+                        <div style={wp.cardSub}>{l.category || l.sector || 'İşletme'} · {l.city} · <span style={{ color: 'var(--tx)', fontWeight: 600 }}>{l.estimated_value_tl > 0 ? `~${fmt(l.estimated_value_tl)} ₺` : '—'}</span></div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <ScoreRing score={l.scoring.score} grade={l.scoring.grade} size={56} stroke={4}/>
+                        <span style={gradeChipStyle(l.scoring.grade)}>{l.scoring.grade}</span>
+                      </div>
                     </div>
-                    <div style={{ color: '#9A9A9A' }}>→</div>
+                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 14 }}>
+                      {chips.map((c, i) => (
+                        <span key={i} style={c.style}>{c.dot && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--accent)', display: 'inline-block', marginRight: 5 }}/>}{c.label}</span>
+                      ))}
+                    </div>
+                    {(issues.length > 0 || opps.length > 0) && (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                        {issues.map((t, i) => <span key={'i'+i} style={wp.tagIssue}>{t}</span>)}
+                        {opps.map((t, i) => <span key={'o'+i} style={wp.tagOpp}>{t}</span>)}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+                      <span style={{ fontSize: 12, color: 'var(--sub)' }}>Son analiz · {fmtDate(l.last_analyzed) || '—'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>Öncelik</span>
+                        <span style={{ fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{l.sales_priority_score || 0}</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
             </div>
+          </div>
+
+          <aside style={wp.panel}>
+            {selected && <SelectedPanel lead={selected} onOpenDetail={() => onSelect(selIdx)}/>}
           </aside>
-        </section>
+        </div>
       </main>
     );
   }
 
-  const vp = {
-    main:          { padding: '24px 40px 48px', overflowY: 'auto', minWidth: 0, flex: 1, fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', background: '#FAFAF9' },
-    topbar:        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 22, borderBottom: '1px solid #ECECEC', marginBottom: 36 },
-    search:        { display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, color: '#9A9A9A', fontSize: 12.5, width: 320 },
-    kbd:           { marginLeft: 'auto', fontSize: 10.5, color: '#9A9A9A', background: '#F4F4F2', padding: '2px 6px', borderRadius: 4, fontFamily: '"JetBrains Mono"' },
-    topRight:      { display: 'flex', alignItems: 'center', gap: 10 },
-    statusChip:    { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 8, fontSize: 11, fontFamily: '"JetBrains Mono"', letterSpacing: 1, color: '#3A3A3A' },
-    pulseDot:      { width: 6, height: 6, borderRadius: 99, background: '#C6F24E', boxShadow: '0 0 0 4px rgba(198,242,78,0.25)', display: 'inline-block', flexShrink: 0 },
-    user:          { display: 'flex', alignItems: 'center', gap: 10, padding: '4px 12px 4px 4px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 10 },
-    avatar:        { width: 30, height: 30, borderRadius: 8, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 },
-    hero:          { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 36, paddingBottom: 28 },
-    eyebrow:       { display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, letterSpacing: 1.2, color: '#6B6B6B', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', marginBottom: 24 },
-    h1:            { fontFamily: '"Inter Tight"', fontSize: 72, letterSpacing: -2.8, lineHeight: 0.92, fontWeight: 600, margin: 0 },
-    h1Accent:      { color: '#C6F24E' },
-    lede:          { fontSize: 17, lineHeight: 1.45, color: '#3A3A3A', maxWidth: 540, marginTop: 22, fontWeight: 400 },
-    em:            { fontStyle: 'normal', fontWeight: 600, color: '#0A0A0A', borderBottom: '1.5px solid #C6F24E' },
-    heroMeta:      { display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, color: '#6B6B6B', marginTop: 18, fontFamily: '"JetBrains Mono"', flexWrap: 'wrap' },
-    sep:           { color: '#D0D0CE' },
-    tabs:          { display: 'flex', gap: 8, marginTop: 32, flexWrap: 'wrap' },
-    tab:           { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #ECECEC', background: '#fff', fontSize: 13, color: '#3A3A3A', cursor: 'pointer', fontWeight: 500 },
-    tabActive:     { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 99, border: '1px solid #0A0A0A', background: '#0A0A0A', fontSize: 13, color: '#fff', cursor: 'pointer', fontWeight: 500 },
-    tabCount:      { fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"' },
-    tabCountActive:{ fontSize: 11, color: '#C6F24E', fontFamily: '"JetBrains Mono"' },
-    heroRight:     { display: 'flex', alignItems: 'flex-end' },
-    focusCard:     { background: '#0A0A0A', color: '#fff', borderRadius: 22, padding: 28, width: '100%' },
-    focusEyebrow:  { fontSize: 11, color: '#C6F24E', letterSpacing: 1.2, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase' },
-    focusTitle:    { fontSize: 24, fontFamily: '"Inter Tight"', fontWeight: 600, letterSpacing: -0.6, marginTop: 12, lineHeight: 1.1 },
-    focusSub:      { color: '#9A9A9A', fontSize: 13.5, marginTop: 6, lineHeight: 1.4 },
-    focusStats:    { display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginTop: 22, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)' },
-    fsl:           { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
-    fsv:           { fontSize: 20, fontFamily: '"Inter Tight"', fontWeight: 600, marginTop: 6, letterSpacing: -0.5 },
-    fsu:           { color: '#6B6B6B', fontSize: 13, fontWeight: 400 },
-    focusHint:     { fontSize: 12, color: '#B7B7B2', marginTop: 16, lineHeight: 1.45 },
-    focusActions:  { display: 'flex', gap: 10, marginTop: 22 },
-    opsGrid:       { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 8, marginBottom: 18 },
-    opsCard:       { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 18 },
-    opsLabel:      { fontSize: 11, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
-    opsValue:      { fontFamily: '"Inter Tight"', fontSize: 34, fontWeight: 600, letterSpacing: -1.2, marginTop: 10 },
-    opsSub:        { fontSize: 12.5, color: '#6B6B6B', lineHeight: 1.45, marginTop: 8 },
-    taskSection:   { marginTop: 30 },
-    taskGrid:      { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 },
-    taskCard:      { background: '#fff', border: '1px solid #ECECEC', borderRadius: 16, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 },
-    taskTop:       { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
-    taskEyebrow:   { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
-    taskTitle:     { fontFamily: '"Inter Tight"', fontSize: 18, fontWeight: 600, letterSpacing: -0.4, marginTop: 6, lineHeight: 1.15 },
-    taskScore:     { minWidth: 44, height: 44, borderRadius: 12, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: '"Inter Tight"', fontSize: 18, fontWeight: 600 },
-    taskMeta:      { fontSize: 12, color: '#6B6B6B', fontFamily: '"JetBrains Mono"', lineHeight: 1.5 },
-    taskReason:    { fontSize: 13, color: '#3A3A3A', lineHeight: 1.5, minHeight: 40 },
-    taskFooter:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 'auto', flexWrap: 'wrap' },
-    taskActions:   { display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' },
-    btnLime:       { padding: '11px 16px', borderRadius: 10, background: '#C6F24E', color: '#0A0A0A', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
-    btnGhostDark:  { padding: '11px 16px', borderRadius: 10, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', fontWeight: 500, fontSize: 13, cursor: 'pointer' },
-    kpiRow:        { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 8 },
-    kpiCard:       { padding: 20, borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 180 },
-    kpiBig:        { fontFamily: '"Inter Tight"', fontSize: 40, fontWeight: 600, letterSpacing: -1.4 },
-    kpiBars:       { display: 'flex', alignItems: 'flex-end', gap: 4, height: 48 },
-    kpiCap:        { fontSize: 12.5, color: '#3A3A3A', marginTop: 'auto' },
-    dotsRow:       { display: 'flex', flexWrap: 'wrap', gap: 5 },
-    note:          { marginTop: 14, padding: '12px 16px', background: '#fff', border: '1px dashed #ECECEC', borderRadius: 12, fontSize: 12.5, color: '#6B6B6B' },
-    twoCol:        { display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 28, marginTop: 36 },
-    colSide:       { display: 'flex', flexDirection: 'column', gap: 26 },
-    sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
-    eyebrowSm:     { fontSize: 11, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: '"JetBrains Mono"' },
-    h2:            { fontFamily: '"Inter Tight"', fontSize: 24, fontWeight: 600, letterSpacing: -0.6, margin: '6px 0 0' },
-    queue:         { display: 'flex', flexDirection: 'column', gap: 1, background: '#ECECEC', border: '1px solid #ECECEC', borderRadius: 18, overflow: 'hidden' },
-    queueRow:      { display: 'grid', gridTemplateColumns: '90px 1fr 170px', gap: 20, padding: 22, background: '#fff', alignItems: 'center' },
-    queueIdx:      { display: 'flex', flexDirection: 'column', gap: 6 },
-    queueIdxNum:   { fontFamily: '"JetBrains Mono"', fontSize: 11, color: '#9A9A9A', letterSpacing: 1 },
-    queueIdxScore: { fontFamily: '"Inter Tight"', fontSize: 28, fontWeight: 600, letterSpacing: -1 },
-    queueTitle:    { fontSize: 16, fontFamily: '"Inter Tight"', fontWeight: 600, letterSpacing: -0.4, margin: 0, lineHeight: 1.25 },
-    queueSub:      { fontSize: 12.5, color: '#6B6B6B', marginTop: 6 },
-    queueTags:     { display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' },
-    tag:           { padding: '4px 10px', borderRadius: 99, background: '#F4F4F2', color: '#3A3A3A', fontSize: 11, fontFamily: '"JetBrains Mono"' },
-    tagPrimary:    { padding: '4px 10px', borderRadius: 99, background: '#0A0A0A', color: '#fff', fontSize: 11, fontFamily: '"JetBrains Mono"' },
-    tagNeutral:    { padding: '4px 10px', borderRadius: 99, background: '#FFF5EA', color: '#A14C20', fontSize: 11, fontFamily: '"JetBrains Mono"' },
-    queueCta:      { textAlign: 'right' },
-    queueCtaLabel: { fontSize: 11, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"', marginBottom: 8 },
-    btnPrimarySm:  { padding: '9px 14px', borderRadius: 8, background: '#0A0A0A', color: '#fff', border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' },
-    btnGhost:      { padding: '9px 14px', borderRadius: 8, background: '#fff', border: '1px solid #ECECEC', color: '#3A3A3A', fontWeight: 500, fontSize: 12.5, cursor: 'pointer' },
-    healthCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 16, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 },
-    healthRow:     { display: 'grid', gridTemplateColumns: '80px 1fr 30px', alignItems: 'center', gap: 12 },
-    healthLabel:   { fontSize: 13, color: '#3A3A3A' },
-    healthBarWrap: { height: 6, background: '#F4F4F2', borderRadius: 99, overflow: 'hidden' },
-    healthVal:     { fontSize: 13, fontFamily: '"JetBrains Mono"', textAlign: 'right' },
-    segCtl:        { display: 'inline-flex', background: '#F4F4F2', borderRadius: 8, padding: 3, fontSize: 11.5, fontFamily: '"JetBrains Mono"', color: '#6B6B6B', gap: 2 },
-    segActive:     { padding: '4px 10px', background: '#fff', borderRadius: 6, color: '#0A0A0A', fontWeight: 600 },
-    chartCard:     { background: '#fff', border: '1px solid #ECECEC', borderRadius: 16, padding: '20px 18px 14px' },
-    chartBars:     { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10, height: 140, alignItems: 'end' },
-    barCol:        { display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: 6 },
-    barLabel:      { position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', fontSize: 10, fontFamily: '"JetBrains Mono"', color: '#0A0A0A' },
-    barX:          { fontSize: 10.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"' },
-    miniList:      { display: 'flex', flexDirection: 'column', gap: 1, background: '#ECECEC', border: '1px solid #ECECEC', borderRadius: 16, overflow: 'hidden' },
-    miniRow:       { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#fff' },
-    miniIni:       { width: 32, height: 32, borderRadius: 8, background: '#F4F4F2', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 },
-    miniName:      { fontSize: 13.5, fontWeight: 500 },
-    miniMeta:      { fontSize: 11.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginTop: 2 },
-    linkSm:        { fontSize: 12, color: '#6B6B6B', cursor: 'pointer', fontFamily: '"JetBrains Mono"' },
+  const wp = {
+    main:          { padding: '20px 32px 48px', minWidth: 0, flex: 1, fontFamily: "'Instrument Sans', system-ui, sans-serif", color: 'var(--tx)', background: 'var(--bg)' },
+    headRow:       { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 },
+    eyebrow:       { fontSize: 12.5, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 },
+    h1:            { fontFamily: "'Space Grotesk'", fontSize: 44, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, margin: 0, color: 'var(--tx)' },
+    dateChip:      { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '11px 18px' },
+    ctaBtn:        { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 999, padding: '12px 22px', fontFamily: "'Instrument Sans'", fontSize: 13.5, fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 22px rgba(197,242,74,0.22)' },
+    kpiRow:        { display: 'grid', gridTemplateColumns: '1.9fr 1fr 1fr 1fr 1fr', gap: 14, marginBottom: 16 },
+    accentCard:    { background: 'var(--accent)', borderRadius: 'var(--r)', padding: '24px 26px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: 'var(--accent-ink)', position: 'relative', overflow: 'hidden', minHeight: 150 },
+    accentLabel:   { fontSize: 12.5, fontWeight: 600, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.06em' },
+    accentValue:   { fontFamily: "'Space Grotesk'", fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 6 },
+    accentSub:     { fontSize: 12.5, fontWeight: 600, opacity: 0.75, marginTop: 2 },
+    accentIcon:    { width: 34, height: 34, borderRadius: 11, background: 'rgba(18,20,10,0.16)', display: 'grid', placeItems: 'center', flexShrink: 0 },
+    accentBars:    { display: 'flex', alignItems: 'flex-end', gap: 7, height: 42, marginTop: 14 },
+    kpiCard:       { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 150, transition: 'transform .2s, border-color .2s' },
+    kpiLabel:      { fontSize: 12, color: 'var(--sub)', fontWeight: 500, lineHeight: 1.35 },
+    kpiValue:      { fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--tx)' },
+    kpiDelta:      { fontSize: 11.5, color: 'var(--muted)', marginTop: 3 },
+    body:          { display: 'grid', gridTemplateColumns: '1fr 430px', gap: 16, alignItems: 'start' },
+    card:          { position: 'relative', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: '20px 22px', cursor: 'pointer', transition: 'transform .2s cubic-bezier(.22,1,.36,1), border-color .2s, box-shadow .2s' },
+    cardSelected:  { borderColor: 'var(--accent)', boxShadow: '0 0 0 3px rgba(197,242,74,0.1)' },
+    cardName:      { fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--tx)' },
+    cardSub:       { fontSize: 12.5, color: 'var(--sub)', marginTop: 4 },
+    tagIssue:      { fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 7, background: 'rgba(255,107,107,0.09)', border: '1px solid rgba(255,107,107,0.2)', color: '#ff8f8f' },
+    tagOpp:        { fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 7, background: 'rgba(197,242,74,0.1)', border: '1px solid rgba(197,242,74,0.22)', color: '#d3f56e' },
+    panel:         { position: 'sticky', top: 90, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 28, padding: 24, display: 'flex', flexDirection: 'column', gap: 18 },
+    panelInner:    { display: 'flex', flexDirection: 'column', gap: 18 },
+    panelEyebrow:  { fontSize: 11, color: 'var(--muted)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8 },
+    panelName:     { fontFamily: "'Space Grotesk'", fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.12, color: 'var(--tx)' },
+    panelSub:      { fontSize: 13, color: 'var(--sub)', marginTop: 5 },
+    metricsGrid:   { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
+    metricBox:     { background: 'var(--raised)', borderRadius: 16, padding: '14px 16px' },
+    metricLabel:   { fontSize: 11, color: 'var(--sub)', marginBottom: 4 },
+    metricValue:   { fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, color: 'var(--tx)' },
+    sectionLabel:  { fontSize: 11, color: 'var(--muted)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 10 },
+    auditGrid:     { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
+    auditRow:      { display: 'flex', alignItems: 'center', gap: 9, background: 'var(--raised)', borderRadius: 12, padding: '9px 12px' },
+    auditMark:     { width: 19, height: 19, borderRadius: 999, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700 },
+    auditLabel:    { fontSize: 11.5, color: 'var(--tx)', fontWeight: 500, lineHeight: 1.1 },
+    auditNote:     { fontSize: 10.5, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    svcChip:       { fontSize: 12, fontWeight: 500, padding: '6px 13px', borderRadius: 999, background: 'var(--raised)', border: '1px solid var(--line)', color: 'var(--tx)' },
+    pkgBox:        { background: 'var(--accent)', borderRadius: 20, padding: '18px 20px', color: 'var(--accent-ink)' },
+    pkgEyebrow:    { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.7 },
+    pkgStage:      { fontSize: 11, fontWeight: 600, background: 'rgba(18,20,10,0.16)', padding: '3px 10px', borderRadius: 999 },
+    pkgName:       { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    pkgPrice:      { fontSize: 12.5, fontWeight: 600, opacity: 0.75, marginTop: 2 },
+    pkgBtn:        { background: '#12140a', color: 'var(--accent)', border: 'none', borderRadius: 999, padding: '9px 16px', fontFamily: "'Instrument Sans'", fontSize: 12.5, fontWeight: 600, cursor: 'pointer', flexShrink: 0 },
+    toggleBtn:     { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--raised)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 15px', color: 'var(--tx)', fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+    togglePanel:   { marginTop: 8, background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 14, padding: '15px 16px', fontSize: 12.5, lineHeight: 1.65, color: 'var(--sub)', whiteSpace: 'pre-wrap' },
+    callBtn:       { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 14, padding: 13, fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+    mailBtn:       { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'var(--raised)', color: 'var(--tx)', border: '1px solid var(--line)', borderRadius: 14, padding: 13, fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+    moreBtn:       { width: 48, display: 'grid', placeItems: 'center', background: 'var(--raised)', color: 'var(--sub)', border: '1px solid var(--line)', borderRadius: 14, cursor: 'pointer' },
   };
 
   // ── Lead Detail ────────────────────────────────────────────────────────────
 
   function sevStyle(s) {
-    return ({ Kritik: { background: '#FFE0E0', color: '#A12020' }, Yüksek: { background: '#FFE9D9', color: '#A14C20' }, Orta: { background: '#FFF6CC', color: '#7A5A00' }, Düşük: { background: '#E8EEFF', color: '#1F3A8A' }, Bilgi: { background: '#F4F4F2', color: '#3A3A3A' } })[s] || { background: '#F4F4F2', color: '#3A3A3A' };
+    return ({ Kritik: { background: 'rgba(255,107,107,0.14)', color: '#ff8f8f' }, Yüksek: { background: 'rgba(255,159,67,0.14)', color: '#ffb36b' }, Orta: { background: 'rgba(255,207,74,0.14)', color: '#ffcf4a' }, Düşük: { background: 'rgba(124,197,255,0.14)', color: '#7cc5ff' }, Bilgi: { background: 'var(--raised)', color: 'var(--sub)' } })[s] || { background: 'var(--raised)', color: 'var(--sub)' };
   }
 
   function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange }) {
@@ -1010,15 +1094,15 @@
       <div style={ld.root}>
         <header style={ld.top}>
           <div style={ld.crumbs}>
-            <span style={{ ...ld.crumb, cursor: 'pointer', color: '#6B6B6B' }} onClick={onBack}>Cockpit</span>
+            <span style={{ ...ld.crumb, cursor: 'pointer', color: 'var(--sub)' }} onClick={onBack}>Workspace</span>
             <span style={ld.crumbSep}>/</span><span style={ld.crumb}>Leadler</span>
             <span style={ld.crumbSep}>/</span>
-            <span style={{ ...ld.crumb, color: '#0A0A0A', fontWeight: 600 }}>{lead.name}</span>
+            <span style={{ ...ld.crumb, color: 'var(--tx)', fontWeight: 600 }}>{lead.name}</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={{ ...ld.btnGhost, opacity: idx === 0 ? 0.4 : 1 }} onClick={onPrev} disabled={idx === 0}>← Önceki</button>
             <button style={{ ...ld.btnGhost, opacity: idx === total-1 ? 0.4 : 1 }} onClick={onNext} disabled={idx === total-1}>Sonraki →</button>
-            <button style={ld.btnDark} onClick={onBack}>← Cockpit</button>
+            <button style={ld.btnDark} onClick={onBack}>← Workspace</button>
           </div>
         </header>
 
@@ -1048,10 +1132,10 @@
           <div style={ld.heroRight}>
             <div>
               <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="52" fill="none" stroke="#F4F4F2" strokeWidth="6"/>
-                <circle cx="60" cy="60" r="52" fill="none" stroke="#0A0A0A" strokeWidth="6" strokeDasharray="326.7" strokeDashoffset={scoreDash(lead.scoring.score)} transform="rotate(-90 60 60)" strokeLinecap="round"/>
-                <text x="60" y="60" textAnchor="middle" fontSize="32" fontWeight="600" fill="#0A0A0A" fontFamily="Inter Tight">{lead.scoring.score}</text>
-                <text x="60" y="80" textAnchor="middle" fontSize="11" fill="#9A9A9A" fontFamily="JetBrains Mono">/100</text>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--line2)" strokeWidth="6"/>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" strokeWidth="6" strokeDasharray="326.7" strokeDashoffset={scoreDash(lead.scoring.score)} transform="rotate(-90 60 60)" strokeLinecap="round"/>
+                <text x="60" y="60" textAnchor="middle" fontSize="32" fontWeight="600" fill="var(--tx)" fontFamily="Space Grotesk">{lead.scoring.score}</text>
+                <text x="60" y="80" textAnchor="middle" fontSize="11" fill="var(--muted)" fontFamily="Space Grotesk">/100</text>
               </svg>
             </div>
             <div style={ld.gradePill}>{lead.scoring.grade}</div>
@@ -1104,8 +1188,8 @@
                   </div>
                   {(ms.price_min || ms.price_max) ? (
                     <div style={ld.packRight}>
-                      <div style={ld.packPrice}>~{fmt(ms.price_min)} ₺ <span style={{ fontSize: 11, color: '#9A9A9A' }}>/ay</span></div>
-                      <div style={ld.packRange}>{(ms.price_min||0).toLocaleString('tr-TR')} – {(ms.price_max||0).toLocaleString('tr-TR')} ₺ <span style={{ color: '#9A9A9A' }}>tek seferlik</span></div>
+                      <div style={ld.packPrice}>~{fmt(ms.price_min)} ₺ <span style={{ fontSize: 11, color: 'var(--muted)' }}>/ay</span></div>
+                      <div style={ld.packRange}>{(ms.price_min||0).toLocaleString('tr-TR')} – {(ms.price_max||0).toLocaleString('tr-TR')} ₺ <span style={{ color: 'var(--muted)' }}>tek seferlik</span></div>
                     </div>
                   ) : null}
                 </div>
@@ -1114,16 +1198,16 @@
                 </div>
               </div>
             ) : (
-              <div style={{ ...ld.packCard, background: '#F9F9F7' }}>
+              <div style={{ ...ld.packCard, background: 'var(--panel2)' }}>
                 <div style={ld.eyebrow}>ÖNERİLEN PAKET</div>
-                <div style={{ fontSize: 14, color: '#9A9A9A', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
+                <div style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
               </div>
             )}
 
             <div style={ld.findCard}>
               <div style={ld.findHeader}><div style={ld.eyebrow}>TARAMA BULGULARI</div><div style={ld.cardTitle}>{issues.length > 0 ? `${issues.length} sinyal` : 'Temiz'}</div></div>
               {issues.length === 0
-                ? <div style={{ padding: '16px 24px', color: '#9A9A9A', fontSize: 13 }}>Sorun tespit edilmedi.</div>
+                ? <div style={{ padding: '16px 24px', color: 'var(--sub)', fontSize: 13 }}>Sorun tespit edilmedi.</div>
                 : issues.map((issue, i) => {
                     const sev = issueToSeverity(issue);
                     return (
@@ -1142,7 +1226,7 @@
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowReport(r => !r)}>
                   <div><div style={ld.eyebrow}>AI RAPORU</div><div style={ld.cardTitle}>Zeplin AI Analizi {showReport ? '▲' : '▼'}</div></div>
                 </div>
-                {showReport && <div style={{ padding: '16px 24px', fontSize: 13.5, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lead.ai_report}</div>}
+                {showReport && <div style={{ padding: '16px 24px', fontSize: 13.5, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lead.ai_report}</div>}
               </div>
             )}
 
@@ -1154,7 +1238,7 @@
                     {showEmail && <button style={ld.findBtn} onClick={e => { e.stopPropagation(); copyEmail(); }}>{copied ? '✓ Kopyalandı' : 'Kopyala'}</button>}
                   </div>
                 </div>
-                {showEmail && <div style={{ padding: '16px 24px', fontSize: 13, color: '#3A3A3A', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: '"JetBrains Mono"', background: '#FAFAF9' }}>{lead.ai_email}</div>}
+                {showEmail && <div style={{ padding: '16px 24px', fontSize: 13, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Space Grotesk'", background: 'var(--panel2)' }}>{lead.ai_email}</div>}
               </div>
             )}
           </div>
@@ -1178,7 +1262,7 @@
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Pipeline konumu</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[{ key: 'yeni', label: 'Yeni' }, { key: 'contacted', label: 'Temasta' }, { key: 'converted', label: 'Kazanıldı' }].map(s => (
-                  <button key={s.key} style={{ ...ld.findBtn, background: status === s.key ? '#0A0A0A' : '#fff', color: status === s.key ? '#fff' : '#0A0A0A', fontWeight: status === s.key ? 600 : 400 }} onClick={() => onStatusChange(s.key)}>{s.label}</button>
+                  <button key={s.key} style={{ ...ld.findBtn, background: status === s.key ? 'var(--accent)' : 'var(--panel2)', color: status === s.key ? 'var(--accent-ink)' : 'var(--tx)', fontWeight: status === s.key ? 600 : 400, border: status === s.key ? 'none' : '1px solid var(--line)' }} onClick={() => onStatusChange(s.key)}>{s.label}</button>
                 ))}
               </div>
             </div>
@@ -1229,71 +1313,71 @@
   }
 
   const ld = {
-    root:        { padding: '24px 48px 48px', overflowY: 'auto', flex: 1, fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A', background: '#FAFAF9', minWidth: 0 },
-    top:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid #ECECEC', marginBottom: 32 },
-    crumbs:      { display: 'flex', gap: 10, fontSize: 13, color: '#9A9A9A', alignItems: 'center', flexWrap: 'wrap' },
-    crumb:       { fontFamily: '"JetBrains Mono"' },
-    crumbSep:    { color: '#D0D0CE' },
-    btnGhost:    { padding: '8px 14px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 8, fontSize: 12.5, color: '#3A3A3A', cursor: 'pointer' },
-    btnDark:     { padding: '8px 14px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 500, cursor: 'pointer' },
-    btnDarkSm:   { padding: '6px 12px', background: '#0A0A0A', color: '#fff', border: 'none', borderRadius: 7, fontSize: 11.5, fontWeight: 500, cursor: 'pointer' },
+    root:        { padding: '24px 48px 48px', flex: 1, fontFamily: "'Instrument Sans', system-ui, sans-serif", color: 'var(--tx)', background: 'var(--bg)', minWidth: 0 },
+    top:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 18, borderBottom: '1px solid var(--line)', marginBottom: 32 },
+    crumbs:      { display: 'flex', gap: 10, fontSize: 13, color: 'var(--muted)', alignItems: 'center', flexWrap: 'wrap' },
+    crumb:       { fontFamily: "'Space Grotesk'" },
+    crumbSep:    { color: 'var(--muted)' },
+    btnGhost:    { padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5, color: 'var(--sub)', cursor: 'pointer' },
+    btnDark:     { padding: '8px 14px', background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' },
+    btnDarkSm:   { padding: '6px 12px', background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 7, fontSize: 11.5, fontWeight: 600, cursor: 'pointer' },
     hero:        { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32, marginBottom: 24 },
     heroLeft:    { flex: 1 },
     statusRow:   { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
-    statusBadge: { fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#FFE0E0', color: '#A12020', padding: '4px 10px', borderRadius: 99, fontWeight: 600, letterSpacing: 0.5 },
-    metaTag:     { fontSize: 11.5, fontFamily: '"JetBrains Mono"', background: '#fff', border: '1px solid #ECECEC', padding: '4px 10px', borderRadius: 99, color: '#3A3A3A' },
-    metaText:    { fontSize: 11.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginLeft: 6 },
-    h1:          { fontFamily: '"Inter Tight"', fontSize: 52, fontWeight: 600, letterSpacing: -2, lineHeight: 1.05, margin: '20px 0 0' },
+    statusBadge: { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'rgba(255,107,107,0.14)', color: '#ff8f8f', padding: '4px 10px', borderRadius: 99, fontWeight: 600, letterSpacing: 0.5 },
+    metaTag:     { fontSize: 11.5, fontFamily: "'Space Grotesk'", background: 'var(--panel)', border: '1px solid var(--line)', padding: '4px 10px', borderRadius: 99, color: 'var(--sub)' },
+    metaText:    { fontSize: 11.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", marginLeft: 6 },
+    h1:          { fontFamily: "'Space Grotesk'", fontSize: 46, fontWeight: 600, letterSpacing: -1.6, lineHeight: 1.05, margin: '20px 0 0', color: 'var(--tx)' },
     urls:        { display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' },
     quickActions:{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' },
-    quickBtn:    { padding: '8px 14px', background: '#FAFAF9', border: '1px solid #ECECEC', borderRadius: 10, fontSize: 12, color: '#0A0A0A', cursor: 'pointer', fontWeight: 500 },
-    urlChip:     { padding: '8px 14px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 99, fontSize: 12.5, color: '#3A3A3A', cursor: 'pointer', fontFamily: '"JetBrains Mono"' },
+    quickBtn:    { padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10, fontSize: 12, color: 'var(--tx)', cursor: 'pointer', fontWeight: 500 },
+    urlChip:     { padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 99, fontSize: 12.5, color: 'var(--sub)', cursor: 'pointer', fontFamily: "'Space Grotesk'" },
     heroRight:   { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 },
-    gradePill:   { width: 56, height: 56, borderRadius: 14, background: '#0A0A0A', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: '"Inter Tight"', fontSize: 26, fontWeight: 600 },
-    nextAction:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24, padding: '20px 24px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, marginBottom: 28 },
-    naEyebrow:   { fontSize: 10.5, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#A14C20' },
-    naTitle:     { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.4, marginTop: 6 },
-    naDesc:      { fontSize: 13, color: '#6B6B6B', marginTop: 4, maxWidth: 600 },
-    naHelper:    { fontSize: 12, color: '#9A9A9A', marginTop: 8, lineHeight: 1.45 },
-    inlineFeedback:{ fontSize: 12, color: '#1F6B3B', marginTop: 10, fontWeight: 500 },
+    gradePill:   { width: 56, height: 56, borderRadius: 14, background: 'var(--accent)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 26, fontWeight: 700 },
+    nextAction:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24, padding: '20px 24px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', marginBottom: 28 },
+    naEyebrow:   { fontSize: 10.5, fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1.2, color: '#ffcf4a' },
+    naTitle:     { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 600, letterSpacing: -0.4, marginTop: 6, color: 'var(--tx)' },
+    naDesc:      { fontSize: 13, color: 'var(--sub)', marginTop: 4, maxWidth: 600 },
+    naHelper:    { fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.45 },
+    inlineFeedback:{ fontSize: 12, color: 'var(--accent)', marginTop: 10, fontWeight: 500 },
     cols:        { display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 24 },
     side:        { display: 'flex', flexDirection: 'column', gap: 16 },
-    eyebrow:     { fontSize: 11, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#9A9A9A' },
-    cardTitle:   { fontFamily: '"Inter Tight"', fontSize: 20, fontWeight: 600, letterSpacing: -0.4, marginTop: 6 },
-    statsCard:   { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 24, marginBottom: 16 },
+    eyebrow:     { fontSize: 11, fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--muted)' },
+    cardTitle:   { fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 600, letterSpacing: -0.4, marginTop: 6, color: 'var(--tx)' },
+    statsCard:   { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 24, marginBottom: 16 },
     statsHeader: { marginBottom: 18 },
-    statsGrid:   { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, borderTop: '1px solid #ECECEC', paddingTop: 18 },
-    stat:        { padding: '0 14px', borderRight: '1px solid #ECECEC' },
-    statLabel:   { fontSize: 10.5, color: '#9A9A9A', textTransform: 'uppercase', letterSpacing: 1, fontFamily: '"JetBrains Mono"' },
-    statVal:     { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.6, marginTop: 8 },
-    packCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22, marginBottom: 16 },
-    packTitle:   { fontFamily: '"Inter Tight"', fontSize: 22, fontWeight: 600, letterSpacing: -0.4, margin: '8px 0 6px' },
-    packDesc:    { fontSize: 13, color: '#6B6B6B', maxWidth: 480 },
+    statsGrid:   { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, borderTop: '1px solid var(--line)', paddingTop: 18 },
+    stat:        { padding: '0 14px', borderRight: '1px solid var(--line)' },
+    statLabel:   { fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: "'Space Grotesk'" },
+    statVal:     { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, letterSpacing: -0.6, marginTop: 8, color: 'var(--tx)' },
+    packCard:    { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 22, marginBottom: 16 },
+    packTitle:   { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 600, letterSpacing: -0.4, margin: '8px 0 6px', color: 'var(--tx)' },
+    packDesc:    { fontSize: 13, color: 'var(--sub)', maxWidth: 480 },
     packRight:   { textAlign: 'right', minWidth: 160 },
-    packPrice:   { fontFamily: '"Inter Tight"', fontSize: 20, fontWeight: 600, letterSpacing: -0.4, color: '#1F8B3B' },
-    packRange:   { fontSize: 12, color: '#3A3A3A', fontFamily: '"JetBrains Mono"', marginTop: 4 },
-    packTags:    { display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid #ECECEC', flexWrap: 'wrap' },
-    tag:         { fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#F4F4F2', padding: '4px 10px', borderRadius: 6, color: '#3A3A3A' },
-    tagPrimary:  { fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#0A0A0A', color: '#fff', padding: '4px 10px', borderRadius: 6 },
-    findCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, overflow: 'hidden' },
-    findHeader:  { padding: '20px 24px', borderBottom: '1px solid #ECECEC' },
-    findRow:     { display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid #F4F4F2' },
-    sevPill:     { fontSize: 10.5, fontFamily: '"JetBrains Mono"', padding: '4px 10px', borderRadius: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, minWidth: 60, textAlign: 'center', flexShrink: 0 },
-    findTitle:   { fontSize: 14, fontWeight: 600 },
-    findBtn:     { padding: '7px 12px', background: '#fff', border: '1px solid #ECECEC', borderRadius: 7, fontSize: 12, color: '#0A0A0A', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
-    sideCard:    { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22 },
+    packPrice:   { fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: -0.4, color: 'var(--accent)' },
+    packRange:   { fontSize: 12, color: 'var(--sub)', fontFamily: "'Space Grotesk'", marginTop: 4 },
+    packTags:    { display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', flexWrap: 'wrap' },
+    tag:         { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'var(--raised)', padding: '4px 10px', borderRadius: 6, color: 'var(--sub)' },
+    tagPrimary:  { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'var(--accent)', color: 'var(--accent-ink)', padding: '4px 10px', borderRadius: 6, fontWeight: 600 },
+    findCard:    { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden' },
+    findHeader:  { padding: '20px 24px', borderBottom: '1px solid var(--line)' },
+    findRow:     { display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid var(--line)' },
+    sevPill:     { fontSize: 10.5, fontFamily: "'Space Grotesk'", padding: '4px 10px', borderRadius: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, minWidth: 60, textAlign: 'center', flexShrink: 0 },
+    findTitle:   { fontSize: 14, fontWeight: 600, color: 'var(--tx)' },
+    findBtn:     { padding: '7px 12px', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 7, fontSize: 12, color: 'var(--tx)', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' },
+    sideCard:    { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 22 },
     readinessGrid:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
-    readyItemOk: { display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#EEF9E9', color: '#1F6B3B', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
-    readyItemWarn:{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: '#FFF5EA', color: '#A14C20', fontSize: 11.5, fontFamily: '"JetBrains Mono"' },
-    lastEventBanner:{ padding: '10px 12px', borderRadius: 10, background: '#FAFAF9', border: '1px solid #ECECEC', marginBottom: 8 },
-    lastEventLabel:{ fontSize: 10.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1 },
-    lastEventText: { fontSize: 13, color: '#0A0A0A', fontWeight: 600, marginTop: 6 },
+    readyItemOk: { display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: 'rgba(197,242,74,0.1)', color: 'var(--accent)', fontSize: 11.5, fontFamily: "'Space Grotesk'" },
+    readyItemWarn:{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,159,67,0.12)', color: '#ffb36b', fontSize: 11.5, fontFamily: "'Space Grotesk'" },
+    lastEventBanner:{ padding: '10px 12px', borderRadius: 10, background: 'var(--panel2)', border: '1px solid var(--line)', marginBottom: 8 },
+    lastEventLabel:{ fontSize: 10.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1 },
+    lastEventText: { fontSize: 13, color: 'var(--tx)', fontWeight: 600, marginTop: 6 },
     actRow:      { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' },
-    actDot:      { width: 8, height: 8, borderRadius: 99, background: '#0A0A0A', marginTop: 6, flexShrink: 0 },
-    actKind:     { fontSize: 13, fontWeight: 500 },
-    actMeta:     { fontSize: 11.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginTop: 2 },
-    noteHint:    { fontSize: 11.5, color: '#9A9A9A', lineHeight: 1.4 },
-    textarea:    { width: '100%', minHeight: 80, padding: 12, border: '1px solid #ECECEC', borderRadius: 10, fontSize: 13, resize: 'vertical', boxSizing: 'border-box', color: '#0A0A0A', background: '#FAFAF9', outline: 'none' },
+    actDot:      { width: 8, height: 8, borderRadius: 99, background: 'var(--accent)', marginTop: 6, flexShrink: 0 },
+    actKind:     { fontSize: 13, fontWeight: 500, color: 'var(--tx)' },
+    actMeta:     { fontSize: 11.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", marginTop: 2 },
+    noteHint:    { fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.4 },
+    textarea:    { width: '100%', minHeight: 80, padding: 12, border: '1px solid var(--line)', borderRadius: 10, fontSize: 13, resize: 'vertical', boxSizing: 'border-box', color: 'var(--tx)', background: 'var(--panel2)', outline: 'none' },
   };
 
   // ── Pipeline View ──────────────────────────────────────────────────────────
@@ -1345,7 +1429,7 @@
     }
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
         <div style={pv.header}>
           <div>
             <div style={pv.pageEyebrow}>PIPELINE</div>
@@ -1416,28 +1500,28 @@
   }
 
   const pv = {
-    header:      { padding: '28px 40px 20px', borderBottom: '1px solid #ECECEC', background: '#fff' },
-    pageEyebrow: { fontSize: 11, fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1.2, color: '#9A9A9A', marginBottom: 8 },
-    pageTitle:   { fontFamily: '"Inter Tight"', fontSize: 36, fontWeight: 700, letterSpacing: -1.2, margin: 0 },
-    pageSub:     { fontSize: 13, color: '#6B6B6B', marginTop: 6, fontFamily: '"JetBrains Mono"' },
-    board:       { display: 'flex', gap: 10, padding: '24px 32px 40px', overflowX: 'auto', alignItems: 'flex-start', flex: 1 },
-    col:         { minWidth: 200, flex: '0 0 200px', background: '#F4F4F2', borderRadius: 14, padding: 12, display: 'flex', flexDirection: 'column', gap: 0 },
+    header:      { padding: '26px 32px 20px', borderBottom: '1px solid var(--line)', background: 'var(--bg)' },
+    pageEyebrow: { fontSize: 11, fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--muted)', marginBottom: 8 },
+    pageTitle:   { fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 600, letterSpacing: -1.2, margin: 0, color: 'var(--tx)' },
+    pageSub:     { fontSize: 13, color: 'var(--sub)', marginTop: 6, fontFamily: "'Space Grotesk'" },
+    board:       { display: 'flex', gap: 14, padding: '24px 32px 40px', overflowX: 'auto', alignItems: 'flex-start', flex: 1 },
+    col:         { minWidth: 220, flex: '0 0 220px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 14, display: 'flex', flexDirection: 'column', gap: 0 },
     colHead:     { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 },
     colDot:      { width: 8, height: 8, borderRadius: 99, flexShrink: 0 },
-    colTitle:    { fontSize: 12.5, fontWeight: 600, flex: 1 },
-    colCnt:      { fontSize: 11, fontFamily: '"JetBrains Mono"', background: 'rgba(0,0,0,0.08)', padding: '2px 7px', borderRadius: 99, color: '#3A3A3A' },
-    cards:       { display: 'flex', flexDirection: 'column', gap: 8 },
-    card:        { background: '#fff', border: '1px solid #ECECEC', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' },
-    cardName:    { fontSize: 13, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 },
-    cardActionLabel:{ fontSize: 10.5, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+    colTitle:    { fontSize: 12.5, fontWeight: 600, flex: 1, color: 'var(--tx)' },
+    colCnt:      { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'var(--raised)', padding: '2px 7px', borderRadius: 99, color: 'var(--sub)' },
+    cards:       { display: 'flex', flexDirection: 'column', gap: 10 },
+    card:        { background: 'var(--raised)', border: '1px solid var(--line)', borderRadius: 14, padding: '14px', cursor: 'pointer' },
+    cardName:    { fontSize: 13, fontWeight: 600, lineHeight: 1.3, marginBottom: 8, color: 'var(--tx)' },
+    cardActionLabel:{ fontSize: 10.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
     cardMeta:    { display: 'flex', gap: 6, flexWrap: 'wrap' },
     cardActions: { display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' },
-    cardBtn:     { flex: 1, minHeight: 32, padding: '7px 10px', borderRadius: 8, border: 'none', background: '#0A0A0A', color: '#fff', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' },
+    cardBtn:     { flex: 1, minHeight: 32, padding: '7px 10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' },
     cardBtnMuted:{ opacity: 0.72, cursor: 'progress' },
-    cardBtnGhost:{ minHeight: 32, padding: '7px 10px', borderRadius: 8, border: '1px solid #ECECEC', background: '#fff', color: '#3A3A3A', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' },
-    cardScore:   { fontSize: 11, fontFamily: '"JetBrains Mono"', fontWeight: 700, padding: '2px 8px', borderRadius: 6 },
-    cardVal:     { fontSize: 11, color: '#1F8B3B', fontFamily: '"JetBrains Mono"' },
-    empty:       { fontSize: 12, color: '#C0C0BC', textAlign: 'center', padding: '20px 0', border: '1.5px dashed #E0E0DC', borderRadius: 10 },
+    cardBtnGhost:{ minHeight: 32, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--panel2)', color: 'var(--sub)', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' },
+    cardScore:   { fontSize: 11, fontFamily: "'Space Grotesk'", fontWeight: 700, padding: '2px 8px', borderRadius: 6 },
+    cardVal:     { fontSize: 11, color: 'var(--accent)', fontFamily: "'Space Grotesk'" },
+    empty:       { fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: '20px 0', border: '1.5px dashed var(--line2)', borderRadius: 10 },
   };
 
   // ── Hizmetler View ─────────────────────────────────────────────────────────
@@ -1461,7 +1545,7 @@
     const totalMonthly = Math.round(entries.reduce((a, e) => a + e.totalVal, 0));
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
         <div style={pv.header}>
           <div>
             <div style={pv.pageEyebrow}>HİZMETLER</div>
@@ -1473,19 +1557,19 @@
           {entries.map(({ svc, leads: matched, totalVal }) => (
             <div key={svc.slug} style={hv.card}>
               <div style={hv.cardTop}>
-                <span style={{ ...hv.badge, background: svc.monthly ? '#E8EEFF' : '#EAFBD3', color: svc.monthly ? '#1F3A8A' : '#1F6B3B' }}>
+                <span style={{ ...hv.badge, background: svc.monthly ? 'rgba(124,197,255,0.14)' : 'rgba(197,242,74,0.12)', color: svc.monthly ? '#7cc5ff' : 'var(--accent)' }}>
                   {svc.monthly ? 'Aylık' : 'Tek Seferlik'}
                 </span>
-                <span style={{ ...hv.badge, background: '#F4F4F2', color: '#3A3A3A' }}>{svc.category || 'Genel'}</span>
+                <span style={{ ...hv.badge, background: 'var(--raised)', color: 'var(--sub)' }}>{svc.category || 'Genel'}</span>
               </div>
               <div style={hv.cardName}>{svc.name}</div>
               {svc.desc && <div style={hv.cardDesc}>{svc.desc}</div>}
-              {svc.detects && <div style={hv.detects}><strong style={{ color: '#3A3A3A' }}>Bot tespit eder:</strong> {svc.detects}</div>}
+              {svc.detects && <div style={hv.detects}><strong style={{ color: 'var(--sub)' }}>Bot tespit eder:</strong> {svc.detects}</div>}
               <div style={hv.cardStats}>
                 <div><div style={hv.statVal}>{matched.length}</div><div style={hv.statLbl}>Eşleşen Lead</div></div>
-                <div><div style={{ ...hv.statVal, color: '#1F8B3B' }}>~{Math.round(totalVal).toLocaleString('tr-TR')} ₺</div><div style={hv.statLbl}>{svc.monthly ? 'Aylık' : 'Yıllık'}</div></div>
+                <div><div style={{ ...hv.statVal, color: 'var(--accent)' }}>~{Math.round(totalVal).toLocaleString('tr-TR')} ₺</div><div style={hv.statLbl}>{svc.monthly ? 'Aylık' : 'Yıllık'}</div></div>
               </div>
-              <div style={hv.price}>₺{(svc.price_min||0).toLocaleString('tr-TR')} – ₺{(svc.price_max||0).toLocaleString('tr-TR')} <span style={{ fontSize: 11, color: '#9A9A9A', fontWeight: 600 }}>{svc.monthly ? '/ ay' : '/ proje'}</span></div>
+              <div style={hv.price}>₺{(svc.price_min||0).toLocaleString('tr-TR')} – ₺{(svc.price_max||0).toLocaleString('tr-TR')} <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>{svc.monthly ? '/ ay' : '/ proje'}</span></div>
             </div>
           ))}
         </div>
@@ -1495,113 +1579,86 @@
 
   const hv = {
     grid:     { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14, padding: '24px 32px 40px' },
-    card:     { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 },
+    card:     { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 20, display: 'flex', flexDirection: 'column', gap: 10 },
     cardTop:  { display: 'flex', gap: 6 },
-    badge:    { fontSize: 10.5, fontFamily: '"JetBrains Mono"', fontWeight: 600, padding: '3px 9px', borderRadius: 99 },
-    cardName: { fontFamily: '"Inter Tight"', fontSize: 17, fontWeight: 600, letterSpacing: -0.3, marginTop: 4 },
-    cardDesc: { fontSize: 12.5, color: '#6B6B6B', lineHeight: 1.45 },
-    detects:  { fontSize: 12, color: '#9A9A9A', background: '#F9F9F7', padding: '8px 12px', borderRadius: 8, lineHeight: 1.4 },
-    cardStats:{ display: 'flex', gap: 24, paddingTop: 10, borderTop: '1px solid #F4F4F2', marginTop: 4 },
-    statVal:  { fontFamily: '"Inter Tight"', fontSize: 20, fontWeight: 700, letterSpacing: -0.5 },
-    statLbl:  { fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', marginTop: 2 },
-    price:    { fontFamily: '"Inter Tight"', fontSize: 15, fontWeight: 600, color: '#0A0A0A', marginTop: 4 },
+    badge:    { fontSize: 10.5, fontFamily: "'Space Grotesk'", fontWeight: 600, padding: '3px 9px', borderRadius: 99 },
+    cardName: { fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600, letterSpacing: -0.3, marginTop: 4, color: 'var(--tx)' },
+    cardDesc: { fontSize: 12.5, color: 'var(--sub)', lineHeight: 1.45 },
+    detects:  { fontSize: 12, color: 'var(--sub)', background: 'var(--panel2)', padding: '8px 12px', borderRadius: 8, lineHeight: 1.4 },
+    cardStats:{ display: 'flex', gap: 24, paddingTop: 10, borderTop: '1px solid var(--line)', marginTop: 4 },
+    statVal:  { fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: -0.5, color: 'var(--tx)' },
+    statLbl:  { fontSize: 11, color: 'var(--muted)', fontFamily: "'Space Grotesk'", marginTop: 2 },
+    price:    { fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600, color: 'var(--tx)', marginTop: 4 },
   };
 
-  // ── Raporlar View ──────────────────────────────────────────────────────────
+  // ── Leadler View (table, matches Lead Workspace design 1:1) ────────────────
 
   function RaporlarView({ leads, statuses, onSelect }) {
-    const [sort, setSort] = React.useState('score');
-    const [cityFilter, setCityFilter] = React.useState('all');
-    const [statusFilter, setStatusFilter] = React.useState('all');
-    const [readinessFilter, setReadinessFilter] = React.useState('all');
-    const cities = React.useMemo(() => ['all', ...Array.from(new Set(leads.map(l => l.city).filter(Boolean))).sort()], [leads]);
-    const filtered = React.useMemo(() => {
-      return leads.filter(lead => {
-        const status = statuses[lead.name] || 'yeni';
-        if (cityFilter !== 'all' && lead.city !== cityFilter) return false;
-        if (statusFilter !== 'all' && status !== statusFilter) return false;
-        if (readinessFilter === 'ready-call' && !lead.phone) return false;
-        if (readinessFilter === 'needs-data' && !needsContactCompletion(lead)) return false;
-        if (readinessFilter === 'proposal-ready' && !(lead.ai_report && lead.ai_email && lead.matched_services?.length)) return false;
-        return true;
-      });
-    }, [leads, statuses, cityFilter, statusFilter, readinessFilter]);
-    const sorted = React.useMemo(() => {
-      const arr = filtered.slice();
-      if (sort === 'score')    arr.sort((a, b) => b.scoring.score - a.scoring.score);
-      if (sort === 'value')    arr.sort((a, b) => (b.estimated_value_tl||0) - (a.estimated_value_tl||0));
-      if (sort === 'priority') arr.sort((a, b) => (b.sales_priority_score||0) - (a.sales_priority_score||0));
-      return arr;
-    }, [filtered, sort]);
-
-    const totalPipeline = leads.reduce((a, l) => a + (l.estimated_value_tl||0), 0);
-    const readyToContact = leads.filter(l => l.phone || l.address).length;
+    const [filter, setFilter] = React.useState('hepsi');
+    const filtered = React.useMemo(() => filterLeads(leads, filter), [leads, filter]);
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#FAFAF9', overflowY: 'auto' }}>
-        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
+        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={pv.pageEyebrow}>RAPORLAR</div>
-            <h1 style={pv.pageTitle}>Lead rapor görünümü</h1>
-            <p style={pv.pageSub}>{filtered.length} lead · Ulaşılabilir: {readyToContact} · Pipeline: ~{totalPipeline.toLocaleString('tr-TR')} ₺</p>
+            <div style={pv.pageEyebrow}>TÜM İŞLETMELER · VERİTABANI</div>
+            <h1 style={pv.pageTitle}>Leadler</h1>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} style={rv.select}>
-              {cities.map(city => <option key={city} value={city}>{city === 'all' ? 'Tum ilceler' : city}</option>)}
-            </select>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={rv.select}>
-              <option value="all">Tum durumlar</option>
-              <option value="yeni">Yeni</option>
-              <option value="contacted">Temasta</option>
-              <option value="converted">Kazanildi</option>
-            </select>
-            <select value={readinessFilter} onChange={e => setReadinessFilter(e.target.value)} style={rv.select}>
-              <option value="all">Tum hazirliklar</option>
-              <option value="ready-call">Hazir arama</option>
-              <option value="needs-data">Veri tamamlama</option>
-              <option value="proposal-ready">Teklif hazir</option>
-            </select>
-            <span style={{ fontSize: 12, color: '#6B6B6B', fontFamily: '"JetBrains Mono"' }}>Sırala:</span>
-            {[['score','Puan'],['value','Değer'],['priority','Öncelik']].map(([k,l]) => (
-              <button key={k} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: sort===k ? '#0A0A0A' : '#fff', color: sort===k ? '#fff' : '#3A3A3A', fontSize: 12, cursor: 'pointer', fontWeight: sort===k ? 600 : 400 }} onClick={() => setSort(k)}>{l}</button>
-            ))}
-          </div>
+          <button style={rv.exportBtn} onClick={() => exportLeadsCSV(leads)}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="var(--accent-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Dışa Aktar
+          </button>
         </div>
-        <div style={{ padding: '24px 32px 40px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {sorted.map((l, i) => {
-            const originalIdx = leads.indexOf(l);
-            const st = statuses[l.name] || 'yeni';
-            const statusColors = { yeni: '#FFE0E0', contacted: '#E8EEFF', converted: '#EAFBD3' };
-            const statusTextColors = { yeni: '#A12020', contacted: '#1F3A8A', converted: '#1F6B3B' };
-            const statusLabels = { yeni: 'Yeni', contacted: 'Temasta', converted: 'Kazanıldı' };
-            return (
-              <div key={l.name} style={{ background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: '18px 24px', cursor: 'pointer', display: 'grid', gridTemplateColumns: '60px 1fr 180px 120px', gap: 20, alignItems: 'center' }} onClick={() => onSelect(originalIdx)}>
-                <div style={{ fontFamily: '"Inter Tight"', fontSize: 28, fontWeight: 700, letterSpacing: -1, color: '#0A0A0A' }}>{l.scoring.score}<span style={{ fontSize: 12, color: '#9A9A9A', fontWeight: 400 }}>/100</span></div>
-                <div>
-                  <div style={{ fontFamily: '"Inter Tight"', fontSize: 16, fontWeight: 600, letterSpacing: -0.3 }}>{l.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#6B6B6B', marginTop: 4 }}>{l.city} · {l.scoring.grade} sınıfı</div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#FFF5EA', padding: '3px 9px', borderRadius: 99, color: '#A14C20' }}>{getPrimaryActionMeta(l).label}</span>
-                    {(l.scoring.issues || []).slice(0, 3).map((t, ti) => (
-                      <span key={ti} style={{ fontSize: 11, fontFamily: '"JetBrains Mono"', background: '#F4F4F2', padding: '3px 9px', borderRadius: 99, color: '#3A3A3A' }}>{t}</span>
-                    ))}
+
+        <div style={{ padding: '0 32px' }}>
+          <FilterPills active={filter} onChange={setFilter} count={filtered.length}/>
+        </div>
+
+        <div style={rv.tableWrap}>
+          <div style={rv.headRow}>
+            <span>İşletme</span><span>Skor</span><span>Durum</span><span>Değer</span><span>Öncelik</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {filtered.map(l => {
+              const originalIdx = leads.indexOf(l);
+              const st = statuses[l.name] || 'yeni';
+              return (
+                <div key={l.name} className="ll-row" style={rv.row} onClick={() => onSelect(originalIdx)}>
+                  <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 999, flexShrink: 0, background: gradeColor(l.scoring.grade) }}/>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={rv.name}>{l.name}</div>
+                      <div style={rv.sub}>{l.category || l.sector || 'İşletme'} · {l.city}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: gradeColor(l.scoring.grade) }}>{l.scoring.score}</span>
+                    <span style={gradeChipStyle(l.scoring.grade)}>{l.scoring.grade}</span>
+                  </div>
+                  <div><span style={statusChipStyle(st)}>{statusMeta(st).label}</span></div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{l.estimated_value_tl > 0 ? `~${fmt(l.estimated_value_tl)} ₺` : '—'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={rv.prioTrack}><div style={{ height: '100%', width: `${l.sales_priority_score || 0}%`, background: 'var(--accent)', borderRadius: 99 }}/></div>
+                    <span style={{ fontFamily: "'Space Grotesk'", fontSize: 12.5, fontWeight: 600, color: 'var(--sub)' }}>{l.sales_priority_score || 0}</span>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: '"Inter Tight"', fontSize: 16, fontWeight: 600, color: '#1F8B3B' }}>{l.estimated_value_tl > 0 ? `~${fmt(l.estimated_value_tl)} ₺` : '—'}</div>
-                  {l.next_action && <div style={{ fontSize: 11.5, color: '#6B6B6B', marginTop: 4 }}>{l.next_action}</div>}
-                </div>
-                <div style={{ background: statusColors[st], color: statusTextColors[st], fontSize: 11, fontFamily: '"JetBrains Mono"', fontWeight: 600, padding: '6px 12px', borderRadius: 99, textAlign: 'center' }}>{statusLabels[st]}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+            {filtered.length === 0 && <div style={{ padding: 24, color: 'var(--sub)', fontSize: 13, textAlign: 'center' }}>Bu filtrede lead yok.</div>}
+          </div>
         </div>
       </div>
     );
   }
 
   const rv = {
-    select: { padding: '7px 12px', borderRadius: 8, border: '1px solid #ECECEC', background: '#fff', color: '#3A3A3A', fontSize: 12, fontFamily: '"JetBrains Mono"', outline: 'none' },
+    exportBtn: { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 6px 18px rgba(197,242,74,0.2)' },
+    tableWrap: { margin: '0 32px 40px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 24, padding: '8px 8px 12px', overflow: 'hidden' },
+    headRow:   { display: 'grid', gridTemplateColumns: '2.6fr 0.9fr 1.2fr 1fr 1.3fr', gap: 14, padding: '14px 18px', fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 },
+    row:       { display: 'grid', gridTemplateColumns: '2.6fr 0.9fr 1.2fr 1fr 1.3fr', gap: 14, alignItems: 'center', padding: '15px 18px', borderRadius: 16, cursor: 'pointer', borderTop: '1px solid var(--line)', transition: 'background .16s' },
+    name:      { fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    sub:       { fontSize: 11.5, color: 'var(--muted)' },
+    prioTrack: { flex: 1, height: 6, background: 'var(--raised)', borderRadius: 99, overflow: 'hidden', maxWidth: 110 },
   };
 
   // ── Admin View ────────────────────────────────────────────────────────────
@@ -1802,31 +1859,292 @@
   }
 
   const av = {
-    root:      { flex: 1, minWidth: 0, background: '#FAFAF9', overflowY: 'auto', fontFamily: '"Inter", system-ui, sans-serif', color: '#0A0A0A' },
-    empty:     { padding: 40, color: '#6B6B6B' },
+    root:      { flex: 1, minWidth: 0, background: 'var(--bg)', fontFamily: "'Instrument Sans', system-ui, sans-serif", color: 'var(--tx)' },
+    empty:     { padding: 40, color: 'var(--sub)' },
     grid:      { display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 18, padding: '24px 32px 40px' },
     sideStack: { display: 'flex', flexDirection: 'column', gap: 18 },
-    panel:     { background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 22 },
-    loginCard: { width: 420, margin: '80px auto', background: '#fff', border: '1px solid #ECECEC', borderRadius: 14, padding: 24 },
-    text:      { fontSize: 13, color: '#6B6B6B', lineHeight: 1.5, margin: '12px 0 18px' },
-    label:     { display: 'block', fontSize: 11, color: '#9A9A9A', fontFamily: '"JetBrains Mono"', textTransform: 'uppercase', letterSpacing: 1, margin: '16px 0 6px' },
-    input:     { width: '100%', padding: '10px 12px', border: '1px solid #ECECEC', borderRadius: 9, background: '#FAFAF9', color: '#0A0A0A', outline: 'none', fontSize: 13 },
+    panel:     { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 22 },
+    loginCard: { width: 420, margin: '80px auto', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 24 },
+    text:      { fontSize: 13, color: 'var(--sub)', lineHeight: 1.5, margin: '12px 0 18px' },
+    label:     { display: 'block', fontSize: 11, color: 'var(--muted)', fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1, margin: '16px 0 6px' },
+    input:     { width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 9, background: 'var(--panel2)', color: 'var(--tx)', outline: 'none', fontSize: 13 },
     row:       { display: 'flex', gap: 10 },
-    checkRow:  { display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 13, color: '#3A3A3A' },
+    checkRow:  { display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 13, color: 'var(--sub)' },
     estimate:  { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 },
-    feedback:  { marginTop: 14, padding: '10px 12px', borderRadius: 9, background: '#F4F4F2', color: '#3A3A3A', fontSize: 12.5 },
-    primaryBtn:{ width: '100%', marginTop: 16, padding: '11px 14px', borderRadius: 9, border: 'none', background: '#0A0A0A', color: '#fff', fontWeight: 600, cursor: 'pointer' },
-    metricRow: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #F4F4F2', fontSize: 13 },
+    feedback:  { marginTop: 14, padding: '10px 12px', borderRadius: 9, background: 'var(--raised)', color: 'var(--sub)', fontSize: 12.5 },
+    primaryBtn:{ width: '100%', marginTop: 16, padding: '11px 14px', borderRadius: 9, border: 'none', background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 600, cursor: 'pointer' },
+    metricRow: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--line)', fontSize: 13 },
     jobs:      { display: 'flex', flexDirection: 'column', gap: 8, margin: '14px 0' },
-    jobRow:    { display: 'flex', justifyContent: 'space-between', gap: 12, padding: 12, border: '1px solid #ECECEC', borderRadius: 10, background: '#FAFAF9' },
-    jobTitle:  { fontSize: 13, fontWeight: 600 },
-    jobStatus: { alignSelf: 'flex-start', padding: '4px 8px', borderRadius: 99, background: '#0A0A0A', color: '#fff', fontSize: 10.5, fontFamily: '"JetBrains Mono"' },
-    muted:     { fontSize: 11.5, color: '#9A9A9A', marginTop: 4 },
+    jobRow:    { display: 'flex', justifyContent: 'space-between', gap: 12, padding: 12, border: '1px solid var(--line)', borderRadius: 10, background: 'var(--panel2)' },
+    jobTitle:  { fontSize: 13, fontWeight: 600, color: 'var(--tx)' },
+    jobStatus: { alignSelf: 'flex-start', padding: '4px 8px', borderRadius: 99, background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 10.5, fontFamily: "'Space Grotesk'" },
+    muted:     { fontSize: 11.5, color: 'var(--muted)', marginTop: 4 },
+  };
+
+  // ── Analytics (Raporlar) View ──────────────────────────────────────────────
+
+  function bar(pct, color) { return { width: `${pct}%`, height: '100%', borderRadius: 99, background: color }; }
+
+  function AnalyticsView({ leads, statuses }) {
+    const total = leads.length || 1;
+
+    const GRADE_COLORS = { A: '#b6f24a', B: '#ffcf4a', C: '#ff8f4a', D: '#7a7a78' };
+    const gradeCounts = { A: 0, B: 0, C: 0, D: 0 };
+    leads.forEach(l => { const g = l.scoring?.grade; if (gradeCounts[g] !== undefined) gradeCounts[g] += 1; });
+    const gradeMax = Math.max(...Object.values(gradeCounts), 1);
+    const gradeBars = ['A','B','C','D'].map(g => ({ g, n: gradeCounts[g], c: GRADE_COLORS[g], pct: (gradeCounts[g]/gradeMax*100) }));
+
+    const counts = computeTabCounts(leads, statuses);
+    const funnelSteps = [
+      { label: 'Toplam', n: total, bg: 'var(--raised)', tx: 'var(--tx)' },
+      { label: 'Yeni', n: counts.yeni, bg: 'var(--panel2)', tx: 'var(--tx)' },
+      { label: 'Temasta', n: counts.contacted, bg: 'rgba(124,197,255,0.16)', tx: '#7cc5ff' },
+      { label: 'Kazanıldı', n: counts.converted, bg: 'var(--accent)', tx: 'var(--accent-ink)' },
+    ];
+
+    const avgScore = Math.round(leads.reduce((a, l) => a + (l.scoring?.score || 0), 0) / total);
+    const gaugeCirc = 389.6;
+    const gaugeOffset = gaugeCirc * (1 - Math.min(avgScore, 100) / 100);
+
+    const now = new Date();
+    const weekBuckets = new Array(8).fill(0);
+    leads.forEach(l => {
+      if (!l.last_analyzed) return;
+      const d = new Date(l.last_analyzed.replace(' ', 'T'));
+      if (isNaN(d)) return;
+      const diffDays = Math.floor((now - d) / 86400000);
+      const weekIdx = Math.floor(diffDays / 7);
+      if (weekIdx >= 0 && weekIdx < 8) weekBuckets[7 - weekIdx] += 1;
+    });
+    const weekMax = Math.max(...weekBuckets, 1);
+    const weekly = weekBuckets.map((n, i) => ({ n, label: i === 7 ? 'Bu hafta' : `-${7-i}h`, pct: (n/weekMax*100) }));
+    const weeklyTotal = weekBuckets.reduce((a, b) => a + b, 0);
+
+    const sectorMap = {};
+    leads.forEach(l => {
+      const s = l.category || l.sector || 'Diğer';
+      sectorMap[s] = (sectorMap[s] || 0) + 1;
+    });
+    const sectors = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([s, n], i) => ({ s, pct: Math.round(n/total*100), c: ['#b6f24a','#ffcf4a','#ff8f4a','#7cc5ff','#a78bfa'][i] || 'var(--sub)' }));
+
+    const readiness = computeReadinessBuckets(leads);
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
+        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div style={pv.pageEyebrow}>PERFORMANS · SON 30 GÜN</div>
+            <h1 style={pv.pageTitle}>Raporlar</h1>
+          </div>
+          <div style={{ display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5 }}>
+            <span style={{ padding: '8px 16px', borderRadius: 999, color: 'var(--sub)', fontSize: 12.5, fontWeight: 500 }}>7g</span>
+            <span style={{ padding: '8px 16px', borderRadius: 999, background: '#000', color: 'var(--tx)', fontSize: 12.5, fontWeight: 600 }}>30g</span>
+            <span style={{ padding: '8px 16px', borderRadius: 999, color: 'var(--sub)', fontSize: 12.5, fontWeight: 500 }}>Çeyrek</span>
+          </div>
+        </div>
+
+        <div style={rp.grid}>
+          <div style={rp.card}>
+            <div style={rp.cardTitle}>Not Dağılımı</div>
+            <div style={rp.cardSub}>{total} lead sınıflandırıldı</div>
+            <div style={rp.stack}>
+              {gradeBars.map(g => (
+                <div key={g.g}>
+                  <div style={rp.rowHead}><span style={{ fontWeight: 600, color: g.c }}>Sınıf {g.g}</span><span style={rp.num}>{g.n}</span></div>
+                  <div style={rp.barTrack}><div style={bar(g.pct, g.c)}/></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={rp.card}>
+            <div style={rp.cardTitle}>Dönüşüm Hunisi</div>
+            <div style={rp.cardSub}>Yeni → Müşteri · %{Math.round(counts.converted/total*100)}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {funnelSteps.map(s => (
+                <div key={s.label} style={{ width: `${40 + (s.n/total*60)}%`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 12, background: s.bg }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: s.tx }}>{s.label}</span>
+                  <span style={{ ...rp.num, fontSize: 14, fontWeight: 700, color: s.tx }}>{s.n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ ...rp.card, alignItems: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ ...rp.cardTitle, alignSelf: 'flex-start' }}>Ortalama Skor</div>
+            <div style={{ ...rp.cardSub, alignSelf: 'flex-start' }}>tüm aktif leadler</div>
+            <div style={{ position: 'relative', width: 150, height: 150, margin: '14px 0 6px' }}>
+              <svg width="150" height="150" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="75" cy="75" r="62" fill="none" stroke="var(--line2)" strokeWidth="11"/>
+                <circle cx="75" cy="75" r="62" fill="none" stroke="var(--accent)" strokeWidth="11" strokeLinecap="round" strokeDasharray={gaugeCirc} strokeDashoffset={gaugeOffset} style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)' }}/>
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: "'Space Grotesk'", fontSize: 44, fontWeight: 700, lineHeight: 1, color: 'var(--tx)' }}>{avgScore}</span>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>/ 100</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...rp.card, gridColumn: 'span 2' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+              <div>
+                <div style={rp.cardTitle}>Haftalık Yeni Lead</div>
+                <div style={rp.cardSub}>tarama hacmi · 8 hafta</div>
+              </div>
+              <div style={{ fontFamily: "'Space Grotesk'", fontSize: 26, fontWeight: 700, color: 'var(--tx)' }}>{weeklyTotal}<span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}> toplam</span></div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 150 }}>
+              {weekly.map((w, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, height: '100%', justifyContent: 'flex-end' }}>
+                  <span style={{ ...rp.num, fontSize: 11, color: 'var(--sub)' }}>{w.n}</span>
+                  <div style={{ width: '70%', minWidth: 14, height: `${Math.max(w.pct, 4)}%`, borderRadius: 6, background: 'linear-gradient(180deg, var(--accent), rgba(197,242,74,0.35))' }}/>
+                  <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{w.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={rp.card}>
+            <div style={rp.cardTitle}>Sektör Dağılımı</div>
+            <div style={rp.cardSub}>en aktif kategoriler</div>
+            <div style={rp.stack}>
+              {sectors.map(s => (
+                <div key={s.s}>
+                  <div style={rp.rowHead}><span>{s.s}</span><span style={rp.num}>{s.pct}%</span></div>
+                  <div style={{ ...rp.barTrack, height: 7 }}><div style={bar(s.pct, s.c)}/></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ ...rp.card, gridColumn: 'span 3', flexDirection: 'row', gap: 14, alignItems: 'stretch' }}>
+            {[
+              { label: 'Hazır arama', val: readiness.readyToCall, sub: 'telefon bilgisi tamam' },
+              { label: 'Veri tamamlama', val: readiness.needsData, sub: 'telefon / adres eksik' },
+              { label: 'Teklif hazır', val: readiness.proposalReady, sub: 'rapor + taslak + paket hazır' },
+            ].map(r => (
+              <div key={r.label} style={{ flex: 1, background: 'var(--raised)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: 28, fontWeight: 700, color: 'var(--tx)' }}>{r.val}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4, color: 'var(--tx)' }}>{r.label}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{r.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const rp = {
+    grid:     { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, padding: '24px 32px 40px' },
+    card:     { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 22, display: 'flex', flexDirection: 'column' },
+    cardTitle:{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: 'var(--tx)' },
+    cardSub:  { fontSize: 11.5, color: 'var(--muted)', marginBottom: 18 },
+    stack:    { display: 'flex', flexDirection: 'column', gap: 14 },
+    rowHead:  { display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 },
+    num:      { fontFamily: "'Space Grotesk'", color: 'var(--sub)' },
+    barTrack: { height: 9, background: 'var(--raised)', borderRadius: 99, overflow: 'hidden' },
+  };
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+
+  function LoginView({ onSubmit }) {
+    const [role, setRole]         = React.useState('admin');
+    const [email, setEmail]       = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [error, setError]       = React.useState(false);
+    const [busy, setBusy]         = React.useState(false);
+
+    const totalLeads = leads.length;
+    const converted   = leads.filter(l => (getStatuses()[l.name] || 'yeni') === 'converted').length;
+    const pipelineVal = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
+
+    function submit(e) {
+      e.preventDefault();
+      if (busy) return;
+      setBusy(true);
+      setError(false);
+      onSubmit(email, password, role).catch(() => setError(true)).finally(() => setBusy(false));
+    }
+
+    return (
+      <div style={lv.root}>
+        <div style={lv.brandPane}>
+          <div style={lv.glow}/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+            <div style={lv.brandLogo}><img src="/logo-mark.png" alt="Zeplin Media" style={{ width: '78%', height: '78%', objectFit: 'contain' }}/></div>
+            <div style={{ lineHeight: 1.05 }}>
+              <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Zeplin Media</div>
+              <div style={{ fontSize: 11, color: '#a6a28f' }}>Lead Intelligence</div>
+            </div>
+          </div>
+          <div style={{ position: 'relative', maxWidth: 400 }}>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Bugün kimi arayacağını bilerek başla.</div>
+            <div style={{ marginTop: 14, fontSize: 14.5, color: '#a6a28f', lineHeight: 1.5 }}>Yapay zekâ her lead için sıradaki en iyi aksiyonu, gerekçesini ve hazır mesajını hazırlar. Sen sadece ara.</div>
+          </div>
+          <div style={{ position: 'relative', display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+            <div><div style={lv.statVal}>{totalLeads}</div><div style={lv.statLbl}>Aktif lead</div></div>
+            <div><div style={{ ...lv.statVal, color: '#fff' }}>{converted}</div><div style={lv.statLbl}>Kazanıldı</div></div>
+            <div><div style={{ ...lv.statVal, color: '#fff' }}>~{fmt(pipelineVal)} ₺</div><div style={lv.statLbl}>Pipeline değeri</div></div>
+          </div>
+        </div>
+
+        <div style={lv.formPane}>
+          <form style={lv.formCard} onSubmit={submit}>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 23, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--tx)' }}>Panele giriş</div>
+            <div style={{ fontSize: 13.5, color: 'var(--sub)', marginTop: 4 }}>Rolünü seç ve devam et</div>
+
+            <div style={lv.roleTabs}>
+              <button type="button" style={role === 'admin' ? lv.roleTabActive : lv.roleTab} onClick={() => setRole('admin')}>Yönetici</button>
+              <button type="button" style={role === 'sales' ? lv.roleTabActive : lv.roleTab} onClick={() => setRole('sales')}>Çalışan</button>
+            </div>
+
+            <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <label style={lv.label}>E-posta
+                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="ad@zeplinmedia.com" style={lv.input}/>
+              </label>
+              <label style={lv.label}>Şifre
+                <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" style={lv.input}/>
+              </label>
+            </div>
+
+            {error && <div style={lv.error}>E-posta veya şifre hatalı. Tekrar dene.</div>}
+
+            <button style={{ ...lv.submitBtn, opacity: busy ? 0.75 : 1 }} disabled={busy}>
+              {busy ? <span style={lv.spinner}/> : null}
+              {busy ? 'Giriş yapılıyor…' : 'Giriş yap'}
+            </button>
+            <div style={lv.hint}>Yönetici sekmesinde admin şifresi, çalışan sekmesinde ekip hesabı kullanılır.</div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const lv = {
+    root:         { minHeight: '100vh', display: 'flex', flexWrap: 'wrap' },
+    brandPane:    { flex: '1 1 420px', minHeight: 320, background: '#0a0906', color: '#fbfaf4', padding: 48, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' },
+    glow:         { position: 'absolute', top: -120, right: -80, width: 360, height: 360, borderRadius: 999, background: 'radial-gradient(circle, rgba(197,242,74,0.22), transparent 68%)' },
+    brandLogo:    { width: 34, height: 34, borderRadius: 9, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' },
+    statVal:      { fontFamily: "'Space Grotesk'", fontSize: 26, fontWeight: 700, color: 'var(--accent)' },
+    statLbl:      { fontSize: 11.5, color: '#a6a28f' },
+    formPane:     { flex: '1 1 420px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, background: 'var(--bg)' },
+    formCard:     { width: '100%', maxWidth: 380 },
+    roleTabs:     { marginTop: 22, display: 'flex', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 12, padding: 4, gap: 4 },
+    roleTab:      { flex: 1, height: 38, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, background: 'transparent', color: 'var(--muted)' },
+    roleTabActive:{ flex: 1, height: 38, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, background: 'var(--panel)', color: 'var(--tx)', boxShadow: '0 1px 3px rgba(0,0,0,0.16)' },
+    label:        { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--sub)' },
+    input:        { height: 44, padding: '0 14px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--panel)', color: 'var(--tx)', fontFamily: "'Instrument Sans'", fontSize: 14, fontWeight: 500, outline: 'none' },
+    error:        { marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
+    submitBtn:    { marginTop: 18, width: '100%', height: 46, border: 'none', borderRadius: 12, background: 'var(--accent)', color: 'var(--accent-ink)', fontFamily: "'Instrument Sans'", fontSize: 14.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 },
+    spinner:      { width: 15, height: 15, border: '2px solid rgba(18,20,10,0.35)', borderTopColor: '#12140a', borderRadius: 999, display: 'inline-block', animation: 'zspin .7s linear infinite' },
+    hint:         { marginTop: 14, fontSize: 11.5, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 },
   };
 
   // ── App ────────────────────────────────────────────────────────────────────
 
-  function App() {
+  function Dashboard({ user, theme, onToggleTheme, onLogout }) {
     const [view,        setView]        = React.useState('cockpit');
     const [selectedIdx, setSelectedIdx] = React.useState(0);
     const [leadRows,    setLeadRows]    = React.useState(() => leads.slice());
@@ -1850,9 +2168,9 @@
 
     function selectLead(i) { setSelectedIdx(i); setView('detail'); }
 
-    function openReports() { setView('raporlar'); }
-
     function openSearch() { promptLeadSearch(sorted, selectLead); }
+
+    function openAdmin() { setView('admin'); }
 
     function handleAutomationClick() { copyAutomationPlan(); }
 
@@ -1883,7 +2201,7 @@
 
     function renderContent() {
       if (!sorted.length) {
-        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: '#6B6B6B', background: '#FAFAF9' }}>Lead verisi bulunamadı.</div>;
+        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>Lead verisi bulunamadı.</div>;
       }
       switch (view) {
         case 'detail':
@@ -1906,19 +2224,72 @@
           return <HizmetlerView leads={leadRows} />;
         case 'raporlar':
           return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
+        case 'analytics':
+          return <AnalyticsView leads={sorted} statuses={statuses}/>;
         case 'admin':
           return <AdminView />;
         default:
-          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenReports={openReports} onOpenSearch={openSearch}/>;
+          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin}/>;
       }
     }
 
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
-        <Sidebar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick}/>
-        {renderContent()}
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+        <Topbar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick} onOpenSearch={openSearch} theme={theme} onToggleTheme={onToggleTheme} user={user} onLogout={onLogout}/>
+        <div style={{ display: 'flex', flex: 1, minWidth: 0 }}>
+          {renderContent()}
+        </div>
       </div>
     );
+  }
+
+  // ── Root: theme + auth gate ─────────────────────────────────────────────────
+
+  function App() {
+    const [theme, setTheme] = React.useState(() => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'));
+    const [auth, setAuth]   = React.useState({ loading: true, configured: false, authenticated: false, user: null });
+
+    React.useEffect(() => {
+      document.documentElement.dataset.theme = theme;
+      try { localStorage.setItem('zeplin_theme', theme); } catch (e) {}
+    }, [theme]);
+
+    function toggleTheme() { setTheme(t => (t === 'light' ? 'dark' : 'light')); }
+
+    React.useEffect(() => {
+      fetchJSON('/api/auth').then(data => {
+        setAuth({ loading: false, configured: data.configured !== false, authenticated: Boolean(data.authenticated), user: data.user || null });
+      }).catch(() => {
+        setAuth({ loading: false, configured: false, authenticated: false, user: null });
+      });
+    }, []);
+
+    function login(email, password, role) {
+      return fetchJSON('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      }).then(data => {
+        setAuth({ loading: false, configured: true, authenticated: true, user: data.user || null });
+      });
+    }
+
+    function logout() {
+      if (!window.confirm('Çıkış yapmak istediğine emin misin?')) return;
+      fetchJSON('/api/auth', { method: 'DELETE' }).catch(() => {}).finally(() => {
+        setAuth({ loading: false, configured: true, authenticated: false, user: null });
+      });
+    }
+
+    if (auth.loading) {
+      return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--sub)', fontSize: 13 }}>Yükleniyor…</div>;
+    }
+
+    if (auth.configured && !auth.authenticated) {
+      return <LoginView onSubmit={login}/>;
+    }
+
+    return <Dashboard user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={logout}/>;
   }
 
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
