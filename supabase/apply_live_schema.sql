@@ -115,7 +115,8 @@ delete from public.outreach_events where id > 0;
 
 update public.leads
 set status = 'yeni',
-    updated_at = now();
+    updated_at = now()
+where status is distinct from 'yeni';
 
 update public.lead_assignments
 set status = 'archived',
