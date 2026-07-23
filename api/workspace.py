@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,11 +26,25 @@ def _lead_missing_contact(lead: dict) -> bool:
     return not bool(lead.get("phone") or lead.get("address"))
 
 
-def _summary(leads: list[dict], assignments: list[dict]) -> dict:
+def _is_today_event(event: dict, action: str) -> bool:
+    if event.get("action") != action:
+        return False
+    happened_at = event.get("happened_at") or event.get("created_at")
+    if not happened_at:
+        return False
+    try:
+        raw = str(happened_at).replace("Z", "+00:00")
+        event_date = datetime.fromisoformat(raw).astimezone(timezone.utc).date()
+    except ValueError:
+        return False
+    return event_date == datetime.now(timezone.utc).date()
+
+
+def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> dict:
     active_assignments = [item for item in assignments if item.get("status") == "active"]
     return {
         "lead_count": len(leads),
-        "today_call_count": sum(1 for lead in leads if lead.get("next_action")),
+        "today_call_count": sum(1 for event in events if _is_today_event(event, "call_made")),
         "mail_ready_count": sum(1 for lead in leads if _lead_ready_for_email(lead)),
         "missing_info_count": sum(1 for lead in leads if _lead_missing_contact(lead)),
         "follow_up_count": len(active_assignments),
@@ -77,7 +92,7 @@ class handler(BaseHTTPRequestHandler):
                         "title": user.get("title"),
                         "avatar_url": user.get("avatar_url"),
                     },
-                    "summary": _summary(leads, assignments),
+                    "summary": _summary(leads, assignments, events),
                     "leads": leads,
                     "assignments": assignments,
                     "outreach": events,
