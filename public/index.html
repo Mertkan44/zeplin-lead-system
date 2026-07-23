@@ -323,6 +323,22 @@
     window.alert(text);
   }
 
+  function initialsFor(value) {
+    const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'ZM';
+    return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
+  }
+
+  function roleLabel(role) {
+    return role === 'admin' ? 'Patron' : 'Çalışan';
+  }
+
+  function roleTone(role) {
+    return role === 'admin'
+      ? { bg: 'var(--accent)', fg: 'var(--accent-ink)', bd: 'transparent' }
+      : { bg: 'var(--raised)', fg: 'var(--sub)', bd: 'var(--line)' };
+  }
+
   const ACTIONS = {
     data_enrichment_started: { label: 'Veri Tamamlama Başladı', icon: '🧭', status: null },
     draft_prepared:     { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
@@ -629,10 +645,11 @@
       { key: 'pipeline',  label: 'Pipeline' },
       { key: 'analytics', label: 'Raporlar' },
       { key: 'hizmetler', label: 'Hizmetler' },
+      { key: 'profile',   label: 'Profil' },
       { key: 'admin',     label: 'Admin' },
     ].filter(n => n.key !== 'admin' || !user || user.role === 'admin');
     const currentView = view === 'detail' ? 'raporlar' : view;
-    const initials = (user?.name || user?.email || 'M').trim().charAt(0).toUpperCase();
+    const initials = initialsFor(user?.name || user?.email || 'ZM');
 
     return (
       <header style={tb.bar}>
@@ -674,7 +691,9 @@
         <button title="Otomasyonu etkinleştir" style={tb.iconBtn} onClick={onAutomationClick}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L5 13h6l-1 9 8-11h-6l1-9z" fill="var(--accent)" stroke="var(--accent)" strokeWidth="1.2" strokeLinejoin="round"/></svg>
         </button>
-        <div style={tb.avatar} onClick={onLogout} title={user ? `${user.name || user.email} · Çıkış yap` : 'Çıkış yap'}>{initials}</div>
+        <button style={tb.avatar} onClick={() => onNav('profile')} title={user ? `${user.name || user.email} profilini aç` : 'Profili aç'}>
+          {user?.avatar_url ? <img src={user.avatar_url} alt={user.name || user.email || 'Profil'} style={tb.avatarImg}/> : initials}
+        </button>
       </header>
     );
   }
@@ -693,7 +712,8 @@
     badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
     iconBtn:      { width: 40, height: 40, borderRadius: 999, background: 'var(--panel)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 },
-    avatar:       { width: 38, height: 38, borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, flexShrink: 0 },
+    avatar:       { width: 38, height: 38, borderRadius: 999, border: '1px solid var(--line)', background: 'var(--panel2)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, flexShrink: 0, overflow: 'hidden', padding: 0, cursor: 'pointer' },
+    avatarImg:    { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   };
 
   // ── Workspace view (matches Lead Workspace design 1:1) ─────────────────────
@@ -2000,6 +2020,152 @@
     barTrack: { height: 9, background: 'var(--raised)', borderRadius: 99, overflow: 'hidden' },
   };
 
+  // ── Profile View ──────────────────────────────────────────────────────────
+
+  function ProfileView({ user, users, summary, assignments, onLogout }) {
+    const list = React.useMemo(() => {
+      const byEmail = new Map();
+      (users || []).forEach(item => {
+        if (item?.email) byEmail.set(item.email, item);
+      });
+      if (user?.email && !byEmail.has(user.email)) byEmail.set(user.email, user);
+      return [...byEmail.values()].sort((a, b) => {
+        const ar = a.role === 'admin' ? 0 : 1;
+        const br = b.role === 'admin' ? 0 : 1;
+        if (ar !== br) return ar - br;
+        return String(a.name || a.email).localeCompare(String(b.name || b.email), 'tr');
+      });
+    }, [users, user]);
+
+    const assignmentCounts = React.useMemo(() => {
+      const counts = {};
+      (assignments || []).forEach(item => {
+        if (item.status !== 'active') return;
+        counts[item.user_email] = (counts[item.user_email] || 0) + 1;
+      });
+      return counts;
+    }, [assignments]);
+
+    const currentEmail = user?.email;
+    const current = list.find(item => item.email === currentEmail) || user || {};
+    const currentCount = user?.role === 'admin'
+      ? (summary?.assigned_count ?? Object.values(assignmentCounts).reduce((a, b) => a + b, 0))
+      : (summary?.assigned_count ?? assignmentCounts[currentEmail] ?? 0);
+    const activeMembers = list.filter(item => item.active !== false).length;
+    const bossCount = list.filter(item => item.role === 'admin').length;
+    const salesCount = list.filter(item => item.role === 'sales').length;
+
+    return (
+      <div style={pf.root}>
+        <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18 }}>
+          <div>
+            <div style={pv.pageEyebrow}>PROFİL</div>
+            <h1 style={pv.pageTitle}>Ekip ve hesap</h1>
+            <p style={pv.pageSub}>Aktif oturum, ekip rolleri ve profil fotoğrafları.</p>
+          </div>
+          <button style={ld.btnGhost} onClick={onLogout}>Çıkış yap</button>
+        </div>
+
+        <div style={pf.hero}>
+          <div style={pf.heroPhotoWrap}>
+            {current.avatar_url ? <img src={current.avatar_url} alt={current.name || current.email || 'Profil'} style={pf.heroPhoto}/> : <div style={pf.heroInitial}>{initialsFor(current.name || current.email)}</div>}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={pf.heroEyebrow}>Şu an bu hesaptasın</div>
+            <div style={pf.heroName}>{current.name || current.email}</div>
+            <div style={pf.heroMeta}>
+              <span>{current.email}</span>
+              <span>·</span>
+              <span>{current.title || roleLabel(current.role)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+              <ProfilePill role={current.role}/>
+              <span style={pf.softPill}>{current.active === false ? 'Pasif' : 'Aktif hesap'}</span>
+              <span style={pf.softPill}>{currentCount} atanmış lead</span>
+            </div>
+          </div>
+          <div style={pf.heroStats}>
+            <div style={pf.statBox}><span>{list.length}</span><small>Toplam kişi</small></div>
+            <div style={pf.statBox}><span>{activeMembers}</span><small>Aktif</small></div>
+            <div style={pf.statBox}><span>{bossCount}</span><small>Patron</small></div>
+            <div style={pf.statBox}><span>{salesCount}</span><small>Çalışan</small></div>
+          </div>
+        </div>
+
+        <div style={pf.sectionHead}>
+          <div>
+            <div style={ld.eyebrow}>EKİP</div>
+            <div style={pf.sectionTitle}>Zeplin kullanıcıları</div>
+          </div>
+          <div style={pf.sectionHint}>Fotoğraflar canlı profilden geliyor.</div>
+        </div>
+
+        <div style={pf.teamGrid}>
+          {list.map(member => {
+            const isMe = member.email === currentEmail;
+            const count = assignmentCounts[member.email] || 0;
+            return (
+              <div key={member.email} style={{ ...pf.memberCard, ...(isMe ? pf.memberCardActive : null) }}>
+                <div style={pf.memberPhotoWrap}>
+                  {member.avatar_url ? <img src={member.avatar_url} alt={member.name || member.email} style={pf.memberPhoto}/> : <div style={pf.memberInitial}>{initialsFor(member.name || member.email)}</div>}
+                  {isMe && <span style={pf.meBadge}>Bu hesap</span>}
+                </div>
+                <div style={pf.memberBody}>
+                  <div style={pf.memberName}>{member.name || member.email}</div>
+                  <div style={pf.memberEmail}>{member.email}</div>
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 12 }}>
+                    <ProfilePill role={member.role}/>
+                    <span style={pf.softPill}>{member.title || roleLabel(member.role)}</span>
+                    <span style={member.active === false ? pf.passivePill : pf.softPill}>{member.active === false ? 'Pasif' : 'Aktif'}</span>
+                  </div>
+                </div>
+                <div style={pf.memberFooter}>
+                  <span>Atanmış lead</span>
+                  <strong>{user?.role === 'admin' || isMe ? count : '—'}</strong>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  function ProfilePill({ role }) {
+    const tone = roleTone(role);
+    return <span style={{ ...pf.rolePill, background: tone.bg, color: tone.fg, borderColor: tone.bd }}>{roleLabel(role)}</span>;
+  }
+
+  const pf = {
+    root:           { flex: 1, minWidth: 0, background: 'var(--bg)', color: 'var(--tx)' },
+    hero:           { margin: '24px 32px 0', padding: 24, border: '1px solid var(--line)', borderRadius: 24, background: 'linear-gradient(135deg, var(--panel), var(--panel2))', display: 'flex', flexWrap: 'wrap', gap: 22, alignItems: 'center' },
+    heroPhotoWrap:  { width: 136, height: 136, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--raised)', boxShadow: '0 20px 44px rgba(0,0,0,0.12)' },
+    heroPhoto:      { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+    heroInitial:    { width: '100%', height: '100%', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, color: 'var(--accent-ink)', background: 'var(--accent)' },
+    heroEyebrow:    { fontFamily: "'Space Grotesk'", fontSize: 11, color: 'var(--muted)', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 8 },
+    heroName:       { fontFamily: "'Space Grotesk'", fontSize: 42, lineHeight: 1, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--tx)' },
+    heroMeta:       { marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', color: 'var(--sub)', fontSize: 13.5 },
+    heroStats:      { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(110px, 1fr))', gap: 10, flex: '1 1 260px', maxWidth: 380 },
+    statBox:        { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 16, padding: 15, minHeight: 82, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' },
+    sectionHead:    { margin: '28px 32px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' },
+    sectionTitle:   { fontFamily: "'Space Grotesk'", fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em' },
+    sectionHint:    { fontSize: 12.5, color: 'var(--muted)' },
+    teamGrid:       { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, padding: '0 32px 40px' },
+    memberCard:     { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 22, overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 },
+    memberCardActive:{ borderColor: 'rgba(197,242,74,0.65)', boxShadow: '0 16px 38px rgba(197,242,74,0.12)' },
+    memberPhotoWrap:{ position: 'relative', aspectRatio: '1 / 1', background: 'var(--raised)', overflow: 'hidden' },
+    memberPhoto:    { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+    memberInitial:  { width: '100%', height: '100%', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 28, fontWeight: 700, color: 'var(--accent-ink)', background: 'var(--accent)' },
+    meBadge:        { position: 'absolute', top: 12, left: 12, background: 'var(--accent)', color: 'var(--accent-ink)', borderRadius: 999, padding: '6px 10px', fontSize: 11, fontWeight: 700 },
+    memberBody:     { padding: 16, minHeight: 126 },
+    memberName:     { fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--tx)' },
+    memberEmail:    { marginTop: 4, fontSize: 12.5, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    memberFooter:   { marginTop: 'auto', padding: '12px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--sub)', fontSize: 12.5 },
+    rolePill:       { border: '1px solid', borderRadius: 999, padding: '5px 9px', fontSize: 11.5, fontWeight: 700 },
+    softPill:       { border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--sub)', borderRadius: 999, padding: '5px 9px', fontSize: 11.5, fontWeight: 600 },
+    passivePill:    { border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.1)', color: '#ff8f8f', borderRadius: 999, padding: '5px 9px', fontSize: 11.5, fontWeight: 600 },
+  };
+
   // ── Login ──────────────────────────────────────────────────────────────────
 
   function LoginView({ onSubmit }) {
@@ -2104,6 +2270,7 @@
     const [statuses,    setStatuses]    = React.useState(() => getStatuses());
     const [summary,     setSummary]     = React.useState(null);
     const [assignments, setAssignments] = React.useState([]);
+    const [teamUsers,   setTeamUsers]   = React.useState([]);
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
 
@@ -2148,6 +2315,15 @@
         });
     }
 
+    function refreshTeamUsers() {
+      return fetchJSON('/api/users')
+        .then(data => setTeamUsers(Array.isArray(data.users) ? data.users : []))
+        .catch(err => {
+          console.warn('Users API fallback:', err);
+          setTeamUsers(user ? [user] : []);
+        });
+    }
+
     function handleStatusChange(name, s) {
       setStatusLS(name, s).finally(refreshWorkspace);
     }
@@ -2163,7 +2339,7 @@
     function handleAutomationClick() { copyAutomationPlan(); }
 
     React.useEffect(() => {
-      refreshWorkspace().finally(() => setLoading(false));
+      Promise.all([refreshWorkspace(), refreshTeamUsers()]).finally(() => setLoading(false));
     }, []);
 
     React.useEffect(() => {
@@ -2187,6 +2363,12 @@
             </div>
           </div>
         );
+      }
+      if (view === 'profile') {
+        return <ProfileView user={user} users={teamUsers} summary={summary} assignments={assignments} onLogout={onLogout}/>;
+      }
+      if (view === 'admin') {
+        return <AdminView user={user} />;
       }
       if (!sorted.length) {
         return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>{user?.role === 'sales' ? 'Sana atanmış aktif lead yok.' : 'Lead verisi bulunamadı.'}</div>;
@@ -2214,8 +2396,6 @@
           return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
         case 'analytics':
           return <AnalyticsView leads={sorted} statuses={statuses}/>;
-        case 'admin':
-          return <AdminView user={user} />;
         default:
           return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin} user={user} summary={summary} assignments={assignments}/>;
       }

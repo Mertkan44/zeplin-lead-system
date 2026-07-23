@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import make_password_hash, normalize_email, require_admin
+from src.auth import make_password_hash, normalize_email, require_admin, require_auth
 from src.http_api import read_json, send_json, send_options
 from src.storage.supabase import (
     fetch_app_user_by_email,
@@ -28,9 +28,9 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            require_admin(self)
+            require_auth(self)
         except PermissionError:
-            send_json(self, 401, {"ok": False, "error": "admin login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_json(self, 401, {"ok": False, "error": "login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
         if not supabase_enabled():
             send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="GET, POST, PATCH, OPTIONS")
