@@ -44,10 +44,11 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
     active_assignments = [item for item in assignments if item.get("status") == "active"]
     return {
         "lead_count": len(leads),
+        "assigned_count": len(active_assignments),
         "today_call_count": sum(1 for event in events if _is_today_event(event, "call_made")),
         "mail_ready_count": sum(1 for lead in leads if _lead_ready_for_email(lead)),
         "missing_info_count": sum(1 for lead in leads if _lead_missing_contact(lead)),
-        "follow_up_count": len(active_assignments),
+        "follow_up_count": sum(1 for lead in leads if lead.get("status") == "follow_up"),
         "won_count": sum(1 for lead in leads if lead.get("status") == "converted"),
     }
 
