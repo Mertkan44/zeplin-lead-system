@@ -197,8 +197,13 @@
   }
 
   function fetchJSON(url, options) {
-    return fetch(url, options || {}).then(res => {
-      if (!res.ok) throw new Error(`request_failed_${res.status}`);
+    const opts = { credentials: 'same-origin', ...(options || {}) };
+    return fetch(url, opts).then(res => {
+      if (!res.ok) {
+        return res.json().catch(() => ({})).then(data => {
+          throw new Error(data.error || `request_failed_${res.status}`);
+        });
+      }
       return res.json();
     });
   }
@@ -842,7 +847,7 @@
     );
   }
 
-  function CockpitMain({ leads, statuses, onSelect, onOpenAdmin }) {
+  function CockpitMain({ leads, statuses, onSelect, onOpenAdmin, user, summary }) {
     const [filter, setFilter] = React.useState('hepsi');
     const [selectedName, setSelectedName] = React.useState(leads[0]?.name);
 
@@ -857,17 +862,20 @@
     const totalVal  = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
     const avgScore  = Math.round(leads.reduce((s, l) => s + (l.scoring?.score || 0), 0) / (leads.length || 1));
     const gradeA    = leads.filter(l => l.scoring.grade === 'A').length;
-    const converted = leads.filter(l => statuses[l.name] === 'converted').length;
+    const assignedCount = summary?.assigned_count ?? leads.filter(l => l.assigned_to || l.assigned_user_id).length;
+    const todayCalls = summary?.today_call_count ?? 0;
+    const converted = summary?.won_count ?? leads.filter(l => statuses[l.name] === 'converted').length;
+    const followUps = summary?.follow_up_count ?? 0;
     const weekBuckets = React.useMemo(() => computeWeekBuckets(leads), [leads]);
     const weekMax = Math.max(...weekBuckets, 1);
     const topCity = React.useMemo(() => mostCommonCity(leads), [leads]);
     const dateStr = React.useMemo(() => new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), []);
 
     const kpis = [
-      { label: 'Toplam Lead',   value: String(leads.length), delta: `+${weekBuckets[7]} bu hafta`, dot: 'var(--accent)' },
-      { label: 'Ort. Skor',     value: String(avgScore),     delta: '/ 100 puan',       dot: '#ffcf4a' },
-      { label: 'A Sınıfı Lead', value: String(gradeA),        delta: 'yüksek öncelik',   dot: '#b6f24a' },
-      { label: 'Dönüşen',       value: String(converted),     delta: 'müşteri oldu',     dot: '#7cc5ff' },
+      { label: user?.role === 'admin' ? 'Atanan Lead' : 'Bana Atanan', value: String(assignedCount || leads.length), delta: `${leads.length} aktif kayıt`, dot: 'var(--accent)' },
+      { label: 'Bugünkü Arama', value: String(todayCalls),    delta: 'gerçek aktivite',  dot: '#ffcf4a' },
+      { label: 'Takip Bekleyen',value: String(followUps),     delta: 'yeniden temas',    dot: '#7cc5ff' },
+      { label: 'Kazanılan',     value: String(converted),     delta: 'müşteri oldu',     dot: '#b6f24a' },
     ];
 
     return (
@@ -879,7 +887,7 @@
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={wp.dateChip}><IconCal/><span>{dateStr}</span></div>
-            <button style={wp.ctaBtn} onClick={onOpenAdmin}><IconPlus/> Yeni Tarama</button>
+            {user?.role === 'admin' && <button style={wp.ctaBtn} onClick={onOpenAdmin}><IconPlus/> Yeni Tarama</button>}
           </div>
         </div>
 
@@ -1663,9 +1671,7 @@
 
   // ── Admin View ────────────────────────────────────────────────────────────
 
-  function AdminView() {
-    const [auth, setAuth] = React.useState({ loading: true, authenticated: false, configured: true });
-    const [password, setPassword] = React.useState('');
+  function AdminView({ user }) {
     const [query, setQuery] = React.useState('restoran');
     const [city, setCity] = React.useState('Istanbul Kadıköy');
     const [maxResults, setMaxResults] = React.useState(10);
@@ -1675,6 +1681,7 @@
     const [tokens, setTokens] = React.useState(null);
     const [feedback, setFeedback] = React.useState('');
     const [busy, setBusy] = React.useState(false);
+    const isAdmin = user?.role === 'admin';
 
     const estimatedTokens = maxResults * (deepResearch ? 9000 : 5200);
     const estimatedCost = (estimatedTokens / 1000000 * 0.9).toFixed(4);
@@ -1689,38 +1696,8 @@
     }
 
     React.useEffect(() => {
-      fetchAdminJSON('/api/auth')
-        .then(data => {
-          setAuth({ loading: false, authenticated: Boolean(data.authenticated), configured: data.configured !== false });
-          if (data.authenticated) refreshAdmin();
-        })
-        .catch(() => setAuth({ loading: false, authenticated: false, configured: true }));
-    }, []);
-
-    function login(e) {
-      e.preventDefault();
-      setBusy(true);
-      setFeedback('');
-      fetchAdminJSON('/api/auth', {
-        method: 'POST',
-        body: JSON.stringify({ password }),
-      })
-        .then(() => {
-          setPassword('');
-          setAuth({ loading: false, authenticated: true, configured: true });
-          return refreshAdmin();
-        })
-        .catch(err => setFeedback(err.message))
-        .finally(() => setBusy(false));
-    }
-
-    function logout() {
-      fetchAdminJSON('/api/auth', { method: 'DELETE' }).finally(() => {
-        setAuth({ loading: false, authenticated: false, configured: true });
-        setJobs([]);
-        setTokens(null);
-      });
-    }
+      if (isAdmin) refreshAdmin();
+    }, [isAdmin]);
 
     function createJob(e) {
       e.preventDefault();
@@ -1744,39 +1721,14 @@
         .finally(() => setBusy(false));
     }
 
-    if (auth.loading) {
-      return <div style={av.root}><div style={av.empty}>Admin oturumu kontrol ediliyor.</div></div>;
-    }
-
-    if (!auth.configured) {
+    if (!isAdmin) {
       return (
         <div style={av.root}>
-          <div style={av.panel}>
-            <div style={pv.pageEyebrow}>ADMIN SETUP</div>
-            <h1 style={pv.pageTitle}>Giriş ayarı eksik</h1>
-            <p style={av.text}>Vercel Environment Variables içine ADMIN_PASSWORD ve SESSION_SECRET eklenmeli.</p>
+          <div style={av.loginCard}>
+            <div style={pv.pageEyebrow}>YETKİ</div>
+            <h1 style={pv.pageTitle}>Admin alanı</h1>
+            <p style={av.text}>Yeni search ve token bütçesi sadece patron hesaplarında açık.</p>
           </div>
-        </div>
-      );
-    }
-
-    if (!auth.authenticated) {
-      return (
-        <div style={av.root}>
-          <form style={av.loginCard} onSubmit={login}>
-            <div style={pv.pageEyebrow}>ADMIN LOGIN</div>
-            <h1 style={pv.pageTitle}>Zeplin Admin</h1>
-            <p style={av.text}>Yeni search, token bütçesi ve pipeline işleri için giriş yap.</p>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Admin şifresi"
-              style={av.input}
-            />
-            {feedback && <div style={av.feedback}>{feedback}</div>}
-            <button style={av.primaryBtn} disabled={busy || !password.trim()}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</button>
-          </form>
         </div>
       );
     }
@@ -1789,7 +1741,7 @@
             <h1 style={pv.pageTitle}>Search operasyonu</h1>
             <p style={pv.pageSub}>Yeni lead taraması, DeepSeek bütçesi ve Supabase job kuyruğu.</p>
           </div>
-          <button style={ld.btnGhost} onClick={logout}>Çıkış</button>
+          <div style={av.userChip}>{user?.name || user?.email}</div>
         </div>
 
         <div style={av.grid}>
@@ -1879,6 +1831,7 @@
     jobTitle:  { fontSize: 13, fontWeight: 600, color: 'var(--tx)' },
     jobStatus: { alignSelf: 'flex-start', padding: '4px 8px', borderRadius: 99, background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 10.5, fontFamily: "'Space Grotesk'" },
     muted:     { fontSize: 11.5, color: 'var(--muted)', marginTop: 4 },
+    userChip:  { border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--sub)', borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 600 },
   };
 
   // ── Analytics (Raporlar) View ──────────────────────────────────────────────
@@ -2115,7 +2068,7 @@
               {busy ? <span style={lv.spinner}/> : null}
               {busy ? 'Giriş yapılıyor…' : 'Giriş yap'}
             </button>
-            <div style={lv.hint}>Yönetici sekmesinde admin şifresi, çalışan sekmesinde ekip hesabı kullanılır.</div>
+            <div style={lv.hint}>Yönetici ve çalışan girişleri Supabase ekip hesaplarıyla yapılır.</div>
           </form>
         </div>
       </div>
@@ -2149,19 +2102,54 @@
     const [selectedIdx, setSelectedIdx] = React.useState(0);
     const [leadRows,    setLeadRows]    = React.useState(() => leads.slice());
     const [statuses,    setStatuses]    = React.useState(() => getStatuses());
+    const [summary,     setSummary]     = React.useState(null);
+    const [assignments, setAssignments] = React.useState([]);
+    const [loading,     setLoading]     = React.useState(true);
+    const [dataError,   setDataError]   = React.useState('');
 
     const sorted = React.useMemo(
       () => [...leadRows].sort((a, b) => b.scoring.score - a.scoring.score),
       [leadRows]
     );
 
-    function syncSharedState() {
+    function syncSharedState(next = {}) {
       setLeadRows(leads.slice());
       setStatuses({ ...getStatuses() });
+      if (next.summary !== undefined) setSummary(next.summary);
+      if (next.assignments !== undefined) setAssignments(next.assignments);
+    }
+
+    function hydrateWorkspace(data) {
+      if (Array.isArray(data.leads)) {
+        apiReady = true;
+        applyRemoteLeads(data.leads);
+      }
+      if (Array.isArray(data.outreach)) {
+        applyRemoteOutreach(data.outreach);
+      }
+      syncSharedState({
+        summary: data.summary || null,
+        assignments: Array.isArray(data.assignments) ? data.assignments : [],
+      });
+    }
+
+    function refreshWorkspace() {
+      return fetchJSON('/api/workspace')
+        .then(data => {
+          hydrateWorkspace(data);
+          setDataError('');
+        })
+        .catch(err => {
+          apiReady = false;
+          setDataError(err.message);
+          console.warn('Workspace API fallback:', err);
+          outreachEvents = readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
+          syncSharedState();
+        });
     }
 
     function handleStatusChange(name, s) {
-      setStatusLS(name, s).finally(syncSharedState);
+      setStatusLS(name, s).finally(refreshWorkspace);
     }
 
     function navigate(v) { setView(v); }
@@ -2175,22 +2163,7 @@
     function handleAutomationClick() { copyAutomationPlan(); }
 
     React.useEffect(() => {
-      Promise.all([
-        fetchJSON('/api/leads?limit=500').then(rows => {
-          apiReady = true;
-          applyRemoteLeads(rows);
-        }).catch(err => {
-          apiReady = false;
-          console.warn('Lead API fallback:', err);
-        }),
-        fetchJSON('/api/outreach?limit=1000').then(rows => {
-          apiReady = true;
-          applyRemoteOutreach(rows);
-        }).catch(err => {
-          console.warn('Outreach API fallback:', err);
-          outreachEvents = readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
-        }),
-      ]).finally(syncSharedState);
+      refreshWorkspace().finally(() => setLoading(false));
     }, []);
 
     React.useEffect(() => {
@@ -2200,8 +2173,23 @@
     }, [selectedIdx, sorted.length]);
 
     function renderContent() {
+      if (loading) {
+        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>Workspace yükleniyor.</div>;
+      }
+      if (dataError && !sorted.length) {
+        return (
+          <div style={{ flex: 1, display: 'grid', placeItems: 'center', background: 'var(--bg)' }}>
+            <div style={av.loginCard}>
+              <div style={pv.pageEyebrow}>BAĞLANTI</div>
+              <h1 style={pv.pageTitle}>Veri alınamadı</h1>
+              <p style={av.text}>{dataError}</p>
+              <button style={av.primaryBtn} onClick={() => { setLoading(true); refreshWorkspace().finally(() => setLoading(false)); }}>Tekrar dene</button>
+            </div>
+          </div>
+        );
+      }
       if (!sorted.length) {
-        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>Lead verisi bulunamadı.</div>;
+        return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>{user?.role === 'sales' ? 'Sana atanmış aktif lead yok.' : 'Lead verisi bulunamadı.'}</div>;
       }
       switch (view) {
         case 'detail':
@@ -2212,14 +2200,14 @@
               total={sorted.length}
               status={statuses[sorted[selectedIdx].name] || 'yeni'}
               onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
-              onDataChange={syncSharedState}
+              onDataChange={refreshWorkspace}
               onBack={() => setView('cockpit')}
               onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
               onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}
             />
           );
         case 'pipeline':
-          return <PipelineView leads={sorted} onSelect={selectLead} onDataChange={syncSharedState}/>;
+          return <PipelineView leads={sorted} onSelect={selectLead} onDataChange={refreshWorkspace}/>;
         case 'hizmetler':
           return <HizmetlerView leads={leadRows} />;
         case 'raporlar':
@@ -2227,9 +2215,9 @@
         case 'analytics':
           return <AnalyticsView leads={sorted} statuses={statuses}/>;
         case 'admin':
-          return <AdminView />;
+          return <AdminView user={user} />;
         default:
-          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin}/>;
+          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin} user={user} summary={summary} assignments={assignments}/>;
       }
     }
 
