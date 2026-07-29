@@ -632,9 +632,42 @@ def create_search_job(
             headers=_headers(config),
             json=payload,
         )
-        response.raise_for_status()
-        body = response.json()
-        return body[0] if isinstance(body, list) and body else body
+        if response.status_code != 404:
+            response.raise_for_status()
+            body = response.json()
+            return body[0] if isinstance(body, list) and body else body
+
+        # Compatibility path for deployments that have not applied migration 006 yet.
+        legacy_job = {
+            key: value for key, value in payload.items() if key not in {"reservation_meta"}
+        }
+        legacy_job["meta"] = {
+            **payload["reservation_meta"],
+            "queue_mode": "legacy_single_worker",
+        }
+        job_response = client.post(
+            _postgrest_url(config, "admin_search_jobs"),
+            headers=_headers(config, prefer="return=representation"),
+            json=legacy_job,
+        )
+        job_response.raise_for_status()
+        rows = job_response.json()
+        job = rows[0] if isinstance(rows, list) and rows else rows
+        ledger_response = client.post(
+            _postgrest_url(config, "ai_token_ledger"),
+            headers=_headers(config, prefer="return=minimal"),
+            json={
+                "job_id": job["id"],
+                "kind": "reservation",
+                "provider": "deepseek",
+                "model": estimate["model_mix"],
+                "estimated_tokens": estimate["estimated_tokens"],
+                "estimated_cost_usd": estimate["estimated_cost_usd"],
+                "meta": {"query": query, "city": city, "max_results": max_results},
+            },
+        )
+        ledger_response.raise_for_status()
+        return job
 
 
 def fetch_search_jobs(limit: int = 20, *, status: str | None = None) -> list[dict[str, Any]]:
@@ -681,9 +714,33 @@ def claim_search_jobs(limit: int = 1) -> list[dict[str, Any]]:
             headers=_headers(config),
             json={"job_limit": min(max(int(limit), 1), 10)},
         )
-        response.raise_for_status()
-        body = response.json()
-        return body if isinstance(body, list) else []
+        if response.status_code != 404:
+            response.raise_for_status()
+            body = response.json()
+            return body if isinstance(body, list) else []
+
+        # GitHub Actions concurrency keeps this fallback single-worker until migration 006.
+        queued = fetch_search_jobs(limit=min(max(int(limit), 1), 10), status="queued")
+        claimed = []
+        for job in reversed(queued):
+            claim_response = client.patch(
+                _postgrest_url(
+                    config,
+                    "admin_search_jobs",
+                    f"id=eq.{int(job['id'])}&status=eq.queued",
+                ),
+                headers=_headers(config, prefer="return=representation"),
+                json={
+                    "status": "running",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "result": {"queue_mode": "legacy_single_worker"},
+                },
+            )
+            claim_response.raise_for_status()
+            rows = claim_response.json()
+            if rows:
+                claimed.append(rows[0])
+        return claimed
 
 
 def record_token_usage(*, job_id: int, model: str, usage: dict[str, Any]) -> dict[str, Any]:
