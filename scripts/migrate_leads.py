@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.dashboard.build import build_dashboard
+from src.ai.generator import AI_PROMPT_VERSION
 from src.services import estimate_value, match_services, recommended_package
 
 
@@ -183,8 +184,13 @@ def normalize_lead(lead: dict) -> dict:
     normalized["matched_services"] = match_services(normalized)
     normalized["recommended_package"] = recommended_package(normalized)
     normalized["estimated_value_tl"] = estimate_value(normalized)
-    normalized["ai_report"] = normalized.get("ai_report") or fallback_report(normalized)
-    normalized["ai_email"] = normalized.get("ai_email") or fallback_email(normalized)
+    if normalized.get("ai_prompt_version") != AI_PROMPT_VERSION:
+        normalized["research_brief"] = None
+        normalized["ai_report"] = None
+        normalized["ai_email"] = None
+    normalized["ai_prompt_version"] = (
+        AI_PROMPT_VERSION if normalized.get("ai_report") and normalized.get("ai_email") else None
+    )
     normalized["last_analyzed"] = normalized.get("last_analyzed") or datetime.now().strftime("%Y-%m-%d %H:%M")
     normalized["schema_version"] = 2
     website = normalized["website"]

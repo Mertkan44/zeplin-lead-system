@@ -48,6 +48,7 @@
         grid-template-columns: 1fr !important;
       }
       .responsive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .responsive-opportunity-columns { grid-template-columns: 1fr !important; }
       .responsive-main, .responsive-kpis, .responsive-detail, .responsive-admin, .responsive-report {
         padding-left: 14px !important;
         padding-right: 14px !important;
@@ -301,25 +302,35 @@
   }
 
   function createProposal(lead) {
-    const pkg = lead.recommended_package || {};
-    const services = (pkg.included_services || lead.matched_services?.map(item => item.name) || []).join(', ');
+    const recommendation = lead.recommended_package || {};
+    const primary = (lead.matched_services || [])[0] || {};
+    const evidence = (primary.evidence || recommendation.evidence || []).map(item => `- ${item}`).join('\n');
+    const deliverables = (primary.deliverables || recommendation.deliverables || []).slice(0, 3).map(item => `- ${item}`).join('\n');
+    const questions = (primary.discovery_questions || recommendation.discovery_questions || []).slice(0, 3).map(item => `- ${item}`).join('\n');
     const text = [
-      `ZEPLIN MEDIA TEKLİF TASLAĞI`,
+      `ZEPLIN MEDIA GÖRÜŞME HAZIRLIK NOTU`,
       `İşletme: ${lead.name}`,
-      `Paket: ${pkg.name || 'Özel çalışma'}`,
-      `Özet: ${pkg.summary || lead.priority_reason || ''}`,
-      `Hizmetler: ${services || 'İhtiyaç görüşmesinde netleştirilecek'}`,
-      `Tahmini aylık değer: ${Number(lead.estimated_value_tl || 0).toLocaleString('tr-TR')} TL`,
+      `Önerilen hizmet: ${recommendation.primary_service || recommendation.name || 'Görüşmede netleştirilecek'}`,
+      `Durum: ${recommendation.stage || 'Keşif'}`,
       ``,
-      `Bu doküman taslaktır; fiyat ve kapsam müşteri onayı öncesinde gözden geçirilmelidir.`,
+      `DOĞRULANAN AÇIKLAR`,
+      evidence || `- Yeterli kanıt yok; önce veri doğrulanmalı.`,
+      ``,
+      `SUNABİLECEĞİMİZ İŞLER`,
+      deliverables || `- İhtiyaç görüşmesinde netleştirilecek.`,
+      ``,
+      `GÖRÜŞMEDE SOR`,
+      questions || `- İşletmenin öncelikli hedefi ve mevcut süreci nedir?`,
+      ``,
+      `Bu belge iç hazırlık notudur; müşteriye teklif olarak gönderilmez.`,
     ].join('\n');
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${lead.name.replace(/[^\wçğıöşüÇĞİÖŞÜ-]+/g, '-')}-teklif.txt`;
+    link.download = `${lead.name.replace(/[^\wçğıöşüÇĞİÖŞÜ-]+/g, '-')}-gorusme-notu.txt`;
     link.click();
     URL.revokeObjectURL(link.href);
-    return addOutreach(lead.name, 'proposal_created', new Date().toISOString(), pkg.name || 'Teklif taslağı');
+    return addOutreach(lead.name, 'proposal_created', new Date().toISOString(), recommendation.name || 'Görüşme notu');
   }
 
   function initialsFor(value) {
@@ -786,7 +797,6 @@
     React.useEffect(() => { setReportOpen(true); setEmailOpen(false); }, [lead.name]);
 
     const audit = auditFor(lead);
-    const ms  = (lead.matched_services || [])[0] || {};
     const pkg = lead.recommended_package;
     const hasPackage = Boolean(pkg) && (lead.matched_services || []).length > 0;
 
@@ -850,24 +860,21 @@
         {hasPackage ? (
           <div style={wp.pkgBox}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={wp.pkgEyebrow}>Önerilen Paket</span>
+              <span style={wp.pkgEyebrow}>Önerilen Hizmet</span>
               {pkg.stage && <span style={wp.pkgStage}>{pkg.stage}</span>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={wp.pkgName}>{pkg.name}</div>
-                <div style={wp.pkgPrice}>
-                  {ms.monthly ? `${fmt(ms.price_min)} ₺/ay` : `${(ms.price_min||0).toLocaleString('tr-TR')}–${(ms.price_max||0).toLocaleString('tr-TR')} ₺`}
-                  {pkg.confidence ? ` · %${pkg.confidence} güven` : ''}
-                </div>
+                <div style={wp.pkgPrice}>{pkg.stage || 'Keşif'}{pkg.confidence ? ` · %${pkg.confidence} güven` : ''}</div>
               </div>
-              <button style={wp.pkgBtn} onClick={() => createProposal(lead)}>Teklif Oluştur</button>
+              <button style={wp.pkgBtn} onClick={() => createProposal(lead)}>Görüşme Notu</button>
             </div>
           </div>
         ) : (
           <div style={{ ...wp.pkgBox, background: 'var(--panel2)' }}>
-            <span style={wp.pkgEyebrow}>Önerilen Paket</span>
-            <div style={{ fontSize: 13, color: 'var(--sub)', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
+            <span style={wp.pkgEyebrow}>Önerilen Hizmet</span>
+            <div style={{ fontSize: 13, color: 'var(--sub)', marginTop: 8 }}>Hizmet önermek için önce lead verisi doğrulanmalı.</div>
           </div>
         )}
 
@@ -1108,9 +1115,9 @@
     const [feedback,   setFeedback]   = React.useState('');
     const [busy,       setBusy]       = React.useState(false);
     const issues     = lead.scoring.issues || [];
-    const hasPackage = lead.matched_services?.length > 0 && lead.recommended_package?.name !== 'Veri tamamlama';
+    const serviceMatches = lead.matched_services || [];
+    const hasRecommendation = serviceMatches.length > 0;
     const svc = lead.recommended_package || {};
-    const ms  = (lead.matched_services || [])[0] || {};
     const events     = getLeadEvents(lead.name);
     const actionMeta = getPrimaryActionMeta(lead);
     const readiness  = getLeadReadiness(lead);
@@ -1247,29 +1254,80 @@
               </div>
             </div>
 
-            {hasPackage ? (
+            {hasRecommendation ? (
               <div style={ld.packCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={ld.eyebrow}>ÖNERİLEN PAKET · {(svc.category || 'DİJİTAL').toUpperCase()}</div>
-                    <h3 style={ld.packTitle}>{svc.name}</h3>
-                    <div style={ld.packDesc}>{svc.summary || svc.description || 'Dijital varlığınızı güçlendirir.'}</div>
+                    <div style={ld.eyebrow}>BİRİNCİL HİZMET ÖNERİSİ</div>
+                    <h3 style={ld.packTitle}>{svc.primary_service || svc.name}</h3>
+                    <div style={ld.packDesc}>{svc.summary || 'Öneri, doğrulanan tarama sinyallerine dayanır.'}</div>
                   </div>
-                  {(ms.price_min || ms.price_max) ? (
-                    <div style={ld.packRight}>
-                      <div style={ld.packPrice}>~{fmt(ms.price_min)} ₺ <span style={{ fontSize: 11, color: 'var(--muted)' }}>/ay</span></div>
-                      <div style={ld.packRange}>{(ms.price_min||0).toLocaleString('tr-TR')} – {(ms.price_max||0).toLocaleString('tr-TR')} ₺ <span style={{ color: 'var(--muted)' }}>tek seferlik</span></div>
-                    </div>
-                  ) : null}
+                  <span style={svc.requires_discovery ? ld.discoveryBadge : ld.verifiedBadge}>
+                    {svc.requires_discovery ? 'Görüşmede doğrula' : 'Kanıtlandı'}
+                  </span>
                 </div>
                 <div style={ld.packTags}>
-                  {[svc.category, svc.name].filter(Boolean).map((t, i) => <span key={i} style={i === 0 ? ld.tagPrimary : ld.tag}>{t}</span>)}
+                  {(svc.evidence || []).map((item, i) => <span key={i} style={ld.tagPrimary}>{item}</span>)}
                 </div>
               </div>
             ) : (
               <div style={{ ...ld.packCard, background: 'var(--panel2)' }}>
-                <div style={ld.eyebrow}>ÖNERİLEN PAKET</div>
-                <div style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8 }}>Paket önerisi için lead verisi tamamlanmalı.</div>
+                <div style={ld.eyebrow}>HİZMET ÖNERİSİ</div>
+                <div style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8 }}>Güvenilir bir hizmet önerisi için önce eksik verileri doğrula.</div>
+              </div>
+            )}
+
+            {hasRecommendation && (
+              <div style={ld.opportunitySection}>
+                <div style={ld.findHeader}>
+                  <div>
+                    <div style={ld.eyebrow}>KANITLANAN İHTİYAÇLAR</div>
+                    <div style={ld.cardTitle}>Ne gördük, ne sunabiliriz?</div>
+                  </div>
+                  <span style={ld.countBadge}>{serviceMatches.length} hizmet sinyali</span>
+                </div>
+                {serviceMatches.slice(0, 4).map((service, serviceIndex) => (
+                  <div key={service.slug || serviceIndex} style={ld.opportunityRow}>
+                    <div style={ld.opportunityTop}>
+                      <div>
+                        <div style={ld.opportunityIndex}>0{serviceIndex + 1} · {service.category || 'Hizmet'}</div>
+                        <div style={ld.opportunityTitle}>{service.name}</div>
+                        <div style={ld.opportunityDesc}>{service.desc}</div>
+                      </div>
+                      <span style={service.requires_discovery ? ld.discoveryBadge : ld.verifiedBadge}>
+                        {service.requires_discovery ? 'Kontrol et' : `%${service.confidence || 0} güven`}
+                      </span>
+                    </div>
+
+                    <div className="responsive-opportunity-columns" style={ld.opportunityColumns}>
+                      <div>
+                        <div style={ld.miniLabel}>TESPİT EDİLEN AÇIK</div>
+                        <div style={ld.evidenceList}>
+                          {(service.evidence || []).map((item, i) => (
+                            <div key={i} style={ld.evidenceItem}><span style={ld.evidenceDot}></span>{item}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={ld.miniLabel}>BİZ NE TESLİM EDERİZ?</div>
+                        <ul style={ld.cleanList}>
+                          {(service.deliverables || []).slice(0, 3).map((item, i) => <li key={i}>{item}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {(service.discovery_questions || []).length > 0 && (
+                      <div style={ld.discoveryBox}>
+                        <div style={ld.miniLabel}>GÖRÜŞMEDE SOR</div>
+                        <div style={ld.questionList}>
+                          {(service.discovery_questions || []).slice(0, 3).map((item, i) => (
+                            <span key={i} style={ld.questionChip}>{item}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -1293,7 +1351,7 @@
             {lead.ai_report && (
               <div style={{ ...ld.findCard, marginTop: 16 }}>
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowReport(r => !r)}>
-                  <div><div style={ld.eyebrow}>AI RAPORU</div><div style={ld.cardTitle}>Zeplin AI Analizi {showReport ? '▲' : '▼'}</div></div>
+                  <div><div style={ld.eyebrow}>GÖRÜŞME HAZIRLIĞI</div><div style={ld.cardTitle}>AI ihtiyaç özeti {showReport ? '▲' : '▼'}</div></div>
                 </div>
                 {showReport && <div style={{ padding: '16px 24px', fontSize: 13.5, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lead.ai_report}</div>}
               </div>
@@ -1303,11 +1361,16 @@
               <div style={{ ...ld.findCard, marginTop: 16 }}>
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowEmail(e => !e)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div><div style={ld.eyebrow}>SATIŞ E-POSTASI</div><div style={ld.cardTitle}>Hazır taslak {showEmail ? '▲' : '▼'}</div></div>
+                    <div><div style={ld.eyebrow}>ONAY BEKLEYEN TASLAK</div><div style={ld.cardTitle}>E-posta taslağı {showEmail ? '▲' : '▼'}</div></div>
                     {showEmail && <button style={ld.findBtn} onClick={e => { e.stopPropagation(); copyEmail(); }}>{copied ? '✓ Kopyalandı' : 'Kopyala'}</button>}
                   </div>
                 </div>
-                {showEmail && <div style={{ padding: '16px 24px', fontSize: 13, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Space Grotesk'", background: 'var(--panel2)' }}>{lead.ai_email}</div>}
+                {showEmail && (
+                  <div>
+                    <div style={ld.draftWarning}>Göndermeden önce işletme bilgilerini, kanıtı ve önerilen hizmeti kontrol et.</div>
+                    <div style={{ padding: '16px 24px', fontSize: 13, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: "'Space Grotesk'", background: 'var(--panel2)' }}>{lead.ai_email}</div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1428,6 +1491,25 @@
     packTags:    { display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--line)', flexWrap: 'wrap' },
     tag:         { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'var(--raised)', padding: '4px 10px', borderRadius: 6, color: 'var(--sub)' },
     tagPrimary:  { fontSize: 11, fontFamily: "'Space Grotesk'", background: 'var(--accent)', color: 'var(--accent-ink)', padding: '4px 10px', borderRadius: 6, fontWeight: 600 },
+    verifiedBadge:{ fontSize: 10.5, fontFamily: "'Space Grotesk'", fontWeight: 600, padding: '5px 9px', borderRadius: 6, background: 'rgba(197,242,74,0.12)', color: 'var(--accent)', whiteSpace: 'nowrap' },
+    discoveryBadge:{ fontSize: 10.5, fontFamily: "'Space Grotesk'", fontWeight: 600, padding: '5px 9px', borderRadius: 6, background: 'rgba(255,207,74,0.12)', color: '#ffcf4a', whiteSpace: 'nowrap' },
+    opportunitySection:{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden', marginBottom: 16 },
+    opportunityRow:{ padding: '22px 24px', borderBottom: '1px solid var(--line)' },
+    opportunityTop:{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 },
+    opportunityIndex:{ fontSize: 10.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1 },
+    opportunityTitle:{ fontSize: 18, color: 'var(--tx)', fontFamily: "'Space Grotesk'", fontWeight: 600, marginTop: 6 },
+    opportunityDesc:{ fontSize: 12.5, color: 'var(--sub)', lineHeight: 1.5, marginTop: 5, maxWidth: 620 },
+    opportunityColumns:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--line)' },
+    miniLabel:{ fontSize: 10.5, color: 'var(--muted)', fontFamily: "'Space Grotesk'", textTransform: 'uppercase', letterSpacing: 1, marginBottom: 9 },
+    evidenceList:{ display: 'flex', flexDirection: 'column', gap: 7 },
+    evidenceItem:{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--tx)', lineHeight: 1.45 },
+    evidenceDot:{ width: 7, height: 7, borderRadius: 99, background: '#ffcf4a', marginTop: 5, flexShrink: 0 },
+    cleanList:{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--tx)', lineHeight: 1.7 },
+    discoveryBox:{ marginTop: 18, background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px 14px' },
+    questionList:{ display: 'flex', gap: 7, flexWrap: 'wrap' },
+    questionChip:{ fontSize: 11.5, color: 'var(--sub)', background: 'var(--raised)', border: '1px solid var(--line)', borderRadius: 7, padding: '6px 9px', lineHeight: 1.35 },
+    countBadge:{ fontSize: 11, color: 'var(--sub)', fontFamily: "'Space Grotesk'", background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 7, padding: '5px 9px' },
+    draftWarning:{ margin: '14px 24px 0', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,207,74,0.10)', border: '1px solid rgba(255,207,74,0.18)', color: '#ffcf4a', fontSize: 11.5, lineHeight: 1.45 },
     findCard:    { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden' },
     findHeader:  { padding: '20px 24px', borderBottom: '1px solid var(--line)' },
     findRow:     { display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid var(--line)' },
@@ -2051,7 +2133,7 @@
             {[
               { label: 'Hazır arama', val: readiness.readyToCall, sub: 'telefon bilgisi tamam' },
               { label: 'Veri tamamlama', val: readiness.needsData, sub: 'telefon / adres eksik' },
-              { label: 'Teklif hazır', val: readiness.proposalReady, sub: 'rapor + taslak + paket hazır' },
+              { label: 'Temasa hazır', val: readiness.proposalReady, sub: 'kanıt + hizmet + onaylı taslak' },
             ].map(r => (
               <div key={r.label} style={{ flex: 1, background: 'var(--raised)', borderRadius: 14, padding: '16px 18px' }}>
                 <div style={{ fontFamily: "'Space Grotesk'", fontSize: 28, fontWeight: 700, color: 'var(--tx)' }}>{r.val}</div>

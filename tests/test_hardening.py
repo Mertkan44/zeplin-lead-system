@@ -10,6 +10,7 @@ from src import auth
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
+from src.services import estimate_value, match_services, recommended_package
 from src.storage.supabase import _lead_row
 
 
@@ -45,7 +46,41 @@ class HardeningTests(unittest.TestCase):
             }
         )
         self.assertNotIn("status", row)
-        self.assertTrue(row["external_id"].startswith("maps:"))
+        self.assertTrue(row["external_id"].startswith("name-city:"))
+
+    def test_lead_identity_does_not_change_with_maps_url(self):
+        base = {
+            "name": "Test Lead",
+            "city": "Istanbul Kadikoy",
+        }
+        first = _lead_row({**base, "maps_url": "https://www.google.com/maps/place/test?one"})
+        second = _lead_row({**base, "maps_url": "https://www.google.com/maps/place/test?two"})
+        self.assertEqual(first["external_id"], second["external_id"])
+
+    def test_low_reviews_does_not_recommend_ads(self):
+        services = match_services({"review_count": 8})
+        slugs = {service["slug"] for service in services}
+        self.assertEqual(slugs, {"google_business_local"})
+
+    def test_missing_whatsapp_does_not_recommend_crm_or_ai(self):
+        services = match_services({"website": {"has_whatsapp": False}})
+        slugs = {service["slug"] for service in services}
+        self.assertEqual(slugs, {"whatsapp_business"})
+
+    def test_unknown_metrics_do_not_create_false_findings(self):
+        services = match_services(
+            {
+                "rating": None,
+                "review_count": None,
+                "social": {"has_instagram": True, "stats": {}},
+            }
+        )
+        self.assertEqual(services, [])
+        self.assertEqual(recommended_package({})["kind"], "verification")
+
+    def test_unapproved_prices_do_not_create_revenue_estimates(self):
+        lead = {"website": {"has_website": False}}
+        self.assertEqual(estimate_value(lead), 0)
 
     def test_invalid_role_is_not_promoted(self):
         now = 2_000_000_000

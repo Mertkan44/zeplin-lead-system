@@ -40,6 +40,8 @@ SECTOR_VOICE = {
     ),
 }
 
+AI_PROMPT_VERSION = 3
+
 
 def _system(sector: str) -> str:
     voice = SECTOR_VOICE.get(sector, SECTOR_VOICE["default"])
@@ -60,7 +62,7 @@ def _lead_context(lead: dict[str, Any]) -> str:
     tiktok = social.get("tiktok") or {}
     delivery = lead.get("delivery") or {}
     scoring = lead.get("scoring") or {}
-    package = recommended_package(lead)
+    service_recommendation = recommended_package(lead)
     triggers = sorted(lead_triggers(lead))
 
     context = {
@@ -99,15 +101,17 @@ def _lead_context(lead: dict[str, Any]) -> str:
         "matched_services": [
             {
                 "name": service.get("name"),
-                "offer": service.get("offer"),
                 "owner": service.get("owner"),
                 "evidence": service.get("evidence"),
                 "confidence": service.get("confidence"),
+                "requires_discovery": service.get("requires_discovery"),
+                "deliverables": service.get("deliverables"),
+                "discovery_questions": service.get("discovery_questions"),
+                "exclusions": service.get("exclusions"),
             }
             for service in (lead.get("matched_services") or [])[:6]
         ],
-        "recommended_package": package,
-        "estimated_value_tl": lead.get("estimated_value_tl"),
+        "service_recommendation": service_recommendation,
         "next_action": lead.get("next_action"),
         "priority_reason": lead.get("priority_reason"),
         "research": lead.get("research"),
@@ -159,11 +163,10 @@ def _cache_payload(lead: dict[str, Any]) -> dict[str, Any]:
         "delivery": lead.get("delivery"),
         "scoring": lead.get("scoring"),
         "matched_services": lead.get("matched_services"),
-        "recommended_package": lead.get("recommended_package"),
-        "estimated_value_tl": lead.get("estimated_value_tl"),
+        "service_recommendation": lead.get("recommended_package"),
         "sales_priority_score": lead.get("sales_priority_score"),
         "research": lead.get("research"),
-        "prompt_version": 2,
+        "prompt_version": AI_PROMPT_VERSION,
     }
 
 
@@ -222,10 +225,19 @@ def generate_research_brief(lead: dict[str, Any], *, force: bool = False) -> str
 
 def generate_report(lead: dict[str, Any], *, force: bool = False) -> str:
     prompt = (
-        "Bu işletme için dijital varlık analiz raporu yaz.\n"
-        "Rapor satışa yardımcı olacak kadar net, ama rapor gibi düzenli olsun.\n"
-        "Başlık kullanma; 4-6 kısa madde yaz. Her maddede kanıt + etkisi + önerilen aksiyon olsun.\n"
-        "Maksimum 170 kelime.\n\n"
+        "Bu işletme için satış çalışanının kullanacağı kanıta dayalı bir ihtiyaç özeti yaz.\n"
+        "Yalnızca LEAD VERİSİ içindeki evidence alanlarını tespit olarak kullan.\n"
+        "Formatı aynen koru:\n"
+        "DOĞRULANAN AÇIKLAR\n"
+        "- En fazla 3 madde: kanıt — muhtemel iş etkisi\n"
+        "SUNABİLECEĞİMİZ HİZMET\n"
+        "- Katalogdaki birincil hizmet ve en fazla 3 teslimat\n"
+        "GÖRÜŞMEDE SOR\n"
+        "- En fazla 3 kısa soru\n"
+        "KONTROL EDİLMELİ\n"
+        "- Bilinmeyen veya kesinleştirilmemiş veriler\n"
+        "Bilinmeyen veriyi eksik gibi yazma; sonuç, sıra veya ciro garantisi verme.\n"
+        "Maksimum 190 kelime.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
     )
     return _generate_cached(task="report", lead=lead, prompt=prompt, force=force)
@@ -234,15 +246,19 @@ def generate_report(lead: dict[str, Any], *, force: bool = False) -> str:
 def generate_email(lead: dict[str, Any], *, force: bool = False) -> str:
     sender_name = env("SALES_SENDER_NAME", "Zeplin Media satış ekibi") or "Zeplin Media satış ekibi"
     prompt = (
-        "Bu işletmeye gönderilecek kişisel satış mailini yaz.\n"
+        "Bu işletmeye gönderilmeden önce çalışan tarafından onaylanacak kişisel satış maili taslağı yaz.\n"
         "Kurallar:\n"
         "- İlk satır mutlaka `Konu:` ile başlasın.\n"
-        "- Maksimum 130 kelime.\n"
-        "- Sadece 1-2 net bulgu kullan.\n"
-        "- Satış paketi önerisini doğal geçir.\n"
-        "- CTA: 15 dakikalık kısa görüşme.\n"
+        "- Konudan sonra boş satır bırak; gövde maksimum 105 kelime olsun.\n"
+        "- Sadece evidence alanındaki 1 doğrulanmış bulguyu kullan.\n"
+        "- Paket adı uydurma. Yalnızca service_recommendation içindeki gerçek hizmeti kullan.\n"
+        "- Teknik terimi işletme sahibinin anlayacağı iş etkisine çevir.\n"
+        "- Sadece ilgili 1-2 teslimatı doğal biçimde anlat.\n"
+        "- requires_discovery true ise ihtiyacı kesinleştirme; kısa bir soru sor.\n"
+        "- CTA: 15 dakikalık kısa görüşme veya uygun kişiye yönlendirme.\n"
         f"- İmza: {sender_name} | Zeplin Media.\n"
-        "- Abartı, emoji ve kesin olmayan iddia kullanma.\n\n"
+        "- `Paket`, `fırsat`, `garanti`, `kesin`, `ciro artışı` kelimelerini kullanma.\n"
+        "- Abartı, emoji, sahte övgü ve kesin olmayan iddia kullanma.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
     )
     return _generate_cached(task="email", lead=lead, prompt=prompt, temperature=0.45, force=force)
@@ -254,4 +270,5 @@ def enrich_ai_fields(lead: dict[str, Any], *, force: bool = False) -> dict[str, 
     enriched["ai_report"] = generate_report(enriched, force=force)
     enriched["ai_email"] = generate_email(enriched, force=force)
     enriched["ai_tier"] = lead_ai_tier(enriched)
+    enriched["ai_prompt_version"] = AI_PROMPT_VERSION
     return enriched

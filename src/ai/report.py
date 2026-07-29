@@ -5,7 +5,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from src.ai.generator import generate_email, generate_report, generate_research_brief
+from src.ai.generator import AI_PROMPT_VERSION, generate_email, generate_report, generate_research_brief
 
 
 console = Console()
@@ -20,6 +20,7 @@ def process_all(audited_file: str = "leads_audited.json", output_file: str = "le
         lead["research_brief"] = generate_research_brief(lead)
         lead["ai_report"] = generate_report(lead)
         lead["ai_email"] = generate_email(lead)
+        lead["ai_prompt_version"] = AI_PROMPT_VERSION
         results.append(lead)
         console.print("[green]✓ araştırma özeti, rapor ve satış maili hazır[/green]")
 

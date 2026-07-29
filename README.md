@@ -155,11 +155,13 @@ and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then 
 results back to Supabase. This avoids long Playwright browser jobs inside short-lived
 Vercel request handlers.
 
-The services matrix lives in `src/services.py`. Each service has a category, owner,
-sales angle, detectable signals, pricing range, and trigger list.
-`scripts/migrate_leads.py` writes matched services and recommended packages into
-the local operational dataset. `src/dashboard/build.py` embeds only the non-secret
-service catalog into the static shell.
+The services matrix lives in `src/services.py`. Each service has a category,
+delivery type, evidence rules, deliverables, exclusions, and discovery questions.
+Only approved, evidence-backed services can be recommended automatically; the
+system does not invent marketing package names or revenue estimates.
+`scripts/migrate_leads.py` writes matched services and the primary service
+recommendation into the local operational dataset. `src/dashboard/build.py`
+embeds only the non-secret service catalog into the static shell.
 
 ## Security Reminder
 

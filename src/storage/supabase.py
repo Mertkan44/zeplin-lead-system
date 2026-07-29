@@ -56,10 +56,12 @@ def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
     data_quality = lead.get("data_quality") or {}
     now = datetime.now(timezone.utc).isoformat()
     maps_url = str(lead.get("maps_url") or "").strip()
-    identity = maps_url or f"{str(lead.get('name') or '').strip().lower()}|{str(lead.get('city') or '').strip().lower()}"
-    identity_prefix = "maps" if maps_url else "name"
+    identity = (
+        f"{str(lead.get('name') or '').strip().casefold()}|"
+        f"{str(lead.get('city') or '').strip().casefold()}"
+    )
     return {
-        "external_id": f"{identity_prefix}:{hashlib.sha256(identity.encode('utf-8')).hexdigest()}",
+        "external_id": f"name-city:{hashlib.sha256(identity.encode('utf-8')).hexdigest()}",
         "name": lead.get("name"),
         "sector": lead.get("sector"),
         "city": lead.get("city"),
@@ -100,7 +102,7 @@ def upsert_leads(leads: list[dict[str, Any]], *, chunk_size: int = 100) -> int:
         for index in range(0, len(rows), chunk_size):
             chunk = rows[index : index + chunk_size]
             response = client.post(
-                _postgrest_url(config, "leads", "on_conflict=external_id"),
+                _postgrest_url(config, "leads", "on_conflict=name"),
                 headers=_headers(config, prefer="resolution=merge-duplicates"),
                 content=json.dumps(chunk, ensure_ascii=False),
             )

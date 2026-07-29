@@ -9,7 +9,7 @@ import subprocess
 from playwright.async_api import async_playwright
 from datetime import datetime
 
-from src.ai.generator import generate_email, generate_report, generate_research_brief
+from src.ai.generator import AI_PROMPT_VERSION, generate_email, generate_report, generate_research_brief
 from src.audit.finder import (
     find_from_google_maps, check_website, detect_sector,
     find_instagram, get_instagram_stats,
@@ -172,6 +172,7 @@ async def run(
             lead["research_brief"] = generate_research_brief(lead, force=force_ai)
             lead["ai_report"] = generate_report(lead, force=force_ai)
             lead["ai_email"] = generate_email(lead, force=force_ai)
+            lead["ai_prompt_version"] = AI_PROMPT_VERSION
             lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
             lead.pop("_ai_mode", None)
             lead = normalize_lead(lead)
