@@ -33,6 +33,7 @@ read_env_value() {
   value="${value%\"}"
   value="${value#\'}"
   value="${value%\'}"
+  value="$(printf '%s' "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
   printf '%s' "$value"
 }
 

@@ -3,8 +3,8 @@ import json
 import os
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
+from pathlib import Path
 
 from src import auth
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
@@ -14,6 +14,12 @@ from src.storage.supabase import _lead_row
 
 
 class HardeningTests(unittest.TestCase):
+    def test_environment_values_are_trimmed(self):
+        from src.config import env
+
+        with patch.dict("os.environ", {"ZEPLIN_TEST_SECRET": "  secret-value \r\n"}):
+            self.assertEqual(env("ZEPLIN_TEST_SECRET"), "secret-value")
+
     def test_maps_card_parses_review_count(self):
         parsed = _parse_maps_search_card("Örnek Klinik\n4,8\n(1.234)\nDiş Kliniği · Kadıköy")
         self.assertEqual(parsed["rating"], 4.8)
