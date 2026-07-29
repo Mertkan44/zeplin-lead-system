@@ -54,7 +54,7 @@ ZEPLIN_SERVICES = [
     _service(
         slug="corporate_website",
         name="Kurumsal Web Sitesi",
-        category="Web ve Donusum",
+        category="Web ve Dönüşüm",
         desc="Isletmeyi guvenilir anlatan, mobil uyumlu ve iletisim odakli web sitesi.",
         service_type="project",
         recommendation_mode="direct",
@@ -75,8 +75,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="landing_page",
-        name="Landing Page ve Donusum Sayfasi",
-        category="Web ve Donusum",
+        name="Landing Page ve Dönüşüm Sayfası",
+        category="Web ve Dönüşüm",
         desc="Tek bir kampanya veya hizmet icin olculebilir donusum sayfasi.",
         service_type="project",
         recommendation_mode="discovery_only",
@@ -97,8 +97,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="web_technical",
-        name="Web Teknik Iyilestirme ve Bakim",
-        category="Web ve Donusum",
+        name="Web Teknik İyileştirme ve Bakım",
+        category="Web ve Dönüşüm",
         desc="Mevcut sitenin guvenlik, hiz, mobil kullanim ve teknik yapisinin iyilestirilmesi.",
         service_type="project_or_monthly",
         recommendation_mode="direct",
@@ -119,8 +119,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="analytics_tracking",
-        name="Olcumleme ve Donusum Takibi",
-        category="Olcumleme",
+        name="Ölçümleme ve Dönüşüm Takibi",
+        category="Ölçümleme",
         desc="Web, reklam, form, telefon ve WhatsApp aksiyonlarinin olculebilir hale getirilmesi.",
         service_type="project",
         recommendation_mode="conditional",
@@ -141,8 +141,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="google_business_local",
-        name="Google Business Profile ve Yerel Gorunurluk",
-        category="Yerel Gorunurluk",
+        name="Google Business Profile ve Yerel Görünürlük",
+        category="Yerel Görünürlük",
         desc="Google Maps profilinin eksiksiz, guvenilir ve aksiyon odakli yonetilmesi.",
         service_type="project_or_monthly",
         recommendation_mode="direct",
@@ -163,8 +163,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="seo_organic",
-        name="SEO ve Organik Gorunurluk",
-        category="Organik Buyume",
+        name="SEO ve Organik Görünürlük",
+        category="Organik Büyüme",
         desc="Teknik, icerik ve arama niyeti calismalariyla nitelikli organik talep kazanimi.",
         service_type="monthly",
         recommendation_mode="discovery_only",
@@ -185,8 +185,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="social_media",
-        name="Sosyal Medya Yonetimi",
-        category="Icerik ve Sosyal",
+        name="Sosyal Medya Yönetimi",
+        category="İçerik ve Sosyal",
         desc="Markanin sosyal kanallarda duzenli ve amacli iletisim yurutmesi.",
         service_type="monthly",
         recommendation_mode="conditional",
@@ -207,8 +207,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="content_production",
-        name="Fotograf ve Video Icerik Produksiyonu",
-        category="Icerik ve Sosyal",
+        name="Fotoğraf ve Video İçerik Prodüksiyonu",
+        category="İçerik ve Sosyal",
         desc="Urun, mekan, ekip veya hizmet icin platforma uygun fotograf ve video uretimi.",
         service_type="project",
         recommendation_mode="discovery_only",
@@ -229,7 +229,7 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="performance_ads",
-        name="Performans Reklamlari Yonetimi",
+        name="Performans Reklamları Yönetimi",
         category="Reklam",
         desc="Google Ads veya Meta Ads uzerinden olculebilir talep ve donusum yonetimi.",
         service_type="monthly",
@@ -252,7 +252,7 @@ ZEPLIN_SERVICES = [
     _service(
         slug="crm_lead_tracking",
         name="CRM ve Lead Takip Kurulumu",
-        category="Satis Operasyonu",
+        category="Satış Operasyonu",
         desc="Farkli kanallardan gelen taleplerin atanmasi, takibi ve raporlanmasi.",
         service_type="project",
         recommendation_mode="discovery_only",
@@ -273,8 +273,8 @@ ZEPLIN_SERVICES = [
     ),
     _service(
         slug="whatsapp_business",
-        name="WhatsApp Business ve Mesaj Akislari",
-        category="Satis Operasyonu",
+        name="WhatsApp Business ve Mesaj Akışları",
+        category="Satış Operasyonu",
         desc="Musteri mesajlarinin hizli, tutarli ve olculebilir bir akista yonetilmesi.",
         service_type="project_or_monthly",
         recommendation_mode="conditional",
@@ -297,22 +297,22 @@ ZEPLIN_SERVICES = [
 
 
 TRIGGER_LABELS = {
-    "no_website": "Web sitesi bulunamadi",
-    "no_ssl": "Guvenli HTTPS baglantisi dogrulanamadi",
+    "no_website": "Web sitesi bulunamadı",
+    "no_ssl": "Güvenli HTTPS bağlantısı doğrulanamadı",
     "not_mobile": "Mobil uyum sorunu tespit edildi",
-    "slow_site": "Sayfa acilis suresi yuksek olculdu",
-    "no_schema": "Yapilandirilmis veri bulunamadi",
-    "no_og": "Sosyal paylasim meta etiketleri bulunamadi",
-    "no_email_capture": "E-posta toplama alani bulunamadi",
-    "no_whatsapp": "Web sitesinde WhatsApp aksiyonu bulunamadi",
-    "no_instagram": "Instagram hesabi bulunamadi",
-    "low_engagement": "Dogrulanan Instagram etkilesimi dusuk",
-    "low_followers": "Dogrulanan takipci sayisi dusuk",
-    "no_tiktok": "TikTok hesabi bulunamadi",
-    "low_rating": "Dogrulanan Google puani dusuk",
-    "low_reviews": "Dogrulanan Google yorum sayisi az",
-    "no_delivery": "Online siparis kanali bulunamadi",
-    "no_analytics": "Gorunur analytics etiketi bulunamadi",
+    "slow_site": "Sayfa açılış süresi yüksek ölçüldü",
+    "no_schema": "Yapılandırılmış veri bulunamadı",
+    "no_og": "Sosyal paylaşım meta etiketleri bulunamadı",
+    "no_email_capture": "E-posta toplama alanı bulunamadı",
+    "no_whatsapp": "Web sitesinde WhatsApp aksiyonu bulunamadı",
+    "no_instagram": "Instagram hesabı bulunamadı",
+    "low_engagement": "Doğrulanan Instagram etkileşimi düşük",
+    "low_followers": "Doğrulanan takipçi sayısı düşük",
+    "no_tiktok": "TikTok hesabı bulunamadı",
+    "low_rating": "Doğrulanan Google puanı düşük",
+    "low_reviews": "Doğrulanan Google yorum sayısı az",
+    "no_delivery": "Online sipariş kanalı bulunamadı",
+    "no_analytics": "Görünür analytics etiketi bulunamadı",
 }
 
 
@@ -409,12 +409,12 @@ def recommended_package(lead: dict) -> dict:
     if not services:
         return {
             "kind": "verification",
-            "name": "Once ihtiyaci dogrula",
-            "summary": "Otomatik hizmet onermek icin yeterli ve guvenilir kanit yok.",
+            "name": "Önce ihtiyacı doğrula",
+            "summary": "Otomatik hizmet önermek için yeterli ve güvenilir kanıt yok.",
             "primary_service": None,
             "included_services": [],
             "owner": "Sales",
-            "stage": "Kesif",
+            "stage": "Keşif",
             "confidence": 0,
             "evidence": [],
             "discovery_questions": [],
@@ -438,14 +438,14 @@ def recommended_package(lead: dict) -> dict:
         "kind": "service_recommendation",
         "name": primary["name"],
         "summary": (
-            f"{primary['name']} icin {len(primary['matched_triggers'])} dogrulanmis sinyal bulundu."
+            f"{primary['name']} için {len(primary['matched_triggers'])} doğrulanmış sinyal bulundu."
             if not primary["requires_discovery"]
-            else f"{primary['name']} ihtiyaci gorusmede dogrulanmali."
+            else f"{primary['name']} ihtiyacı görüşmede doğrulanmalı."
         ),
         "primary_service": primary["name"],
         "included_services": [service["name"] for service in selected_services],
         "owner": primary["owner"],
-        "stage": "Kesif gerekli" if primary["requires_discovery"] else "Dogrulanmis acik",
+        "stage": "Keşif gerekli" if primary["requires_discovery"] else "Doğrulanmış açık",
         "confidence": primary["confidence"],
         "evidence": evidence,
         "deliverables": primary["deliverables"][:3],
