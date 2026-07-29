@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import os
+import threading
 import time
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler
@@ -16,10 +17,15 @@ from src.storage import supabase
 COOKIE_NAME = "zl_admin_session"
 SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
 USER_ROLES = {"admin", "sales"}
+_LOGIN_WINDOW_SECONDS = 15 * 60
+_LOGIN_MAX_ATTEMPTS = 8
+_login_attempts: dict[str, list[float]] = {}
+_login_lock = threading.Lock()
 
 
 def auth_configured() -> bool:
-    return bool(env("SESSION_SECRET") and (env("ADMIN_PASSWORD") or supabase.is_enabled()))
+    legacy_enabled = env("ALLOW_LEGACY_ADMIN_LOGIN", "0") == "1" and bool(env("ADMIN_PASSWORD"))
+    return bool(env("SESSION_SECRET") and (supabase.is_enabled() or legacy_enabled))
 
 
 def normalize_email(value: str | None) -> str:
@@ -83,6 +89,7 @@ def create_session_cookie(
     name: str | None = None,
     title: str | None = None,
     avatar_url: str | None = None,
+    session_version: str | None = None,
 ) -> str:
     now = int(time.time())
     role = role if role in USER_ROLES else "sales"
@@ -92,6 +99,7 @@ def create_session_cookie(
         "name": name or None,
         "title": title or None,
         "avatar_url": avatar_url or None,
+        "ver": session_version or None,
         "iat": now,
         "exp": now + SESSION_TTL_SECONDS,
     }
@@ -142,7 +150,28 @@ def current_user(handler: BaseHTTPRequestHandler) -> dict[str, Any] | None:
     if int(payload.get("exp") or 0) < int(time.time()):
         return None
     if payload.get("role") not in USER_ROLES:
-        payload["role"] = "admin"
+        return None
+    email = normalize_email(payload.get("sub"))
+    if supabase.is_enabled() and email and email != "admin":
+        try:
+            row = supabase.fetch_app_user_by_email(email)
+        except Exception:
+            return None
+        if not row or not row.get("active", True) or row.get("role") not in USER_ROLES:
+            return None
+        session_version = str(row.get("updated_at") or "")
+        if payload.get("ver") and not hmac.compare_digest(str(payload["ver"]), session_version):
+            return None
+        payload.update(
+            {
+                "sub": normalize_email(row.get("email")),
+                "role": row.get("role"),
+                "name": row.get("name"),
+                "title": row.get("title"),
+                "avatar_url": row.get("avatar_url"),
+                "ver": session_version,
+            }
+        )
     return payload
 
 
@@ -164,6 +193,47 @@ def require_admin(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
     return require_role(handler, "admin")
 
 
+def require_lead_access(user: dict[str, Any], lead_name: str) -> None:
+    if user.get("role") == "admin":
+        return
+    assignments = supabase.fetch_lead_assignments(
+        user_email=normalize_email(user.get("sub")),
+        lead_name=lead_name,
+        status="active",
+        limit=1,
+    )
+    if not assignments:
+        raise PermissionError("lead is not assigned to this user")
+
+
+def login_rate_limited(key: str) -> bool:
+    key_hash = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    durable_result = supabase.check_login_rate_limit(
+        key_hash,
+        max_attempts=_LOGIN_MAX_ATTEMPTS,
+        window_seconds=_LOGIN_WINDOW_SECONDS,
+    )
+    if durable_result is not None:
+        return durable_result
+    now = time.time()
+    cutoff = now - _LOGIN_WINDOW_SECONDS
+    with _login_lock:
+        attempts = [stamp for stamp in _login_attempts.get(key, []) if stamp >= cutoff]
+        _login_attempts[key] = attempts
+        return len(attempts) >= _LOGIN_MAX_ATTEMPTS
+
+
+def record_login_attempt(key: str, *, success: bool) -> None:
+    key_hash = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    if supabase.record_login_attempt(key_hash, success=success):
+        return
+    with _login_lock:
+        if success:
+            _login_attempts.pop(key, None)
+        else:
+            _login_attempts.setdefault(key, []).append(time.time())
+
+
 def authenticate_user(email: str | None, password: str | None, requested_role: str | None = None) -> dict[str, Any] | None:
     normalized_email = normalize_email(email)
     requested_role = (requested_role or "").strip().lower()
@@ -180,8 +250,11 @@ def authenticate_user(email: str | None, password: str | None, requested_role: s
                 "role": row.get("role") or "sales",
                 "title": row.get("title"),
                 "avatar_url": row.get("avatar_url"),
+                "session_version": str(row.get("updated_at") or ""),
             }
 
+    if env("ALLOW_LEGACY_ADMIN_LOGIN", "0") != "1":
+        return None
     admin_email = normalize_email(env("ADMIN_EMAIL")) or "admin"
     admin_role_ok = not requested_role or requested_role == "admin"
     admin_email_ok = not normalized_email or normalized_email == admin_email or normalized_email == "admin"

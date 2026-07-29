@@ -175,6 +175,7 @@ def normalize_lead(lead: dict) -> dict:
     normalized["rating"] = normalized.get("rating")
     normalized["review_count"] = normalized.get("review_count")
     normalized["category"] = normalized.get("category")
+    normalized["status"] = normalized.get("status") or "yeni"
     normalized["website"] = deep_merge(WEBSITE_DEFAULTS, normalized.get("website"))
     normalized["social"] = deep_merge(SOCIAL_DEFAULTS, normalized.get("social"))
     normalized["delivery"] = deep_merge(DELIVERY_DEFAULTS, normalized.get("delivery"))

@@ -24,7 +24,8 @@ def build_dashboard(
     issues = validate_leads(data)
     if issues:
         raise ValueError("Invalid lead data:\n" + format_issues(issues, limit=50))
-    payload = base64.b64encode(json.dumps(data, ensure_ascii=True).encode("utf-8")).decode("ascii")
+    # Lead data is loaded only through authenticated APIs. Never publish CRM data in static HTML.
+    payload = base64.b64encode(b"[]").decode("ascii")
     services_payload = base64.b64encode(
         json.dumps(ZEPLIN_SERVICES, ensure_ascii=True).encode("utf-8")
     ).decode("ascii")

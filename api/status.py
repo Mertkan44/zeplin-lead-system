@@ -1,5 +1,4 @@
 from http.server import BaseHTTPRequestHandler
-import json
 import sys
 from pathlib import Path
 
@@ -7,52 +6,46 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import require_auth
-from src.storage.supabase import is_enabled as supabase_enabled, set_lead_status
-
-
-def _send_json(handler: BaseHTTPRequestHandler, status: int, payload) -> None:
-    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    handler.send_response(status)
-    handler.send_header("Content-Type", "application/json; charset=utf-8")
-    handler.send_header("Access-Control-Allow-Origin", "*")
-    handler.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-    handler.send_header("Access-Control-Allow-Headers", "Content-Type")
-    handler.send_header("Content-Length", str(len(raw)))
-    handler.end_headers()
-    handler.wfile.write(raw)
+from src.auth import require_auth, require_lead_access
+from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.storage.supabase import insert_audit_event, is_enabled as supabase_enabled, set_lead_status
 
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+        send_options(self, allow_methods="POST, OPTIONS")
 
     def do_POST(self):
         try:
-            require_auth(self)
+            user = require_auth(self)
         except PermissionError:
-            _send_json(self, 401, {"ok": False, "error": "login required"})
+            send_json(self, 401, {"ok": False, "error": "login required"}, allow_methods="POST, OPTIONS")
             return
         if not supabase_enabled():
-            _send_json(self, 503, {"ok": False, "error": "supabase is not configured"})
+            send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="POST, OPTIONS")
             return
-        length = int(self.headers.get("Content-Length", "0"))
         try:
-            payload = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
-            _send_json(self, 400, {"ok": False, "error": "invalid json"})
+            payload = read_json(self)
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
             return
-        name = payload.get("name")
-        status = payload.get("status")
+        name = (payload.get("name") or "").strip()
+        status = (payload.get("status") or "").strip()
         if not name or not status:
-            _send_json(self, 400, {"ok": False, "error": "name and status are required"})
+            send_json(self, 400, {"ok": False, "error": "name and status are required"}, allow_methods="POST, OPTIONS")
             return
         try:
+            require_lead_access(user, name)
             set_lead_status(name, status)
-            _send_json(self, 200, {"ok": True})
+            insert_audit_event(
+                actor_email=user.get("sub"),
+                event_type="lead_status_changed",
+                target_type="lead",
+                target_key=name,
+                meta={"status": status},
+            )
+            send_json(self, 200, {"ok": True}, allow_methods="POST, OPTIONS")
+        except PermissionError as exc:
+            send_json(self, 403, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
         except Exception as exc:
-            _send_json(self, 502, {"ok": False, "error": str(exc)})
+            send_internal_error(self, exc, error="status save failed", allow_methods="POST, OPTIONS")

@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -8,7 +9,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import normalize_email, require_auth
-from src.http_api import send_json, send_options
+from src.http_api import send_internal_error, send_json, send_options
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_lead_assignments,
@@ -19,7 +20,9 @@ from src.storage.supabase import (
 
 
 def _lead_ready_for_email(lead: dict) -> bool:
-    return bool(lead.get("ai_email") and (lead.get("phone") or (lead.get("website") or {}).get("website_url")))
+    research = ((lead.get("research") or {}).get("website") or {})
+    emails = research.get("emails") or []
+    return bool(lead.get("ai_email") and (lead.get("email") or emails))
 
 
 def _lead_missing_contact(lead: dict) -> bool:
@@ -34,10 +37,10 @@ def _is_today_event(event: dict, action: str) -> bool:
         return False
     try:
         raw = str(happened_at).replace("Z", "+00:00")
-        event_date = datetime.fromisoformat(raw).astimezone(timezone.utc).date()
+        event_date = datetime.fromisoformat(raw).astimezone(ZoneInfo("Europe/Istanbul")).date()
     except ValueError:
         return False
-    return event_date == datetime.now(timezone.utc).date()
+    return event_date == datetime.now(ZoneInfo("Europe/Istanbul")).date()
 
 
 def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> dict:
@@ -45,7 +48,7 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
     return {
         "lead_count": len(leads),
         "assigned_count": len(active_assignments),
-        "today_call_count": sum(1 for event in events if _is_today_event(event, "call_made")),
+        "today_call_count": sum(1 for event in events if _is_today_event(event, "call_completed")),
         "mail_ready_count": sum(1 for lead in leads if _lead_ready_for_email(lead)),
         "missing_info_count": sum(1 for lead in leads if _lead_missing_contact(lead)),
         "follow_up_count": sum(1 for lead in leads if lead.get("status") == "follow_up"),
@@ -101,4 +104,4 @@ class handler(BaseHTTPRequestHandler):
                 allow_methods="GET, OPTIONS",
             )
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, OPTIONS")
+            send_internal_error(self, exc, error="workspace fetch failed", allow_methods="GET, OPTIONS")

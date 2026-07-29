@@ -7,7 +7,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import require_admin
-from src.http_api import read_json, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     create_search_job,
     estimate_search_tokens,
@@ -45,7 +45,7 @@ class handler(BaseHTTPRequestHandler):
                 },
             )
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)})
+            send_internal_error(self, exc, error="search queue fetch failed")
 
     def do_POST(self):
         try:
@@ -90,4 +90,4 @@ class handler(BaseHTTPRequestHandler):
             estimate = estimate_search_tokens(max_results=max_results, deep_research=deep_research, ai_mode=ai_mode)
             send_json(self, 200, {"ok": True, "job": job, "estimate": estimate})
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)})
+            send_internal_error(self, exc, error="search job creation failed")

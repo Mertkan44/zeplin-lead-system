@@ -43,7 +43,7 @@ set_secret_from_env() {
     echo "$key eksik, atlandı." >&2
     return 1
   fi
-  printf '%s' "$value" | gh secret set "$key" --repo "$REPO" --body-file -
+  printf '%s' "$value" | gh secret set "$key" --repo "$REPO"
   echo "$key yüklendi."
 }
 

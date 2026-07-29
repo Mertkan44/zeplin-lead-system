@@ -1,6 +1,6 @@
 # Zeplin Lead System
 
-Lead intelligence panel for Zeplin Media. It scrapes local businesses from Google Maps, audits their digital presence, matches Zeplin services, generates sales notes, and publishes a static dashboard.
+Lead intelligence panel for Zeplin Media. It scrapes local businesses from Google Maps, audits their digital presence, matches Zeplin services, generates sales notes, and serves a role-aware CRM workspace.
 
 ## Setup
 
@@ -18,13 +18,16 @@ The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODE
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 `.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
 
-For Supabase persistence on the free plan, create a project, run `supabase/schema.sql`
-in the SQL editor, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to `.env`.
-For admin login and production search jobs, also set `ADMIN_PASSWORD` and
-`SESSION_SECRET` in Vercel Environment Variables.
-Run `supabase/migrations/004_roles_assignments.sql` to enable admin/sales roles,
-panel users, and lead assignments. Run `supabase/migrations/005_team_profiles.sql`
-to add profile titles and avatars.
+For a fresh Supabase project, run `supabase/schema.sql` in the SQL editor. For an
+existing project, apply migrations in order through
+`supabase/migrations/006_security_crm_hardening.sql`. The last migration adds stable
+lead identities, atomic queue claims, assignment integrity, audit events, and
+persistent AI generations.
+
+Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
+`SESSION_SECRET` in Vercel. Team members log in with their individual Supabase
+`app_users` account. The old shared admin password is disabled unless
+`ALLOW_LEGACY_ADMIN_LOGIN=1` is deliberately set during a short migration window.
 
 ## Common Commands
 
@@ -83,10 +86,14 @@ venv/bin/python scripts/create_user.py --email satis1@zeplinmedia.com --name "Sa
 venv/bin/python scripts/create_user.py --email admin@zeplinmedia.com --name "Admin" --role admin --password "temporary-password"
 ```
 
-Seed the default Zeplin team:
+Seed the default Zeplin team with a separate password for every member:
 
 ```bash
-venv/bin/python scripts/seed_team_users.py --password "temporary-password"
+export TEAM_PASSWORD_ASLIHAN="..."
+export TEAM_PASSWORD_AHU="..."
+export TEAM_PASSWORD_MERTKAN="..."
+export TEAM_PASSWORD_TURKER="..."
+venv/bin/python scripts/seed_team_users.py
 ```
 
 Role-ready backend endpoints:
@@ -99,7 +106,7 @@ GET /api/workspace                 # role-shaped dashboard payload
 ```
 
 In production, `.github/workflows/process-search-jobs.yml` checks Supabase every
-30 minutes and processes one queued admin search job. Add these GitHub Actions
+15 minutes and atomically claims up to three queued admin search jobs. Add these GitHub Actions
 secrets before relying on the automatic worker:
 
 ```bash
@@ -126,15 +133,21 @@ venv/bin/python scripts/zeplin.py leads --limit 10
 venv/bin/python scripts/zeplin.py cache
 ```
 
-Serve the dashboard locally:
+Run the complete dashboard and API locally with the linked Vercel environment:
 
 ```bash
-venv/bin/python -m http.server 8080 -d public
+vercel env pull .env.local
+vercel dev --listen 3000
 ```
+
+Opening `public/index.html` alone only renders the login shell; authenticated CRM
+data is intentionally available only through the API.
 
 ## Production Shape
 
-`src/dashboard/template.html` is the source template. `public/index.html` is generated from it by embedding `leads_final.json` as base64 JSON. In production, the dashboard reads live data from Vercel API routes backed by Supabase.
+`src/dashboard/template.html` is the source template. `public/index.html` is
+generated without embedding CRM lead records. After authentication, the dashboard
+reads role-filtered live data from Vercel API routes backed by Supabase.
 
 Admin search runs as a queue-backed workflow. The Vercel API creates `admin_search_jobs`
 and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then runs
@@ -142,8 +155,14 @@ and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then 
 results back to Supabase. This avoids long Playwright browser jobs inside short-lived
 Vercel request handlers.
 
-The services matrix lives in `src/services.py`. Each service has a category, owner, sales angle, detectable signals, pricing range, and trigger list. `scripts/migrate_leads.py` writes the matched services plus the recommended package into `leads_final.json`, then `src/dashboard/build.py` embeds both leads and the full service catalog into the static dashboard.
+The services matrix lives in `src/services.py`. Each service has a category, owner,
+sales angle, detectable signals, pricing range, and trigger list.
+`scripts/migrate_leads.py` writes matched services and recommended packages into
+the local operational dataset. `src/dashboard/build.py` embeds only the non-secret
+service catalog into the static shell.
 
 ## Security Reminder
 
-Do not deploy or push new production changes until any API key that appeared in Git history has been rotated and `.env` has been purged from history. See `SECURITY.md`.
+Any API key that appeared in Git history must be rotated. Purging shared history
+requires a coordinated force push and should be handled as a separate maintenance
+window. See `SECURITY.md`.

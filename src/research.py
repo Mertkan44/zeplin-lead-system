@@ -5,6 +5,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+from src.net_security import assert_safe_public_url
 
 
 def _text(node) -> str:
@@ -27,12 +28,14 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
         "headings": [],
         "internal_links": [],
         "contact_signals": [],
+        "emails": [],
         "content_sample": None,
     }
     if not url:
         return empty
 
     try:
+        url = assert_safe_public_url(url)
         with httpx.Client(timeout=15, follow_redirects=True) as client:
             response = client.get(
                 url,
@@ -41,6 +44,7 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
                 },
             )
             response.raise_for_status()
+            assert_safe_public_url(str(response.url))
     except Exception as exc:
         return {**empty, "status": "error", "error": str(exc)[:160]}
 
@@ -67,6 +71,7 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
     raw_text = _text(soup)
     lower = raw_text.lower()
     contact_signals = []
+    emails = sorted(set(re.findall(r"[\w.+-]+@[\w-]+\.[\w.-]+", raw_text, re.I)))[:5]
     for label, pattern in {
         "phone": r"(\+90|0)\s?\d{3}[\s)-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}",
         "email": r"[\w.+-]+@[\w-]+\.[\w.-]+",
@@ -85,6 +90,7 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
         "headings": [h for h in headings if h][:8],
         "internal_links": links,
         "contact_signals": contact_signals,
+        "emails": emails,
         "content_sample": raw_text[:1200] if raw_text else None,
     }
 

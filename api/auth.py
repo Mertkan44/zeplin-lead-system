@@ -12,8 +12,12 @@ from src.auth import (
     clear_session_cookie,
     create_session_cookie,
     current_user,
+    login_rate_limited,
+    normalize_email,
+    record_login_attempt,
 )
 from src.http_api import read_json, send_json, send_options
+from src.storage.supabase import insert_audit_event
 
 
 class handler(BaseHTTPRequestHandler):
@@ -53,16 +57,42 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)})
             return
+        client_ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+        throttle_key = f"{client_ip}:{normalize_email(payload.get('email'))}"
+        if login_rate_limited(throttle_key):
+            insert_audit_event(
+                actor_email=normalize_email(payload.get("email")),
+                event_type="login_rate_limited",
+                target_type="auth",
+                meta={"ip": client_ip},
+            )
+            send_json(self, 429, {"ok": False, "error": "too many login attempts; try again later"})
+            return
         user = authenticate_user(payload.get("email"), payload.get("password"), payload.get("role"))
         if not user:
-            send_json(self, 401, {"ok": False, "error": "invalid password"})
+            record_login_attempt(throttle_key, success=False)
+            insert_audit_event(
+                actor_email=normalize_email(payload.get("email")),
+                event_type="login_failed",
+                target_type="auth",
+                meta={"ip": client_ip},
+            )
+            send_json(self, 401, {"ok": False, "error": "invalid credentials"})
             return
+        record_login_attempt(throttle_key, success=True)
+        insert_audit_event(
+            actor_email=user.get("email"),
+            event_type="login_succeeded",
+            target_type="auth",
+            meta={"ip": client_ip},
+        )
         cookie = create_session_cookie(
             user["email"],
             role=user["role"],
             name=user.get("name"),
             title=user.get("title"),
             avatar_url=user.get("avatar_url"),
+            session_version=user.get("session_version"),
         )
         send_json(
             self,

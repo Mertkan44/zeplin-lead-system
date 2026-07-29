@@ -9,6 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CACHE = ROOT / ".cache" / "ai_generations.json"
+CACHE_SCHEMA_VERSION = 2
 
 
 def stable_json(value: Any) -> str:
@@ -34,10 +35,26 @@ def save_cache(cache: dict[str, Any], path: Path = DEFAULT_CACHE) -> None:
 
 
 def cache_key(*, task: str, provider: str, model: str, payload: Any) -> str:
-    return fingerprint({"task": task, "provider": provider, "model": model, "payload": payload})
+    return fingerprint(
+        {
+            "schema_version": CACHE_SCHEMA_VERSION,
+            "task": task,
+            "provider": provider,
+            "model": model,
+            "payload": payload,
+        }
+    )
 
 
 def get(key: str, path: Path = DEFAULT_CACHE) -> str | None:
+    try:
+        from src.storage.supabase import fetch_ai_generation
+
+        remote = fetch_ai_generation(key)
+        if remote and isinstance(remote.get("content"), str) and remote["content"].strip():
+            return remote["content"]
+    except Exception:
+        pass
     item = load_cache(path).get(key)
     if not isinstance(item, dict):
         return None
@@ -65,6 +82,36 @@ def put(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     save_cache(cache, path)
+    try:
+        from src.storage.supabase import upsert_ai_generation
+
+        upsert_ai_generation(
+            cache_key=key,
+            task=task,
+            provider=provider,
+            model=model,
+            content=content,
+            usage=usage or {},
+        )
+    except Exception:
+        pass
+
+
+def usage_totals(path: Path = DEFAULT_CACHE) -> dict[str, int]:
+    totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "cached_tokens": 0}
+    for item in load_cache(path).values():
+        usage = item.get("usage") if isinstance(item, dict) else None
+        if not isinstance(usage, dict):
+            continue
+        totals["prompt_tokens"] += int(usage.get("prompt_tokens") or 0)
+        totals["completion_tokens"] += int(usage.get("completion_tokens") or 0)
+        totals["total_tokens"] += int(usage.get("total_tokens") or 0)
+        totals["cached_tokens"] += int(
+            usage.get("prompt_cache_hit_tokens")
+            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+            or 0
+        )
+    return totals
 
 
 def stats(path: Path = DEFAULT_CACHE) -> dict[str, Any]:

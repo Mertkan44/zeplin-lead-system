@@ -24,7 +24,7 @@
       --tx: #0c0b08; --sub: #4a4535; --muted: #8b856f;
       --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.14), transparent 60%);
     }
-    html, body { min-height: 100vh; background: var(--bg); }
+    html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
     body { font-family: 'Instrument Sans', system-ui, sans-serif; color: var(--tx); -webkit-font-smoothing: antialiased; background: var(--glow), var(--bg); transition: background-color .2s, color .2s; }
     #root { min-height: 100vh; display: flex; flex-direction: column; }
     button { font-family: inherit; }
@@ -43,6 +43,21 @@
       .tb-search-label { display: none !important; }
       .tb-nav-item { padding: 9px 11px !important; font-size: 12px !important; }
     }
+    @media (max-width: 760px) {
+      .responsive-kpis, .responsive-main, .responsive-detail, .responsive-admin, .responsive-report {
+        grid-template-columns: 1fr !important;
+      }
+      .responsive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .responsive-main, .responsive-kpis, .responsive-detail, .responsive-admin, .responsive-report {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+      .responsive-table { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
+      .responsive-table-head, .responsive-table-row { min-width: 760px; }
+      .responsive-pipeline { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
+      .responsive-pipeline > * { min-width: 270px; }
+      .responsive-report > [style*="grid-column"] { grid-column: auto !important; }
+    }
   </style>
   <script>
     (function () {
@@ -54,9 +69,9 @@
       }
     })();
   </script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.28.4/babel.min.js" crossorigin></script>
 </head>
 <body>
   <div id="root"></div>
@@ -84,10 +99,13 @@
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   function fmt(n) {
-    if (!n) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return Math.round(n / 1000) + 'K';
-    return String(n);
+    if (n === null || n === undefined || n === '') return '—';
+    const value = Number(n);
+    if (!Number.isFinite(value)) return '—';
+    if (value === 0) return '0';
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return Math.round(value / 1000) + 'K';
+    return String(value);
   }
 
   function fmtDate(str) {
@@ -109,7 +127,7 @@
     return Object.assign({}, readLocalStatuses(), remoteStatuses);
   }
   function persistStatus(name, s) {
-    if (!apiReady) return Promise.resolve();
+    if (!apiReady) return Promise.reject(new Error('api_not_ready'));
     return fetch('/api/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,17 +135,16 @@
     }).then(res => {
       if (!res.ok) throw new Error('status_save_failed');
       return res.json();
-    }).catch(err => {
-      apiReady = false;
-      console.warn('Status save fallback:', err);
     });
   }
   function setStatusLS(name, s) {
-    const next = getStatuses();
-    next[name] = s;
+    const previous = remoteStatuses[name];
     remoteStatuses[name] = s;
-    writeLocalStatuses(next);
-    return persistStatus(name, s);
+    return persistStatus(name, s).catch(err => {
+      if (previous === undefined) delete remoteStatuses[name];
+      else remoteStatuses[name] = previous;
+      throw err;
+    });
   }
 
   function readLocalOutreach() {
@@ -137,7 +154,7 @@
     if (!item) return null;
     return {
       lead: item.lead || item.lead_name || '',
-      action: item.action || 'note',
+      action: item.action || 'note_added',
       date: item.date || item.happened_at || item.created_at || new Date().toISOString(),
       note: item.note || '',
       ts: item.ts || item.id || Date.now(),
@@ -154,36 +171,37 @@
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
   }
   function persistOutreachEvent(evt) {
-    if (!apiReady) return Promise.resolve();
+    if (!apiReady) return Promise.reject(new Error('api_not_ready'));
     return fetch('/api/outreach', {
       method: 'POST',
+      keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         lead_name: evt.lead,
         action: evt.action,
         happened_at: evt.date,
         note: evt.note,
+        source: 'dashboard',
+        idempotency_key: `dashboard-${evt.ts}`,
       }),
     }).then(res => {
       if (!res.ok) throw new Error('outreach_save_failed');
       return res.json();
-    }).catch(err => {
-      apiReady = false;
-      console.warn('Outreach save fallback:', err);
     });
   }
   function addOutreach(name, action, date, note) {
-    const arr = getOutreach();
     const evt = { lead: name, action, date, note, ts: Date.now() };
-    arr.push(evt);
-    saveOutreach(arr);
-    const act = ACTIONS[action];
-    if (act && act.status) setStatusLS(name, act.status);
-    return persistOutreachEvent(evt);
+    return persistOutreachEvent(evt).then(() => {
+      const arr = getOutreach();
+      arr.push(evt);
+      saveOutreach(arr);
+      const act = ACTIONS[action];
+      if (act && act.status) return setStatusLS(name, act.status);
+    });
   }
 
   function applyRemoteLeads(rows) {
-    if (!Array.isArray(rows) || rows.length === 0) return;
+    if (!Array.isArray(rows)) return;
     leads = rows.slice();
     remoteStatuses = {};
     leads.forEach(l => { remoteStatuses[l.name] = l.status || 'yeni'; });
@@ -241,12 +259,13 @@
     }
 
     if (lead.phone) {
+      window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
       return addOutreach(
         lead.name,
-        'call_made',
+        'call_started',
         new Date().toISOString(),
         nextAction
-      ).then(() => ({ feedback: 'Arama aksiyonu kaydedildi.' }));
+      ).then(() => ({ feedback: 'Arama ekranı açıldı. Görüşme bitince sonucu ayrıca kaydet.' }));
     }
 
     if (lead.ai_email) {
@@ -255,7 +274,7 @@
       }
       return addOutreach(
         lead.name,
-        'draft_prepared',
+        'email_drafted',
         new Date().toISOString(),
         'Hazır taslak panoya kopyalandı'
       ).then(() => ({ feedback: 'Mail taslağı panoya kopyalandı.' }));
@@ -263,7 +282,7 @@
 
     return addOutreach(
       lead.name,
-      'outreach_review_started',
+      'email_drafted',
       new Date().toISOString(),
       nextAction
     ).then(() => ({ feedback: 'Aksiyon kaydedildi.' }));
@@ -276,51 +295,31 @@
     }
     if (target) {
       openExternal(target);
-      return;
+      return 'Doğrulama kaynağı yeni sekmede açıldı.';
     }
-    window.alert(`${lead.name} için düzeltilecek başlık: ${issue}`);
+    return `${lead.name} için açılabilecek doğrulama kaynağı bulunamadı.`;
   }
 
-  function promptLeadSearch(rows, onSelect) {
-    const q = window.prompt('Lead, firma veya hizmet ara');
-    if (!q) return;
-    const term = q.trim().toLowerCase();
-    const idx = rows.findIndex(lead => {
-      const hay = [
-        lead.name,
-        lead.city,
-        lead.category,
-        lead.sector,
-        lead.next_action,
-        ...(lead.scoring?.issues || []),
-      ].join(' ').toLowerCase();
-      return hay.includes(term);
-    });
-    if (idx >= 0) {
-      onSelect(idx);
-      return;
-    }
-    window.alert(`"${q}" için eşleşen lead bulunamadı.`);
-  }
-
-  function copyAutomationPlan() {
+  function createProposal(lead) {
+    const pkg = lead.recommended_package || {};
+    const services = (pkg.included_services || lead.matched_services?.map(item => item.name) || []).join(', ');
     const text = [
-      'Zeplin otomasyon planı',
-      '- Her 15 dakikada ilçe bazlı tarama',
-      '- Yeni leadleri audit et',
-      '- AI rapor ve mail üret',
-      '- Supabase sync yap',
-      '- Dashboardı rebuild et',
+      `ZEPLIN MEDIA TEKLİF TASLAĞI`,
+      `İşletme: ${lead.name}`,
+      `Paket: ${pkg.name || 'Özel çalışma'}`,
+      `Özet: ${pkg.summary || lead.priority_reason || ''}`,
+      `Hizmetler: ${services || 'İhtiyaç görüşmesinde netleştirilecek'}`,
+      `Tahmini aylık değer: ${Number(lead.estimated_value_tl || 0).toLocaleString('tr-TR')} TL`,
+      ``,
+      `Bu doküman taslaktır; fiyat ve kapsam müşteri onayı öncesinde gözden geçirilmelidir.`,
     ].join('\n');
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        window.alert('Otomasyon planı panoya kopyalandı.');
-      }).catch(() => {
-        window.alert(text);
-      });
-      return;
-    }
-    window.alert(text);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${lead.name.replace(/[^\wçğıöşüÇĞİÖŞÜ-]+/g, '-')}-teklif.txt`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    return addOutreach(lead.name, 'proposal_created', new Date().toISOString(), pkg.name || 'Teklif taslağı');
   }
 
   function initialsFor(value) {
@@ -339,25 +338,47 @@
       : { bg: 'var(--raised)', fg: 'var(--sub)', bd: 'var(--line)' };
   }
 
+  function searchLeads(rows, query) {
+    const term = String(query || '').trim().toLocaleLowerCase('tr-TR');
+    if (!term) return rows.slice(0, 8);
+    return rows.filter(lead => {
+      const haystack = [
+        lead.name,
+        lead.city,
+        lead.category,
+        lead.sector,
+        lead.next_action,
+        lead.phone,
+        lead.address,
+        ...(lead.scoring?.issues || []),
+        ...(lead.matched_services || []).map(item => item.name),
+      ].filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
+      return haystack.includes(term);
+    }).slice(0, 12);
+  }
+
   const ACTIONS = {
     data_enrichment_started: { label: 'Veri Tamamlama Başladı', icon: '🧭', status: null },
-    draft_prepared:     { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
+    email_drafted:      { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
     outreach_review_started: { label: 'Aksiyon İnceleniyor', icon: '🗂️', status: null },
     email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
     reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
-    call_made:         { label: 'Arama Yapıldı',      icon: '📞', status: 'contacted' },
-    meeting_scheduled: { label: 'Toplantı Planlandı', icon: '📅', status: 'contacted' },
-    note:              { label: 'Not Eklendi',         icon: '📝', status: null },
+    call_started:      { label: 'Arama Başlatıldı',   icon: '📞', status: null },
+    call_completed:    { label: 'Arama Tamamlandı',   icon: '📞', status: 'contacted' },
+    follow_up_scheduled:{ label: 'Takip Planlandı',    icon: '📅', status: 'follow_up' },
+    note_added:        { label: 'Not Eklendi',         icon: '📝', status: null },
+    proposal_created:  { label: 'Teklif Taslağı Hazır',icon: '📄', status: null },
+    proposal_sent:     { label: 'Teklif Gönderildi',    icon: '📤', status: 'contacted' },
     deal_won:          { label: 'Anlaşma Yapıldı 🎉', icon: '🎉', status: 'converted' },
-    deal_lost:         { label: 'Anlaşma Düştü',      icon: '❌', status: 'yeni' },
+    deal_lost:         { label: 'Anlaşma Düştü',      icon: '❌', status: 'lost' },
   };
 
   const PIPE_STAGES = [
     { key: 'new',      label: 'Yeni',              color: '#93938f', actions: [] },
     { key: 'enrich',   label: 'Veri Tamamlama',    color: '#ffb36b', actions: ['data_enrichment_started'] },
-    { key: 'draft',    label: 'Taslak Hazır',      color: '#76a6ff', actions: ['draft_prepared'] },
-    { key: 'contacted',label: 'Temasta',           color: '#b9a8ff', actions: ['call_made', 'email_sent', 'reply_received'] },
-    { key: 'meeting',  label: 'Toplantı',          color: '#ff9f43', actions: ['meeting_scheduled'] },
+    { key: 'draft',    label: 'Taslak Hazır',      color: '#76a6ff', actions: ['email_drafted'] },
+    { key: 'contacted',label: 'Temasta',           color: '#b9a8ff', actions: [] },
+    { key: 'meeting',  label: 'Takip',             color: '#ff9f43', actions: ['follow_up_scheduled'] },
     { key: 'won',      label: 'Kazanıldı',         color: '#7ce2b5', actions: ['deal_won'] },
     { key: 'lost',     label: 'Kaybedildi',        color: '#ff6770', actions: ['deal_lost'] },
   ];
@@ -365,11 +386,15 @@
   function getPipelineStage(lead) {
     const st = getStatuses()[lead.name] || 'yeni';
     if (st === 'converted') return 'won';
+    if (st === 'lost') return 'lost';
+    if (st === 'follow_up') return 'meeting';
+    if (st === 'missing_info') return 'enrich';
+    if (st === 'ready') return 'draft';
     const evs = getLeadEvents(lead.name);
-    const last = evs.find(e => e.action !== 'note');
+    const last = evs.find(e => !['note', 'note_added'].includes(e.action));
     if (!last) return st === 'contacted' ? 'contacted' : 'new';
-    const map = { data_enrichment_started: 'enrich', draft_prepared: 'draft', outreach_review_started: 'draft', email_sent: 'contacted', reply_received: 'contacted', call_made: 'contacted',
-                  meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
+    const map = { data_enrichment_started: 'enrich', email_drafted: 'draft', draft_prepared: 'draft', outreach_review_started: 'draft', email_sent: 'contacted', reply_received: 'contacted', call_completed: 'contacted', call_made: 'contacted',
+                  follow_up_scheduled: 'meeting', meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
     return map[last.action] || (st === 'contacted' ? 'contacted' : 'new');
   }
 
@@ -520,9 +545,22 @@
 
   const STATUS_META = {
     yeni:      { label: 'Yeni',      fg: '#c5f24a', bg: 'rgba(197,242,74,0.1)',  bd: 'rgba(197,242,74,0.28)' },
+    missing_info:{ label: 'Veri Eksik', fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)', bd: 'rgba(255,159,67,0.28)' },
+    ready:     { label: 'Hazır',     fg: '#76a6ff', bg: 'rgba(118,166,255,0.1)', bd: 'rgba(118,166,255,0.28)' },
     contacted: { label: 'Görüşüldü', fg: '#ffcf4a', bg: 'rgba(255,207,74,0.1)',  bd: 'rgba(255,207,74,0.28)' },
+    follow_up: { label: 'Takipte',   fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)',  bd: 'rgba(255,159,67,0.28)' },
     converted: { label: 'Müşteri',   fg: '#b6f24a', bg: 'rgba(182,242,74,0.14)', bd: 'rgba(182,242,74,0.32)' },
+    lost:      { label: 'Kaybedildi',fg: '#ff6770', bg: 'rgba(255,103,112,0.1)', bd: 'rgba(255,103,112,0.28)' },
   };
+  const STATUS_OPTIONS = [
+    ['yeni', 'Yeni'],
+    ['missing_info', 'Veri eksik'],
+    ['ready', 'Hazır'],
+    ['contacted', 'Temasta'],
+    ['follow_up', 'Takipte'],
+    ['converted', 'Kazanıldı'],
+    ['lost', 'Kaybedildi'],
+  ];
   function statusMeta(s) { return STATUS_META[s] || STATUS_META.yeni; }
   function statusChipStyle(s) {
     const m = statusMeta(s);
@@ -667,12 +705,12 @@
           {navItems.map(n => {
             const active = currentView === n.key;
             return (
-              <a key={n.key} className="tb-nav-item" style={active ? tb.itemActive : tb.item} onClick={() => onNav(n.key)}>
+              <button type="button" key={n.key} className="tb-nav-item" style={active ? tb.itemActive : tb.item} onClick={() => onNav(n.key)}>
                 <span>{n.label}</span>
                 {n.badge !== undefined && (
                   <span style={active ? tb.badgeActive : tb.badge}>{n.badge}</span>
                 )}
-              </a>
+              </button>
             );
           })}
         </nav>
@@ -706,8 +744,8 @@
     brandName:    { fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 14.5, letterSpacing: -0.2, color: 'var(--tx)' },
     brandSub:     { fontSize: 11, color: 'var(--muted)', marginTop: 1 },
     nav:          { display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5, overflowX: 'auto', flexShrink: 1 },
-    item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
-    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, background: '#000', color: 'var(--tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
+    item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'transparent', color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
+    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: '#000', color: 'var(--tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
     badge:        { fontSize: 10.5, background: 'var(--raised)', color: 'var(--sub)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
@@ -755,6 +793,7 @@
     function copyEmail() {
       if (!lead.ai_email) return;
       if (navigator.clipboard?.writeText) navigator.clipboard.writeText(lead.ai_email).catch(() => {});
+      addOutreach(lead.name, 'email_drafted', new Date().toISOString(), 'Taslak panoya kopyalandı').catch(() => {});
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -822,7 +861,7 @@
                   {pkg.confidence ? ` · %${pkg.confidence} güven` : ''}
                 </div>
               </div>
-              <button style={wp.pkgBtn} onClick={onOpenDetail}>Teklif Oluştur</button>
+              <button style={wp.pkgBtn} onClick={() => createProposal(lead)}>Teklif Oluştur</button>
             </div>
           </div>
         ) : (
@@ -854,11 +893,11 @@
 
         <div style={{ display: 'flex', gap: 9 }}>
           {lead.phone
-            ? <a href={`tel:${lead.phone.replace(/\s+/g,'')}`} style={wp.callBtn}><IconCall/> Ara</a>
+            ? <a href={`tel:${lead.phone.replace(/\s+/g,'')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={wp.callBtn}><IconCall/> Ara</a>
             : <span style={{ ...wp.callBtn, opacity: 0.4, pointerEvents: 'none' }}><IconCall/> Ara</span>}
           {lead.ai_email
-            ? <button style={wp.mailBtn} onClick={copyEmail}><IconMail color="currentColor"/> {copied ? 'Kopyalandı' : 'Mail Gönder'}</button>
-            : <span style={{ ...wp.mailBtn, opacity: 0.4, pointerEvents: 'none' }}><IconMail color="currentColor"/> Mail Gönder</span>}
+            ? <button style={wp.mailBtn} onClick={copyEmail}><IconMail color="currentColor"/> {copied ? 'Kopyalandı' : 'Taslağı Kopyala'}</button>
+            : <span style={{ ...wp.mailBtn, opacity: 0.4, pointerEvents: 'none' }}><IconMail color="currentColor"/> Taslak Yok</span>}
           <button style={wp.moreBtn} onClick={onOpenDetail} title="Detaylı görünüm">
             <IconDots/>
           </button>
@@ -911,7 +950,7 @@
           </div>
         </div>
 
-        <div style={wp.kpiRow}>
+        <div className="responsive-kpis" style={wp.kpiRow}>
           <div style={wp.accentCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -941,7 +980,7 @@
           ))}
         </div>
 
-        <div style={wp.body}>
+        <div className="responsive-main" style={wp.body}>
           <div style={{ minWidth: 0 }}>
             <FilterPills active={filter} onChange={setFilter} count={filtered.length}/>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1084,17 +1123,19 @@
     }, [feedback]);
 
     function copyEmail() {
-      navigator.clipboard.writeText(lead.ai_email || '').then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+      navigator.clipboard.writeText(lead.ai_email || '').then(() => {
+        return addOutreach(lead.name, 'email_drafted', new Date().toISOString(), 'Taslak panoya kopyalandı');
+      }).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
     }
 
     function saveNote() {
       const value = note.trim();
       if (!value) return;
       setBusy(true);
-      addOutreach(lead.name, 'note', new Date().toISOString(), value).then(() => {
+      addOutreach(lead.name, 'note_added', new Date().toISOString(), value).then(() => {
         setFeedback('Not kaydedildi.');
       }).catch(() => {
-        setFeedback('Not yerelde kaydedildi.');
+        setFeedback('Not kaydedilemedi. Bağlantıyı kontrol et.');
       }).finally(() => {
         setBusy(false);
         setNote('');
@@ -1111,7 +1152,7 @@
       startLeadAction(lead).then(result => {
         setFeedback((result && result.feedback) || 'Aksiyon kaydedildi.');
       }).catch(() => {
-        setFeedback('Aksiyon yerelde işlendi.');
+        setFeedback('Aksiyon kaydedilemedi. Bağlantıyı kontrol et.');
       }).finally(() => {
         setBusy(false);
         if (onDataChange) onDataChange();
@@ -1150,7 +1191,7 @@
               {lead.phone && <span style={ld.urlChip}>{lead.phone}</span>}
             </div>
             <div style={ld.quickActions}>
-              {lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} style={ld.quickBtn}>Telefonu aç</a>}
+              {lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={ld.quickBtn}>Telefonu aç</a>}
               {lead.website?.website_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.website.website_url)}>Siteyi aç</button>}
               {lead.social?.instagram_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.social.instagram_url)}>Instagram aç</button>}
               {lead.maps_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.maps_url)}>Maps aç</button>}
@@ -1186,11 +1227,11 @@
           </div>
         )}
 
-        <section style={ld.cols}>
+        <section className="responsive-detail" style={ld.cols}>
           <div>
             <div style={ld.statsCard}>
               <div style={ld.statsHeader}><div style={ld.eyebrow}>SOSYAL SİNYALLER</div><div style={ld.cardTitle}>Etkileşim ve büyüme</div></div>
-              <div style={ld.statsGrid}>
+              <div className="responsive-stats" style={ld.statsGrid}>
                 {[
                   ['Instagram', lead.social?.has_instagram ? '✓' : '✗'],
                   ['Takipçi',   lead.social?.stats?.followers  ? String(lead.social.stats.followers)  : '—'],
@@ -1242,7 +1283,7 @@
                       <div key={i} style={ld.findRow}>
                         <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{sev}</div>
                         <div style={{ flex: 1 }}><div style={ld.findTitle}>{issue}</div></div>
-                        <button style={ld.findBtn} onClick={() => openFixContext(lead, issue)}>Düzelt →</button>
+                        <button style={ld.findBtn} onClick={() => setFeedback(openFixContext(lead, issue))}>Kaynağı aç →</button>
                       </div>
                     );
                   })
@@ -1289,8 +1330,8 @@
               <div style={ld.eyebrow}>DURUM</div>
               <div style={{ ...ld.cardTitle, marginBottom: 14 }}>Pipeline konumu</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[{ key: 'yeni', label: 'Yeni' }, { key: 'contacted', label: 'Temasta' }, { key: 'converted', label: 'Kazanıldı' }].map(s => (
-                  <button key={s.key} style={{ ...ld.findBtn, background: status === s.key ? 'var(--accent)' : 'var(--panel2)', color: status === s.key ? 'var(--accent-ink)' : 'var(--tx)', fontWeight: status === s.key ? 600 : 400, border: status === s.key ? 'none' : '1px solid var(--line)' }} onClick={() => onStatusChange(s.key)}>{s.label}</button>
+                {STATUS_OPTIONS.map(([key, label]) => (
+                  <button key={key} style={{ ...ld.findBtn, background: status === key ? 'var(--accent)' : 'var(--panel2)', color: status === key ? 'var(--accent-ink)' : 'var(--tx)', fontWeight: status === key ? 600 : 400, border: status === key ? 'none' : '1px solid var(--line)' }} onClick={() => onStatusChange(key)}>{label}</button>
                 ))}
               </div>
             </div>
@@ -1301,11 +1342,11 @@
               {lastEvent && (
                 <div style={ld.lastEventBanner}>
                   <div style={ld.lastEventLabel}>Son hareket</div>
-                  <div style={ld.lastEventText}>{(ACTIONS[lastEvent.action] || ACTIONS.note).label}</div>
+                  <div style={ld.lastEventText}>{(ACTIONS[lastEvent.action] || ACTIONS.note_added).label}</div>
                 </div>
               )}
               {events.map((event, eventIdx) => {
-                const meta = ACTIONS[event.action] || ACTIONS.note;
+                const meta = ACTIONS[event.action] || ACTIONS.note_added;
                 return (
                   <div key={`${event.ts}-${eventIdx}`} style={ld.actRow}>
                     <div style={ld.actDot}/>
@@ -1442,18 +1483,23 @@
       if (!name) return;
       const stageObj = PIPE_STAGES.find(s => s.key === stageKey);
       if (!stageObj) return;
+      let operation;
       if (stageObj.actions.length) {
-        addOutreach(name, stageObj.actions[0], new Date().toISOString().slice(0,16), '');
+        operation = addOutreach(name, stageObj.actions[0], new Date().toISOString().slice(0,16), '');
       } else if (stageKey === 'new') {
-        setStatusLS(name, 'yeni');
+        operation = setStatusLS(name, 'yeni');
+      } else if (stageKey === 'contacted') {
+        operation = setStatusLS(name, 'contacted');
       } else if (stageKey === 'won') {
-        addOutreach(name, 'deal_won', new Date().toISOString().slice(0,16), '');
+        operation = addOutreach(name, 'deal_won', new Date().toISOString().slice(0,16), '');
       } else if (stageKey === 'lost') {
-        addOutreach(name, 'deal_lost', new Date().toISOString().slice(0,16), '');
+        operation = addOutreach(name, 'deal_lost', new Date().toISOString().slice(0,16), '');
       }
       dragRef.current = '';
-      if (onDataChange) onDataChange();
-      refresh();
+      Promise.resolve(operation).then(() => {
+        if (onDataChange) onDataChange();
+        refresh();
+      }).catch(err => console.error('Pipeline update failed:', err));
     }
 
     return (
@@ -1465,7 +1511,7 @@
             <p style={pv.pageSub}>{leads.length} lead · {won} kazanıldı · {active} aktif temasta</p>
           </div>
         </div>
-        <div style={pv.board}>
+        <div className="responsive-pipeline" style={pv.board}>
           {PIPE_STAGES.map(stage => {
             const cards = byStage[stage.key] || [];
             return (
@@ -1642,8 +1688,8 @@
           <FilterPills active={filter} onChange={setFilter} count={filtered.length}/>
         </div>
 
-        <div style={rv.tableWrap}>
-          <div style={rv.headRow}>
+        <div className="responsive-table" style={rv.tableWrap}>
+          <div className="responsive-table-head" style={rv.headRow}>
             <span>İşletme</span><span>Skor</span><span>Durum</span><span>Değer</span><span>Öncelik</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1651,7 +1697,7 @@
               const originalIdx = leads.indexOf(l);
               const st = statuses[l.name] || 'yeni';
               return (
-                <div key={l.name} className="ll-row" style={rv.row} onClick={() => onSelect(originalIdx)}>
+                <div key={l.name} className="ll-row responsive-table-row" style={rv.row} onClick={() => onSelect(originalIdx)}>
                   <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ width: 9, height: 9, borderRadius: 999, flexShrink: 0, background: gradeColor(l.scoring.grade) }}/>
                     <div style={{ minWidth: 0 }}>
@@ -1764,7 +1810,7 @@
           <div style={av.userChip}>{user?.name || user?.email}</div>
         </div>
 
-        <div style={av.grid}>
+        <div className="responsive-admin" style={av.grid}>
           <form style={av.panel} onSubmit={createJob}>
             <div style={ld.eyebrow}>YENİ SEARCH</div>
             <div style={ld.cardTitle}>Admin tarama başlat</div>
@@ -1859,29 +1905,37 @@
   function bar(pct, color) { return { width: `${pct}%`, height: '100%', borderRadius: 99, background: color }; }
 
   function AnalyticsView({ leads, statuses }) {
-    const total = leads.length || 1;
+    const [periodDays, setPeriodDays] = React.useState(30);
+    const cutoff = Date.now() - periodDays * 86400000;
+    const periodLeads = leads.filter(lead => {
+      if (!lead.last_analyzed) return false;
+      const stamp = new Date(lead.last_analyzed.replace(' ', 'T')).getTime();
+      return !Number.isNaN(stamp) && stamp >= cutoff;
+    });
+    const actualTotal = periodLeads.length;
+    const total = actualTotal || 1;
 
     const GRADE_COLORS = { A: '#b6f24a', B: '#ffcf4a', C: '#ff8f4a', D: '#7a7a78' };
     const gradeCounts = { A: 0, B: 0, C: 0, D: 0 };
-    leads.forEach(l => { const g = l.scoring?.grade; if (gradeCounts[g] !== undefined) gradeCounts[g] += 1; });
+    periodLeads.forEach(l => { const g = l.scoring?.grade; if (gradeCounts[g] !== undefined) gradeCounts[g] += 1; });
     const gradeMax = Math.max(...Object.values(gradeCounts), 1);
     const gradeBars = ['A','B','C','D'].map(g => ({ g, n: gradeCounts[g], c: GRADE_COLORS[g], pct: (gradeCounts[g]/gradeMax*100) }));
 
-    const counts = computeTabCounts(leads, statuses);
+    const counts = computeTabCounts(periodLeads, statuses);
     const funnelSteps = [
-      { label: 'Toplam', n: total, bg: 'var(--raised)', tx: 'var(--tx)' },
+      { label: 'Toplam', n: actualTotal, bg: 'var(--raised)', tx: 'var(--tx)' },
       { label: 'Yeni', n: counts.yeni, bg: 'var(--panel2)', tx: 'var(--tx)' },
       { label: 'Temasta', n: counts.contacted, bg: 'rgba(124,197,255,0.16)', tx: '#7cc5ff' },
       { label: 'Kazanıldı', n: counts.converted, bg: 'var(--accent)', tx: 'var(--accent-ink)' },
     ];
 
-    const avgScore = Math.round(leads.reduce((a, l) => a + (l.scoring?.score || 0), 0) / total);
+    const avgScore = Math.round(periodLeads.reduce((a, l) => a + (l.scoring?.score || 0), 0) / total);
     const gaugeCirc = 389.6;
     const gaugeOffset = gaugeCirc * (1 - Math.min(avgScore, 100) / 100);
 
     const now = new Date();
     const weekBuckets = new Array(8).fill(0);
-    leads.forEach(l => {
+    periodLeads.forEach(l => {
       if (!l.last_analyzed) return;
       const d = new Date(l.last_analyzed.replace(' ', 'T'));
       if (isNaN(d)) return;
@@ -1894,33 +1948,35 @@
     const weeklyTotal = weekBuckets.reduce((a, b) => a + b, 0);
 
     const sectorMap = {};
-    leads.forEach(l => {
+    periodLeads.forEach(l => {
       const s = l.category || l.sector || 'Diğer';
       sectorMap[s] = (sectorMap[s] || 0) + 1;
     });
     const sectors = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
       .map(([s, n], i) => ({ s, pct: Math.round(n/total*100), c: ['#b6f24a','#ffcf4a','#ff8f4a','#7cc5ff','#a78bfa'][i] || 'var(--sub)' }));
 
-    const readiness = computeReadinessBuckets(leads);
+    const readiness = computeReadinessBuckets(periodLeads);
 
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
         <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={pv.pageEyebrow}>PERFORMANS · SON 30 GÜN</div>
+            <div style={pv.pageEyebrow}>PERFORMANS · SON {periodDays} GÜN</div>
             <h1 style={pv.pageTitle}>Raporlar</h1>
           </div>
           <div style={{ display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5 }}>
-            <span style={{ padding: '8px 16px', borderRadius: 999, color: 'var(--sub)', fontSize: 12.5, fontWeight: 500 }}>7g</span>
-            <span style={{ padding: '8px 16px', borderRadius: 999, background: '#000', color: 'var(--tx)', fontSize: 12.5, fontWeight: 600 }}>30g</span>
-            <span style={{ padding: '8px 16px', borderRadius: 999, color: 'var(--sub)', fontSize: 12.5, fontWeight: 500 }}>Çeyrek</span>
+            {[7, 30, 90].map(days => (
+              <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? '#000' : 'transparent', color: periodDays === days ? 'var(--tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
+                {days === 90 ? 'Çeyrek' : `${days}g`}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div style={rp.grid}>
+        <div className="responsive-report" style={rp.grid}>
           <div style={rp.card}>
             <div style={rp.cardTitle}>Not Dağılımı</div>
-            <div style={rp.cardSub}>{total} lead sınıflandırıldı</div>
+            <div style={rp.cardSub}>{actualTotal} lead sınıflandırıldı</div>
             <div style={rp.stack}>
               {gradeBars.map(g => (
                 <div key={g.g}>
@@ -2261,6 +2317,75 @@
     hint:         { marginTop: 14, fontSize: 11.5, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 },
   };
 
+  function SearchDialog({ rows, onSelect, onClose }) {
+    const [query, setQuery] = React.useState('');
+    const results = React.useMemo(() => searchLeads(rows, query), [rows, query]);
+
+    React.useEffect(() => {
+      function handleKey(event) {
+        if (event.key === 'Escape') onClose();
+      }
+      window.addEventListener('keydown', handleKey);
+      return () => window.removeEventListener('keydown', handleKey);
+    }, [onClose]);
+
+    return (
+      <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+        <section role="dialog" aria-modal="true" aria-label="Lead ara" style={dialog.panel}>
+          <div style={dialog.head}>
+            <div>
+              <div style={pv.pageEyebrow}>HIZLI ERİŞİM</div>
+              <div style={ld.cardTitle}>Lead ara</div>
+            </div>
+            <button type="button" title="Kapat" style={tb.iconBtn} onClick={onClose}>×</button>
+          </div>
+          <input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Firma, ilçe, hizmet veya telefon" style={dialog.input}/>
+          <div style={dialog.results}>
+            {results.map(lead => {
+              const index = rows.indexOf(lead);
+              return (
+                <button type="button" key={lead.name} style={dialog.result} onClick={() => onSelect(index)}>
+                  <span>
+                    <strong style={{ color: 'var(--tx)' }}>{lead.name}</strong>
+                    <span style={dialog.meta}>{lead.city || 'Bölge yok'} · {lead.category || lead.sector || 'Kategori yok'}</span>
+                  </span>
+                  <span style={statusChipStyle(getStatuses()[lead.name] || 'yeni')}>{statusMeta(getStatuses()[lead.name] || 'yeni').label}</span>
+                </button>
+              );
+            })}
+            {!results.length && <div style={dialog.empty}>Bu aramayla eşleşen lead bulunamadı.</div>}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  function ConfirmDialog({ title, text, confirmLabel, onConfirm, onCancel, busy }) {
+    return (
+      <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget && !busy) onCancel(); }}>
+        <section role="alertdialog" aria-modal="true" aria-label={title} style={{ ...dialog.panel, maxWidth: 420 }}>
+          <div style={ld.cardTitle}>{title}</div>
+          <p style={{ color: 'var(--sub)', fontSize: 13.5, lineHeight: 1.6, margin: '10px 0 20px' }}>{text}</p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button type="button" style={ld.btnGhost} disabled={busy} onClick={onCancel}>Vazgeç</button>
+            <button type="button" style={av.primaryBtn} disabled={busy} onClick={onConfirm}>{busy ? 'Çıkış yapılıyor…' : confirmLabel}</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const dialog = {
+    overlay: { position: 'fixed', inset: 0, zIndex: 90, display: 'grid', placeItems: 'start center', padding: '12vh 18px 24px', background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(5px)' },
+    panel: { width: '100%', maxWidth: 620, maxHeight: '72vh', overflow: 'hidden', padding: 20, borderRadius: 12, border: '1px solid var(--line)', background: 'var(--panel)', boxShadow: '0 24px 80px rgba(0,0,0,0.34)' },
+    head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 14 },
+    input: { width: '100%', height: 46, padding: '0 14px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--tx)', font: '500 14px Instrument Sans', outline: 'none' },
+    results: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12, maxHeight: '48vh', overflowY: 'auto' },
+    result: { width: '100%', minHeight: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '10px 12px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', textAlign: 'left', cursor: 'pointer' },
+    meta: { display: 'block', marginTop: 3, color: 'var(--muted)', fontSize: 11.5 },
+    empty: { padding: 24, color: 'var(--muted)', fontSize: 13, textAlign: 'center' },
+  };
+
   // ── App ────────────────────────────────────────────────────────────────────
 
   function Dashboard({ user, theme, onToggleTheme, onLogout }) {
@@ -2273,6 +2398,7 @@
     const [teamUsers,   setTeamUsers]   = React.useState([]);
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
+    const [searchOpen,  setSearchOpen]  = React.useState(false);
 
     const sorted = React.useMemo(
       () => [...leadRows].sort((a, b) => b.scoring.score - a.scoring.score),
@@ -2309,9 +2435,9 @@
         .catch(err => {
           apiReady = false;
           setDataError(err.message);
-          console.warn('Workspace API fallback:', err);
-          outreachEvents = readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
-          syncSharedState();
+          leads = [];
+          outreachEvents = [];
+          syncSharedState({ summary: null, assignments: [] });
         });
     }
 
@@ -2325,18 +2451,22 @@
     }
 
     function handleStatusChange(name, s) {
-      setStatusLS(name, s).finally(refreshWorkspace);
+      setStatusLS(name, s)
+        .then(refreshWorkspace)
+        .catch(err => setDataError(err.message || 'Durum kaydedilemedi'));
     }
 
     function navigate(v) { setView(v); }
 
     function selectLead(i) { setSelectedIdx(i); setView('detail'); }
 
-    function openSearch() { promptLeadSearch(sorted, selectLead); }
+    function openSearch() { setSearchOpen(true); }
 
     function openAdmin() { setView('admin'); }
 
-    function handleAutomationClick() { copyAutomationPlan(); }
+    function handleAutomationClick() {
+      if (user?.role === 'admin') setView('admin');
+    }
 
     React.useEffect(() => {
       Promise.all([refreshWorkspace(), refreshTeamUsers()]).finally(() => setLoading(false));
@@ -2407,6 +2537,7 @@
         <div style={{ display: 'flex', flex: 1, minWidth: 0 }}>
           {renderContent()}
         </div>
+        {searchOpen && <SearchDialog rows={sorted} onClose={() => setSearchOpen(false)} onSelect={index => { setSearchOpen(false); selectLead(index); }}/>}
       </div>
     );
   }
@@ -2416,6 +2547,8 @@
   function App() {
     const [theme, setTheme] = React.useState(() => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'));
     const [auth, setAuth]   = React.useState({ loading: true, configured: false, authenticated: false, user: null });
+    const [logoutOpen, setLogoutOpen] = React.useState(false);
+    const [logoutBusy, setLogoutBusy] = React.useState(false);
 
     React.useEffect(() => {
       document.documentElement.dataset.theme = theme;
@@ -2428,7 +2561,7 @@
       fetchJSON('/api/auth').then(data => {
         setAuth({ loading: false, configured: data.configured !== false, authenticated: Boolean(data.authenticated), user: data.user || null });
       }).catch(() => {
-        setAuth({ loading: false, configured: false, authenticated: false, user: null });
+        setAuth({ loading: false, configured: true, authenticated: false, user: null });
       });
     }, []);
 
@@ -2443,21 +2576,38 @@
     }
 
     function logout() {
-      if (!window.confirm('Çıkış yapmak istediğine emin misin?')) return;
-      fetchJSON('/api/auth', { method: 'DELETE' }).catch(() => {}).finally(() => {
-        setAuth({ loading: false, configured: true, authenticated: false, user: null });
-      });
+      setLogoutBusy(true);
+      fetchJSON('/api/auth', { method: 'DELETE' })
+        .then(() => {
+          setLogoutOpen(false);
+          setAuth({ loading: false, configured: true, authenticated: false, user: null });
+        })
+        .finally(() => setLogoutBusy(false));
     }
 
     if (auth.loading) {
       return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--sub)', fontSize: 13 }}>Yükleniyor…</div>;
     }
 
-    if (auth.configured && !auth.authenticated) {
+    if (!auth.authenticated) {
       return <LoginView onSubmit={login}/>;
     }
 
-    return <Dashboard user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={logout}/>;
+    return (
+      <React.Fragment>
+        <Dashboard user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
+        {logoutOpen && (
+          <ConfirmDialog
+            title="Oturumu kapat"
+            text="Bu cihazdaki Zeplin oturumun kapatılacak."
+            confirmLabel="Çıkış yap"
+            busy={logoutBusy}
+            onCancel={() => setLogoutOpen(false)}
+            onConfirm={logout}
+          />
+        )}
+      </React.Fragment>
+    );
   }
 
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);

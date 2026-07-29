@@ -126,7 +126,8 @@
       "categories": [
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "İBB Beykoz Sahil Sosyal Tesisleri",
@@ -340,7 +341,8 @@
         "Büyüme & Reklam",
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Kanlıca Paysage Restaurant",
@@ -469,7 +471,8 @@
       "categories": [
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Uskumru Restaurant",
@@ -598,7 +601,8 @@
       "categories": [
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Shubra",
@@ -697,7 +701,8 @@
       "stage": "Araştırma",
       "confidence": 0,
       "evidence": []
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Gümüşsuyu Restoran",
@@ -914,7 +919,8 @@
         "Büyüme & Reklam",
         "Yerel SEO"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Balkan Lokantası",
@@ -1128,7 +1134,8 @@
         "Büyüme & Reklam",
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Manzara Restaurant",
@@ -1279,7 +1286,8 @@
         "İçerik & Sosyal",
         "Büyüme & Reklam"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Nevale Mutfak",
@@ -1430,7 +1438,8 @@
         "İçerik & Sosyal",
         "Büyüme & Reklam"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Banyan Restaurant",
@@ -1529,7 +1538,8 @@
       "stage": "Araştırma",
       "confidence": 0,
       "evidence": []
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Shang Palace",
@@ -1628,7 +1638,8 @@
       "stage": "Araştırma",
       "confidence": 0,
       "evidence": []
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "The Hunger Beyoğlu Narmanlı Han",
@@ -1800,7 +1811,8 @@
         "Yerel SEO",
         "Büyüme & Reklam"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Seabreeze Lounge Rooftop Restaurant",
@@ -1951,7 +1963,8 @@
         "İçerik & Sosyal",
         "Büyüme & Reklam"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "İnziva Restaurant",
@@ -2127,7 +2140,8 @@
         "Büyüme & Reklam",
         "Web & Teknik"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "The Market at Bosphorus - Best Restaurant & Breakfast in İstanbul",
@@ -2473,7 +2487,8 @@
         "İletişim & CRM",
         "Büyüme & Reklam"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "jojo Ocakbaşı meze",
@@ -2723,7 +2738,8 @@
         "Büyüme & Reklam",
         "İletişim & CRM"
       ]
-    }
+    },
+    "status": "yeni"
   },
   {
     "name": "Dondurma dükkanı sahil dondurma",
@@ -3081,7 +3097,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Doğal Dükkan - Kavacık",
@@ -3461,7 +3478,8 @@
     },
     "sales_priority_score": 93,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Bedes İyilik Dükkanı",
@@ -3883,7 +3901,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Dukkan",
@@ -4241,7 +4260,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Beykoz Rüya Flowers",
@@ -4663,7 +4683,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Eko Yöresel",
@@ -5085,7 +5106,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Arnavutköy Börekçisi",
@@ -5571,7 +5593,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Beşiktaş Store",
@@ -5949,7 +5972,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Organik Dükkan",
@@ -6327,7 +6351,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Dukkan Burger",
@@ -6813,7 +6838,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Dükkan",
@@ -7215,7 +7241,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "zuccac EminKarahüseyin Züccaciye - züccac",
@@ -7605,7 +7632,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Kadıköy Dükkan",
@@ -7966,7 +7994,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Kadıköy Belediyesi Atıksız Yaşam Dükkanı",
@@ -8330,7 +8359,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Yuka Dükkan",
@@ -8539,7 +8569,8 @@
     },
     "sales_priority_score": 57,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Büyülü Dükkan",
@@ -8824,7 +8855,8 @@
     },
     "sales_priority_score": 90,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Sntrl Dükkan",
@@ -9247,7 +9279,8 @@
     },
     "sales_priority_score": 96,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Armağan Giyim Ümraniye Mağaza",
@@ -9421,7 +9454,8 @@
     },
     "sales_priority_score": 59,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Dinossi - Smiggle Bağdat Caddesi Mağazası",
@@ -9799,7 +9833,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Mavi - İstanbul Kadıköy",
@@ -10161,7 +10196,8 @@
     },
     "sales_priority_score": 96,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Tepe Nautilus AVM",
@@ -10524,7 +10560,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Gencallar Kadıköy Mağaza",
@@ -10817,7 +10854,8 @@
     },
     "sales_priority_score": 87,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Kadıköy market",
@@ -11195,7 +11233,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Kadıköy Dayıoğlu Diş Polikliniği / Tandarts Reis Turkije",
@@ -11366,7 +11405,8 @@
     },
     "sales_priority_score": 59,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "İstanbul Dentestetik Diş Polikliniği Kadıköy",
@@ -11545,7 +11585,8 @@
     },
     "sales_priority_score": 59,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Özel İDentik Ağız Ve Diş Sağlığı Polikliniği | Bağdat Caddesi Dental Clinic",
@@ -11859,7 +11900,8 @@
     },
     "sales_priority_score": 93,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Güçlü Ağız ve Diş Sağlığı Polikliniği",
@@ -12217,7 +12259,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Dentince - Kadıköy Gülüş Tasarımı - İmplant",
@@ -12441,7 +12484,8 @@
     },
     "sales_priority_score": 79,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Klinik+1 Ağız ve Diş Sağlığı Polikliniği-Clinic Plus One",
@@ -12774,7 +12818,8 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   },
   {
     "name": "Baytak Ağız ve Diş Sağlığı Polikliniği Erenköy Şube",
@@ -13018,7 +13063,8 @@
     },
     "sales_priority_score": 87,
     "next_action": "Satış mailini gönder",
-    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır."
+    "priority_reason": "İlk temas için rapor ve teklif başlığı hazır.",
+    "status": "yeni"
   },
   {
     "name": "Kadıköy - Diş Kliniği | Dt. Erdem Can & Kanal Tedavisi Uzmanı Ezgi Orhan | Moda & Caferağa",
@@ -13336,6 +13382,7 @@
     },
     "sales_priority_score": 100,
     "next_action": "Öncelikli arama yap",
-    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek."
+    "priority_reason": "Dijital açık net ve çözüm potansiyeli yüksek.",
+    "status": "yeni"
   }
 ]

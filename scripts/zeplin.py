@@ -13,6 +13,21 @@ from src.lead_schema import format_issues, validate_leads
 from src.research import enrich_research
 from src.storage.supabase import insert_outreach_event, list_leads, set_lead_status, upsert_leads
 
+STATUSES = ["yeni", "missing_info", "ready", "contacted", "follow_up", "converted", "lost"]
+OUTREACH_ACTIONS = [
+    "data_enrichment_started",
+    "note_added",
+    "call_started",
+    "call_completed",
+    "email_drafted",
+    "email_sent",
+    "follow_up_scheduled",
+    "proposal_created",
+    "proposal_sent",
+    "deal_won",
+    "deal_lost",
+]
+
 
 def _load(path: str) -> list[dict]:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
@@ -142,12 +157,12 @@ def main() -> int:
 
     p = sub.add_parser("status")
     p.add_argument("name")
-    p.add_argument("status", choices=["yeni", "contacted", "converted"])
+    p.add_argument("status", choices=STATUSES)
     p.set_defaults(func=cmd_status)
 
     p = sub.add_parser("event")
     p.add_argument("name")
-    p.add_argument("action")
+    p.add_argument("action", choices=OUTREACH_ACTIONS)
     p.add_argument("--note")
     p.set_defaults(func=cmd_event)
 

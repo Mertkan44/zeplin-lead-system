@@ -77,6 +77,7 @@ async def run(
     resume: bool,
     deep_research: bool,
     force_ai: bool,
+    ai_mode: str = "smart",
 ):
     failures = []
     show_browser = os.getenv("ZEPLIN_SHOW_BROWSER") == "1"
@@ -165,16 +166,19 @@ async def run(
             print("    ↩️  resume: AI cache kullanıldı")
             continue
         try:
+            lead["_ai_mode"] = ai_mode
             if deep_research:
                 lead = enrich_research(lead)
             lead["research_brief"] = generate_research_brief(lead, force=force_ai)
             lead["ai_report"] = generate_report(lead, force=force_ai)
             lead["ai_email"] = generate_email(lead, force=force_ai)
             lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+            lead.pop("_ai_mode", None)
             lead = normalize_lead(lead)
             audited[idx] = lead
             put_stage(lead["name"], "ai", lead, city=city, query=query)
         except Exception as exc:
+            lead.pop("_ai_mode", None)
             lead = normalize_lead(lead)
             lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
             audited[idx] = lead
@@ -191,8 +195,7 @@ async def run(
         normalized = normalize_lead(lead)
         if normalized["name"] in existing_map:
             prior = existing_map[normalized["name"]]
-            if prior.get("status") and not normalized.get("status"):
-                normalized["status"] = prior["status"]
+            normalized["status"] = prior.get("status") or "yeni"
             updated_count += 1
         else:
             new_count += 1
@@ -204,7 +207,7 @@ async def run(
     update_dashboard(merged)
     if sync_supabase:
         if supabase_enabled():
-            synced = upsert_leads(merged)
+            synced = upsert_leads(audited)
             insert_run_log(
                 kind="scan",
                 status="partial_success" if failures else "success",
@@ -223,12 +226,21 @@ async def run(
         else:
             print("⚠️ Supabase sync istendi ama SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY eksik.")
     if push:
-        git_push(f"add {len(new_ones)} {city} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        git_push(f"add {new_count} {city} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     else:
         print("ℹ️ Push atlanıldı. Commit/push için --push kullan.")
     if failures:
         print(f"⚠️ {len(failures)} lead AI fallback ile tamamlandı.")
     print(f"\n🎉 Tamamlandı!")
+    return {
+        "query": query,
+        "city": city,
+        "requested": max_results,
+        "audited": len(audited),
+        "new_count": new_count,
+        "updated_count": updated_count,
+        "failures": failures,
+    }
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Scan, audit, and publish Zeplin leads.")
@@ -240,6 +252,7 @@ def parse_args():
     parser.add_argument("--resume", action="store_true", help="Reuse cached audit/AI stages from .cache.")
     parser.add_argument("--deep-research", action="store_true", help="Fetch extra website research before AI.")
     parser.add_argument("--force-ai", action="store_true", help="Ignore AI generation cache.")
+    parser.add_argument("--ai-mode", choices=["flash", "smart", "pro"], default="smart")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -254,5 +267,6 @@ if __name__ == "__main__":
             args.resume,
             args.deep_research,
             args.force_ai,
+            args.ai_mode,
         )
     )

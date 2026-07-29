@@ -8,6 +8,12 @@ from typing import Any
 VALID_GRADES = {"A", "B", "C", "D"}
 REQUIRED_TOP_LEVEL = {
     "name",
+    "city",
+    "maps_url",
+    "phone",
+    "address",
+    "rating",
+    "review_count",
     "website",
     "social",
     "scoring",
@@ -18,6 +24,7 @@ REQUIRED_TOP_LEVEL = {
     "next_action",
     "data_quality",
     "schema_version",
+    "status",
 }
 REQUIRED_WEBSITE = {
     "has_website",
@@ -125,10 +132,10 @@ def validate_leads(leads: Any) -> list[ValidationIssue]:
         name = lead.get("name")
         if not isinstance(name, str) or not name.strip():
             issues.append(ValidationIssue(lead_name, "name", "must be a non-empty string"))
-        elif name in seen_names:
+        elif name.strip().casefold() in seen_names:
             issues.append(ValidationIssue(lead_name, "name", "duplicates another lead"))
         else:
-            seen_names.add(name)
+            seen_names.add(name.strip().casefold())
 
         schema_version = lead.get("schema_version")
         if schema_version is not None:

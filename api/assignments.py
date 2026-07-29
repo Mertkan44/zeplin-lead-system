@@ -8,13 +8,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import normalize_email, require_admin, require_auth
-from src.http_api import read_json, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     fetch_lead_assignment_by_id,
     fetch_lead_assignments,
     is_enabled as supabase_enabled,
     update_lead_assignment,
     upsert_lead_assignment,
+    insert_audit_event,
 )
 
 
@@ -45,7 +46,7 @@ class handler(BaseHTTPRequestHandler):
             )
             send_json(self, 200, {"ok": True, "assignments": assignments}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="assignment fetch failed", allow_methods="GET, POST, PATCH, OPTIONS")
 
     def do_POST(self):
         try:
@@ -74,9 +75,16 @@ class handler(BaseHTTPRequestHandler):
                 status=status,
                 meta=payload.get("meta") if isinstance(payload.get("meta"), dict) else None,
             )
+            insert_audit_event(
+                actor_email=admin.get("sub"),
+                event_type="lead_assigned",
+                target_type="lead",
+                target_key=lead_name,
+                meta={"user_email": user_email, "due_at": due_at, "status": status},
+            )
             send_json(self, 200, {"ok": True, "assignment": assignment}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="assignment save failed", allow_methods="GET, POST, PATCH, OPTIONS")
 
     def do_PATCH(self):
         try:
@@ -110,6 +118,13 @@ class handler(BaseHTTPRequestHandler):
                 status=status,
                 meta=payload.get("meta") if isinstance(payload.get("meta"), dict) else None,
             )
+            insert_audit_event(
+                actor_email=user.get("sub"),
+                event_type="assignment_updated",
+                target_type="assignment",
+                target_key=str(assignment_id),
+                meta={"status": status},
+            )
             send_json(self, 200, {"ok": True}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="assignment update failed", allow_methods="GET, POST, PATCH, OPTIONS")

@@ -8,11 +8,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import make_password_hash, normalize_email, require_admin, require_auth
-from src.http_api import read_json, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     fetch_app_user_by_email,
     fetch_app_users,
     is_enabled as supabase_enabled,
+    insert_audit_event,
     set_app_user_active,
     upsert_app_user,
 )
@@ -28,7 +29,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            require_auth(self)
+            viewer = require_auth(self)
         except PermissionError:
             send_json(self, 401, {"ok": False, "error": "login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
@@ -36,13 +37,28 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
         try:
-            send_json(self, 200, {"ok": True, "users": fetch_app_users()}, allow_methods="GET, POST, PATCH, OPTIONS")
+            users = fetch_app_users()
+            if viewer.get("role") != "admin":
+                own_email = normalize_email(viewer.get("sub"))
+                users = [
+                    {
+                        "email": row.get("email") if normalize_email(row.get("email")) == own_email else None,
+                        "name": row.get("name"),
+                        "role": row.get("role"),
+                        "title": row.get("title"),
+                        "avatar_url": row.get("avatar_url"),
+                        "active": row.get("active"),
+                    }
+                    for row in users
+                    if row.get("active", True)
+                ]
+            send_json(self, 200, {"ok": True, "users": users}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="user fetch failed", allow_methods="GET, POST, PATCH, OPTIONS")
 
     def do_POST(self):
         try:
-            require_admin(self)
+            admin = require_admin(self)
         except PermissionError:
             send_json(self, 401, {"ok": False, "error": "admin login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
@@ -79,13 +95,20 @@ class handler(BaseHTTPRequestHandler):
                 active=active,
             )
             user.pop("password_hash", None)
+            insert_audit_event(
+                actor_email=admin.get("sub"),
+                event_type="user_created",
+                target_type="user",
+                target_key=email,
+                meta={"role": role, "active": active},
+            )
             send_json(self, 200, {"ok": True, "user": user}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="user save failed", allow_methods="GET, POST, PATCH, OPTIONS")
 
     def do_PATCH(self):
         try:
-            require_admin(self)
+            admin = require_admin(self)
         except PermissionError:
             send_json(self, 401, {"ok": False, "error": "admin login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
@@ -102,6 +125,13 @@ class handler(BaseHTTPRequestHandler):
         try:
             if "active" in payload:
                 set_app_user_active(email, bool(payload["active"]))
+                insert_audit_event(
+                    actor_email=admin.get("sub"),
+                    event_type="user_active_changed",
+                    target_type="user",
+                    target_key=email,
+                    meta={"active": bool(payload["active"])},
+                )
             fields = {"name", "role", "title", "avatar_url", "password"}
             if any(field in payload for field in fields):
                 current = fetch_app_user_by_email(email)
@@ -122,8 +152,15 @@ class handler(BaseHTTPRequestHandler):
                     active=bool(payload.get("active", current.get("active", True))),
                 )
                 user.pop("password_hash", None)
+                insert_audit_event(
+                    actor_email=admin.get("sub"),
+                    event_type="user_updated",
+                    target_type="user",
+                    target_key=email,
+                    meta={"role": role, "password_changed": bool(payload.get("password"))},
+                )
                 send_json(self, 200, {"ok": True, "user": user}, allow_methods="GET, POST, PATCH, OPTIONS")
                 return
             send_json(self, 200, {"ok": True}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
-            send_json(self, 502, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(self, exc, error="user update failed", allow_methods="GET, POST, PATCH, OPTIONS")

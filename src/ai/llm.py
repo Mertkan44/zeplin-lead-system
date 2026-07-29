@@ -74,14 +74,15 @@ def _deepseek_chat(
             {"role": "user", "content": prompt},
         ],
         "max_tokens": max_tokens,
-        "temperature": temperature,
         "stream": False,
     }
     if json_output:
         payload["response_format"] = {"type": "json_object"}
     if model.startswith("deepseek-v4"):
-        payload["reasoning_effort"] = reasoning_effort
+        payload["reasoning_effort"] = "high"
         payload["thinking"] = {"type": "enabled"}
+    else:
+        payload["temperature"] = temperature
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -100,11 +101,18 @@ def _deepseek_chat(
             response.raise_for_status()
             return response.json()
 
-    data = _call(payload)
-    choice = data["choices"][0]
-    content = (choice.get("message") or {}).get("content") or ""
-    if content.strip():
-        return LLMResult(content=content.strip(), provider="deepseek", model=model, usage=data.get("usage"))
+    data = None
+    try:
+        data = _call(payload)
+    except RuntimeError:
+        raise
+    except (httpx.HTTPError, KeyError, IndexError, TypeError):
+        data = None
+    if data:
+        choice = data["choices"][0]
+        content = (choice.get("message") or {}).get("content") or ""
+        if content.strip():
+            return LLMResult(content=content.strip(), provider="deepseek", model=model, usage=data.get("usage"))
 
     fallback_model = env("DEEPSEEK_FLASH_MODEL", "deepseek-v4-flash") or "deepseek-v4-flash"
     fallback_payload: dict[str, Any] = {

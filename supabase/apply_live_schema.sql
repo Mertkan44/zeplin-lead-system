@@ -111,14 +111,5 @@ grant usage, select on sequence public.ai_token_ledger_id_seq to service_role;
 grant usage, select on sequence public.app_users_id_seq to service_role;
 grant usage, select on sequence public.lead_assignments_id_seq to service_role;
 
-delete from public.outreach_events where id > 0;
-
-update public.leads
-set status = 'yeni',
-    updated_at = now()
-where status is distinct from 'yeni';
-
-update public.lead_assignments
-set status = 'archived',
-    updated_at = now()
-where status = 'active';
+-- Data resets are intentionally not part of schema application.
+-- Use scripts/reset_sales_activity.py only after an explicit backup and approval.

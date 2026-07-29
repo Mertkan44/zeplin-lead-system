@@ -6,6 +6,7 @@ import time
 from urllib.parse import quote_plus
 from playwright.async_api import async_playwright
 from rich.console import Console
+from src.net_security import assert_safe_public_url
 
 console = Console()
 
@@ -52,6 +53,12 @@ def _parse_maps_search_card(text: str) -> dict:
                 pass
         if re.search(r"yorum yok|no reviews", line, re.I):
             saw_no_reviews = True
+        if result["review_count"] is None:
+            review_match = re.search(r"\(([\d.,\s]+)\)|([\d.,\s]+)\s*(?:yorum|reviews?)", line, re.I)
+            if review_match:
+                raw_reviews = (review_match.group(1) or review_match.group(2) or "").replace(".", "").replace(",", "").replace(" ", "")
+                if raw_reviews.isdigit():
+                    result["review_count"] = int(raw_reviews)
         if result["phone"] is None:
             phone_match = re.search(r"(\+?\d[\d\s()]{8,})", line)
             if phone_match:
@@ -239,9 +246,6 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
             if result.get(key) is None and value is not None:
                 result[key] = value
 
-    if result["rating"] is not None and result["review_count"] == 0:
-        result["review_count"] = None
-
     return result
 
 # ── Web sitesi kontrol ─────────────────────────────────
@@ -256,9 +260,13 @@ async def check_website(url: str) -> dict:
     }
     if not url:
         return empty
+    try:
+        url = assert_safe_public_url(url)
+    except ValueError:
+        return empty
 
     r = {
-        "has_website": True, "website_url": url, "has_ssl": url.startswith("https"),
+        "has_website": False, "website_url": url, "has_ssl": url.startswith("https"),
         "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False,
         "has_schema": False, "has_og": False, "meta_description": None,
         "has_robots": False, "has_sitemap": False,
@@ -275,6 +283,10 @@ async def check_website(url: str) -> dict:
             })
             r["load_time_ms"] = int((time.time() - t0) * 1000)
             r["website_loads"] = resp.status_code == 200
+            assert_safe_public_url(str(resp.url))
+            r["has_website"] = r["website_loads"]
+            r["website_url"] = str(resp.url)
+            r["has_ssl"] = str(resp.url).startswith("https")
 
             html = resp.text
             html_lower = html.lower()
@@ -474,13 +486,13 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
 
 # ── Instagram istatistikleri ───────────────────────────
 def _parse_ig_num(s: str) -> int | None:
-    s = s.strip().replace(',', '').replace('.', '')
+    s = s.strip().upper().replace(" ", "")
     try:
-        if s.upper().endswith('M'):
-            return int(float(s[:-1]) * 1_000_000)
-        if s.upper().endswith('K'):
-            return int(float(s[:-1]) * 1_000)
-        return int(s)
+        if s.endswith("M"):
+            return int(float(s[:-1].replace(",", ".")) * 1_000_000)
+        if s.endswith("K"):
+            return int(float(s[:-1].replace(",", ".")) * 1_000)
+        return int(s.replace(".", "").replace(",", ""))
     except:
         return None
 
@@ -580,7 +592,9 @@ def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None
         else:
             issues.append("Mobil uyumsuz")
             opportunities.append("Mobil tasarım")
-        if website.get("load_time_ms") and website["load_time_ms"] > 3000:
+        if website.get("load_time_ms") is None:
+            issues.append("Site hızı ölçülemedi")
+        elif website["load_time_ms"] > 3000:
             issues.append(f"Site yavaş ({website['load_time_ms']}ms)")
             opportunities.append("Site hız optimizasyonu")
         else:
