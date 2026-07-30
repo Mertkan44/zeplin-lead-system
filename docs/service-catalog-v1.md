@@ -1,291 +1,172 @@
-# Zeplin Media Hizmet Katalogu v1
+# Zeplin Media Hizmet Kataloğu v1
 
-Durum: Isletme sahibi onayi bekleyen urun tanimi
+Durum: İşletme sahibi tarafından 30 Temmuz 2026 tarihinde doğrulanan hizmetler.
 
-Bu belge paneldeki hizmet eslestirmesinin, lead detay ekraninin ve AI tarafindan
-uretilen satis metinlerinin tek dogru kaynagi olacaktir.
+Bu belge paneldeki hizmet eşleştirmesinin, lead detay ekranının ve AI tarafından
+üretilen görüşme/e-posta metinlerinin tek doğru kaynağıdır.
 
-## Temel Kararlar
+## Temel Kurallar
 
-1. Panel artik kendiliginden pazarlama paketi isimleri uretmez.
-2. Bir lead'e yalnizca kanitlanmis bir acikla iliskili hizmet onerilir.
-3. Bilinmeyen veri, eksik veya kotu kabul edilmez.
-4. Reklam, CRM ve otomasyon ihtiyaci disaridan kesin olarak tespit edilemez.
-   Bunlar once kesif sorusu olarak gosterilir.
-5. Fiyat araliklari yonetim tarafindan onaylanana kadar calisan ekraninda
-   tahmini ciro veya teklif bedeli gosterilmez.
-6. Reklam butcesi, produksiyon, lisans ve ucuncu taraf kullanim bedelleri hizmet
-   bedelinden ayri yazilir.
+1. Sistem yalnızca bu belgede bulunan hizmetleri önerebilir.
+2. Paket adı, fiyat, indirim, ciro veya sonuç garantisi kendiliğinden üretilemez.
+3. Bilinmeyen veri eksik, kötü veya başarısız kabul edilemez.
+4. Otomatik taramayla doğrulanamayan ihtiyaçlar çalışan tarafından görüşmede
+   sorulur; işletmede varmış ya da yokmuş gibi anlatılmaz.
+5. Reklam bütçesi, üçüncü taraf yazılım/lisans ücretleri, oyuncu, mekan, ulaşım
+   ve benzeri dış giderler hizmet bedeline otomatik olarak dahil edilmez.
+6. AI metinleri gönderilmeden önce çalışan onayından geçer.
 
-## Ana Hizmetler
+## Doğrulanan Hizmetler
 
-### 1. Kurumsal Web Sitesi
+### 1. SEO ve Organik Görünürlük
 
-**Hizmet tipi:** Tek seferlik proje
+**Tip:** Aylık hizmet
 
-**Kimler icin:** Web sitesi olmayan, mevcut sitesi isletmeyi dogru anlatmayan
-veya mobilde kullanilamayan isletmeler.
+**Kapsam:** Teknik SEO denetimi, anahtar kelime ve rakip araştırması, sayfa ve
+içerik optimizasyonu, yerel görünürlük çalışmaları, Search Console takibi ve
+aylık çalışma raporu.
 
-**Teslimatlar:**
+**Görüşmede sor:** Hedeflenen hizmetler ve bölgeler, mevcut website ve trafik,
+Search Console erişimi, içerik üretimi ve değişiklikleri onaylayacak kişi.
 
-- Bilgi mimarisi ve sayfa plani
-- Mobil uyumlu arayuz ve gelistirme
-- Hizmet, hakkimizda, iletisim ve gerekli sektor sayfalari
-- Form, telefon, WhatsApp ve harita aksiyonlari
-- Temel teknik SEO ve sosyal paylasim meta etiketleri
-- Analytics entegrasyonuna hazir altyapi
-- Yayinlama ve temel kullanim egitimi
+**Ayrı kapsamlanır:** Reklam yönetimi ve bütçesi, kapsam dışı içerik
+prodüksiyonu ve website yeniden yapımı. Sıralama garantisi verilmez.
 
-**Haric tutulanlar:**
+### 2. Sosyal Medya Yönetimi
 
-- Alan adi ve hosting bedelleri
-- Profesyonel fotograf/video cekimi
-- Surekli icerik girisi
-- Reklam yonetimi
+**Tip:** Aylık hizmet
 
-**Otomatik onerilebilir:** Evet; sadece web sitesi olmadigi kesin olarak
-dogrulanmissa. Mobil uyumsuzluk tek basina yeni site yerine once teknik
-iyilestirme hizmetine gider.
+**Kapsam:** Sosyal medya stratejisi, içerik takvimi, paylaşım metinleri, yayın
+planı, kapsam dahilinde mesaj/yorum takibi ve aylık performans değerlendirmesi.
 
-### 2. Landing Page ve Donusum Sayfasi
+**Görüşmede sor:** Yönetilecek kanallar, aylık paylaşım sıklığı, hedef kitle,
+onay verecek kişi ve mevcut içerik arşivi.
 
-**Hizmet tipi:** Tek seferlik proje
+**Ayrı kapsamlanır:** Çekim, reklam yönetimi, reklam bütçesi ve influencer
+giderleri.
 
-**Kimler icin:** Reklam veren, belirli bir hizmeti veya kampanyayi ayri bir
-sayfada donusume cevirmek isteyen isletmeler.
+### 3. Post Tasarımları
 
-**Teslimatlar:**
+**Tip:** Proje veya aylık hizmet
 
-- Tek hedefli sayfa yapisi
-- Teklif, form, telefon veya WhatsApp donusum akisi
-- Mobil tasarim ve hiz optimizasyonu
-- Form ve donusum olcumleme kurulumu
-- Reklam mesaji ile sayfa mesaji uyumu
+**Kapsam:** Marka diline uygun feed postu, carousel, story uyarlamaları, metin
+yerleşimi, revizyon ve yayına hazır dosya teslimi.
 
-**Otomatik onerilebilir:** Hayir. Calisan once aktif kampanya, hedef hizmet ve
-mevcut donusum akisini sormalidir.
+**Görüşmede sor:** Tasarım adedi, kullanılacak formatlar, marka kılavuzu, hazır
+görseller ve metni sağlayacak kişi.
 
-### 3. Web Teknik Iyilestirme ve Bakim
+### 4. Reklam Yönetimi
 
-**Hizmet tipi:** Tek seferlik duzeltme veya aylik bakim
+**Tip:** Aylık hizmet
 
-**Kimler icin:** Sitesi bulunan ancak guvenlik, hiz, mobil kullanim veya teknik
-yapi sorunu olan isletmeler.
+**Kapsam:** Meta Ads ve/veya Google Ads hesap kontrolü, hedef kitle ve bütçe
+planı, kampanya kurulumu, optimizasyon, harcama ve performans raporu.
 
-**Teslimatlar:**
+**Görüşmede sor:** Platform, kampanya hedefi, aylık medya bütçesi, kullanılacak
+kreatifler ve yönlendirilecek website/sayfa.
 
-- SSL ve guvenli yonlendirme kontrolu
-- Mobil kullanim hatalarinin duzeltilmesi
-- Sayfa hizi ve temel Core Web Vitals iyilestirmeleri
-- Kirik baglanti, form ve CTA kontrolleri
-- Schema.org ve Open Graph temel duzenlemeleri
-- Yedekleme, guncelleme ve izleme secenegi
+**Ayrı kapsamlanır:** Medya bütçesi, website oluşturma ve kapsam dışı kreatif
+prodüksiyon.
 
-**Otomatik onerilebilir:** Evet; her bulgu ayri kanit ve kaynakla
-dogrulanmissa. `Schema.org yok` gibi tek bir bulgu, komple SEO hizmeti olarak
-sunulmaz.
+### 5. Website Oluşturma
 
-### 4. Olcumleme ve Donusum Takibi
+**Tip:** Tek seferlik proje
 
-**Hizmet tipi:** Tek seferlik kurulum, istege bagli aylik raporlama
+**Kapsam:** İhtiyaç analizi, sayfa ve içerik planı, mobil uyumlu tasarım ve
+geliştirme, iletişim aksiyonları, yayınlama ve kullanım teslimi.
 
-**Kimler icin:** Web, reklam, telefon, form veya WhatsApp kaynakli taleplerin
-nereden geldigini olcemeyen isletmeler.
+**Otomatik öneri:** Yalnızca işletmenin websitesi olmadığı doğrulanırsa.
 
-**Teslimatlar:**
+**Ayrı kapsamlanır:** Alan adı, hosting, çekim, sürekli içerik ve bakım.
 
-- GA4 ve Google Tag Manager kurulumu veya duzenlemesi
-- Form, telefon, WhatsApp ve gerekli buton eventleri
-- Meta Pixel ve Google Ads donusumleri icin altyapi
-- Temel rapor veya dashboard
-- Test ve teslim dokumani
+### 6. Video ve Fotoğraf Çekimi
 
-**Otomatik onerilebilir:** Kosullu. Tarayici yalnizca gorunur tag sinyalini
-raporlar; nihai oneriden once isletmenin mevcut olcum sistemi sorulur.
+**Tip:** Proje veya çekim günü
 
-### 5. Google Business Profile ve Yerel Gorunurluk
+**Kapsam:** Brief ve konsept, çekim planı, fotoğraf/video çekimi, seçim, temel
+kurgu, renk düzenleme ve belirlenen formatlarda teslim.
 
-**Hizmet tipi:** Kurulum/optimizasyon ve istege bagli aylik yonetim
+**Görüşmede sor:** Çekilecek ürün/mekan/ekip, kullanım kanalları, çekim süresi,
+model/oyuncu ihtiyacı ve teslim adedi.
 
-**Kimler icin:** Yerel musteriye hizmet veren ve Google Maps profilinde eksik
-veya zayif gorunen isletmeler.
+### 7. Menü Çekimi
 
-**Teslimatlar:**
+**Tip:** Restoran ve kafeler için proje veya çekim günü
 
-- Kategori, aciklama, hizmet, iletisim ve calisma saati duzenlemeleri
-- Fotograf ve gorsel alanlarin duzenlenmesi
-- UTM ve aksiyon olcumleme
-- Yorum isteme ve yorum cevaplama akisi
-- Duzenli gonderi ve profil guncelleme secenegi
-- Yerel siralama icin temel tutarlilik kontrolleri
+**Kapsam:** Ürün listesi ve görsel stil planı, yemek/içecek çekimi, renk ve
+temel retouch, menü, sosyal medya ve teslimat platformlarına uygun teslim.
 
-**Otomatik onerilebilir:** Evet; profil, puan ve yorum sayisi gercekten
-alinmissa. Yorum sayisi bilinmiyorsa `az yorum` denmez.
+**Görüşmede sor:** Ürün sayısı, kullanım kanalları, mekan hazırlığı, styling ve
+istenen dosya formatları.
 
-### 6. SEO ve Organik Gorunurluk
+**Ayrı kapsamlanır:** Food styling malzemeleri, baskı ve menü tasarımı.
 
-**Hizmet tipi:** Aylik calisma
+### 8. Reels Çekim ve Edit
 
-**Kimler icin:** Arama motorlarindan nitelikli trafik ve talep kazanmak isteyen,
-icerik ve teknik altyapiya yatirim yapabilecek isletmeler.
+**Tip:** Proje veya aylık hizmet
 
-**Teslimatlar:**
+**Kapsam:** Konu ve senaryo akışı, dikey video çekimi, dinamik kurgu, altyazı,
+müzik, temel efekt ve yayına hazır Reels teslimi.
 
-- Teknik SEO denetimi ve onceliklendirme
-- Anahtar kelime ve arama niyeti calismasi
-- Sayfa ve icerik optimizasyonu
-- Yeni icerik plani veya icerik uretimi kapsam secenegi
-- Search Console ve performans takibi
-- Aylik yapilan is ve sonuc raporu
+**Görüşmede sor:** Aylık video adedi, içerik başlıkları, kamera karşısına
+çıkacak kişi, mekan, ürün ve referans video tarzı.
 
-**Otomatik onerilebilir:** Hayir. Schema veya Open Graph eksigi tek basina
-aylik SEO ihtiyacini kanitlamaz. Hedef, butce, mevcut trafik ve rekabet
-kesif gorusmesinde sorulur.
+### 9. Chatbot ve Seslibot Kurulumu
 
-### 7. Sosyal Medya Yonetimi
+**Tip:** Kurulum projesi ve isteğe bağlı aylık destek
 
-**Hizmet tipi:** Aylik calisma
+**Kapsam:** İhtiyaç analizi, konuşma akışları, bilgi tabanı, chatbot veya
+seslibot kurulumu, uygun entegrasyonlar, test, yayınlama ve eğitim.
 
-**Kimler icin:** Instagram ve/veya TikTok'ta duzenli marka iletisimi yapmak
-isteyen isletmeler.
+**Görüşmede sor:** Botun kanalı, yapacağı işler, sık sorular, randevu/satış
+akışları ve mevcut website, telefon, CRM veya takvim altyapısı.
 
-**Teslimatlar:**
+**Ayrı kapsamlanır:** Üçüncü taraf platform, telefon, model ve kullanım
+ücretleri ile kapsam dışı özel entegrasyonlar.
 
-- Aylik icerik stratejisi ve takvim
-- Onaylanan kapsamda gonderi, story ve kisa video planlama
-- Metin yazimi ve yayinlama
-- Temel topluluk yonetimi
-- Aylik performans ozeti ve sonraki ay aksiyonlari
+### 10. Reklamlar İçin Gelişmiş Yapay Zeka Videoları
 
-**Haric tutulanlar:**
+**Tip:** Proje
 
-- Profesyonel cekim gunu, oyuncu ve mekan giderleri
-- Influencer butcesi
-- Reklam butcesi ve reklam yonetimi
+**Kapsam:** Reklam hedefi ve konsept, senaryo, AI sahne/görsel üretimi,
+seslendirme, müzik, kurgu, reklam formatları ve kapsam dahilinde varyasyonlar.
 
-**Otomatik onerilebilir:** Kosullu. Hesabin olmamasi veya dogrulanmis
-duzensizlik bir gorusme acisi olabilir; takipci sayisi tek basina hizmet
-ihtiyaci veya basarisizlik kaniti degildir.
+**Görüşmede sor:** Hedef kitle, platform, ürün, zorunlu marka öğeleri, istenen
+görsel stil ve varyasyon sayısı.
 
-### 8. Fotograf ve Video Icerik Produksiyonu
+**Ayrı kapsamlanır:** Reklam bütçesi, kampanya yönetimi ve ayrıca lisanslanması
+gereken stok/oyuncu içerikleri.
 
-**Hizmet tipi:** Proje veya cekim gunu
+## Öneri Sistemi
 
-**Kimler icin:** Urun, mekan, ekip veya hizmetini kaliteli gorsellerle
-anlatmasi gereken isletmeler.
+### Otomatik eşleşebilenler
 
-**Teslimatlar:**
+- Website yoksa: **Website Oluşturma**
+- Instagram yoksa veya doğrulanmış sosyal performans sinyali zayıfsa:
+  **Sosyal Medya Yönetimi**
+- Doğrulanmış Instagram etkileşimi düşükse: **Reels Çekim ve Edit**
 
-- Cekim plani ve shot list
-- Onaylanan surede fotograf/video cekimi
-- Secim, kurgu, renk ve platform formatlari
-- Teslim edilen varliklar icin kullanim kapsami
+### Görüşmede doğrulanması gerekenler
 
-**Otomatik onerilebilir:** Hayir. Mevcut icerigin kalitesi otomatik taramayla
-guvenilir bicimde puanlanmadikca calisan ihtiyaci gorusmede dogrular.
+- Post Tasarımları
+- Reklam Yönetimi
+- SEO ve Organik Görünürlük
+- Video ve Fotoğraf Çekimi
+- Menü Çekimi
+- Chatbot ve Seslibot Kurulumu
+- Reklamlar İçin Gelişmiş Yapay Zeka Videoları
 
-### 9. Performans Reklamlari Yonetimi
+Google yorum sayısı, website teknik etiketi veya WhatsApp butonu gibi bir
+sinyal; bu hizmetlerden herhangi birine tek başına kanıt sayılmaz.
 
-**Hizmet tipi:** Aylik yonetim
+## Çalışan Ekranında Her Öneri
 
-**Kanallar:** Google Ads ve Meta Ads ihtiyaca gore ayri kapsamlanir.
+- Doğrulanmış açık veya gözlem
+- Kanıtın kaynağı ve güven seviyesi
+- İlgili gerçek Zeplin hizmeti
+- En fazla üç ilgili teslimat
+- Görüşmede sorulacak sorular
+- İnsan onayı bekleyen görüşme/e-posta taslağı
 
-**Kimler icin:** Net hedefi, olculebilir donusum aksiyonu, yeterli butcesi ve
-talebi karsilayacak operasyonu bulunan isletmeler.
-
-**Teslimatlar:**
-
-- Hesap ve olcumleme kontrolu
-- Kampanya plani, kurulum ve hedefleme
-- Reklam metni ve kapsam dahilindeki kreatif uyarlamalar
-- Butce ve teklif optimizasyonu
-- Donusum ve maliyet raporu
-
-**Haric tutulanlar:**
-
-- Medya butcesi
-- Buyuk olcekli kreatif produksiyon
-- Landing page yapimi
-
-**Otomatik onerilebilir:** Hayir. Dusuk puan, az yorum, zayif SEO veya dusuk
-takipci reklama ihtiyac kaniti degildir.
-
-### 10. CRM ve Lead Takip Kurulumu
-
-**Hizmet tipi:** Tek seferlik kurulum ve istege bagli destek
-
-**Kimler icin:** Form, telefon, WhatsApp ve sosyal medya taleplerini duzenli
-takip edemeyen ekipler.
-
-**Teslimatlar:**
-
-- Satis asamalari ve alanlarin tanimi
-- Lead kaynaklarinin baglanmasi
-- Atama, gorev, hatirlatma ve takip akislari
-- Temel raporlama
-- Ekip egitimi ve teslim dokumani
-
-**Otomatik onerilebilir:** Hayir. Web sitesinde WhatsApp veya form olmamasi,
-isletmenin CRM kullanmadigini kanitlamaz.
-
-### 11. WhatsApp Business ve Mesaj Akislari
-
-**Hizmet tipi:** Tek seferlik kurulum ve istege bagli aylik destek
-
-**Kimler icin:** Musteri mesajlarini ortak, hizli ve olculebilir bir akista
-yonetmek isteyen isletmeler.
-
-**Teslimatlar:**
-
-- WhatsApp Business profil ve temel ayarlar
-- Karsilama, sik sorular ve yonlendirme akislari
-- Site ve kampanya baglantilari
-- Uygunsa API/BSP entegrasyonu
-- Sablon, yetki ve kullanim egitimi
-
-**Haric tutulanlar:**
-
-- Meta/BSP mesaj ve lisans bedelleri
-- Ozel yazilim entegrasyonlari
-
-**Otomatik onerilebilir:** Kosullu. Sitede WhatsApp butonu olmamasi yalnizca
-siteye hizli iletisim aksiyonu ekleme onerisi uretir; API veya AI asistan
-onerisi uretmez.
-
-## Sektor Bazli Ek Cozumler
-
-Asagidaki hizmetler genel katalogda otomatik onerilmez. Yalnizca Zeplin Media
-gercekten teslim ediyorsa ve isletme ihtiyaci gorusmede dogrulanirsa acilir:
-
-- Online randevu veya rezervasyon entegrasyonu
-- QR menu ve siparis yonlendirme
-- Yemek platformu profil/menu duzenleme
-- E-ticaret veya pazar yeri entegrasyonu
-- AI destekli chatbot veya WhatsApp asistani
-- E-posta ve yeniden pazarlama otomasyonlari
-
-## Panelde Kullanilacak Oneri Kurali
-
-Her oneride su alanlar zorunludur:
-
-- **Tespit edilen acik:** Teknik ve sade bir cumle
-- **Kanit:** URL, metrik, ekran veya tarama sonucu
-- **Guven seviyesi:** Dogrulandi, kontrol edilmeli veya bilinmiyor
-- **Muhtemel etkisi:** Kesin sonuc vadetmeden is etkisi
-- **Onerilen hizmet:** Yalnizca katalogdaki gercek hizmet
-- **Teslim edecegimiz is:** En fazla 3 ilgili teslimat
-- **Gorusmede sor:** Oneriyi dogrulayacak 1-3 kesif sorusu
-- **Soylemeden once kontrol et:** Modelin iddia etmemesi gereken bilinmeyenler
-
-## Calisan Icin Lead Detay Akisi
-
-1. Isletme ozeti ve iletisim bilgisi
-2. En guclu uc kanitlanmis acik
-3. Her acigin altinda ilgili Zeplin hizmeti ve teslimatlar
-4. Gorusmede sorulacak kisa kesif sorulari
-5. Calisanin secebilecegi iletisim amaci
-6. Secilen kanit ve hizmetten uretilen e-posta/arama notu
-7. Gondermeden once insan onayi
-
-DeepSeek serbestce paket veya vaat uretmez. Yalnizca calisanin sectigi
-kanitlari, hizmet teslimatlarini ve iletisim amacini akici metne donusturur.
+DeepSeek paket, fiyat veya kesin sonuç uydurmaz. Çalışanın seçtiği kanıt,
+hizmet kapsamı ve iletişim amacını anlaşılır bir görüşme metnine dönüştürür.

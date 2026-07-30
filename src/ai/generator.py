@@ -11,12 +11,12 @@ from src.services import lead_triggers, recommended_package
 
 SECTOR_VOICE = {
     "restaurant": (
-        "Restoran sahibine yazıyorsun. Müşteri deneyimi, rezervasyon, online sipariş, "
-        "Google yorumları, menü görünürlüğü ve yerel rakiplerle karşılaştırmayı düşün."
+        "Restoran sahibine yazıyorsun. Menü çekimi, sosyal medya, Reels, reklam kreatifi, "
+        "website ve organik görünürlük ihtiyaçlarını yalnızca doğrulanmış veriler üzerinden düşün."
     ),
     "cafe": (
-        "Kafe sahibine yazıyorsun. Mahalle keşfi, görsel içerik, Google Maps, paket servis "
-        "ve müdavim kazanımı üzerinden düşün."
+        "Kafe sahibine yazıyorsun. Menü çekimi, görsel içerik, Reels, sosyal medya, "
+        "website ve reklam iletişimini yalnızca doğrulanmış veriler üzerinden düşün."
     ),
     "salon": (
         "Kuaför/güzellik salonu sahibine yazıyorsun. Online randevu, Instagram/TikTok içerikleri, "
@@ -27,20 +27,20 @@ SECTOR_VOICE = {
         "web varlığı ve hızlı iletişim akışına odaklan."
     ),
     "retail": (
-        "Mağaza/butik sahibine yazıyorsun. E-ticaret, sosyal vitrin, kampanya ve tekrar satın alma "
-        "fırsatlarını değerlendir."
+        "Mağaza/butik sahibine yazıyorsun. Sosyal vitrin, post tasarımları, çekim, Reels, "
+        "website ve reklam kreatiflerini yalnızca doğrulanmış veriler üzerinden değerlendir."
     ),
     "health": (
         "Sağlık/klinik işletmesine yazıyorsun. Güven, yerel görünürlük, randevu akışı ve açıklayıcı "
         "içerik diline dikkat et."
     ),
     "default": (
-        "Yerel işletme sahibine yazıyorsun. Genel dijital varlık, web sitesi kalitesi, sosyal medya, "
-        "yorumlar ve hızlı iletişim üzerinden analiz yap."
+        "Yerel işletme sahibine yazıyorsun. Website, SEO, sosyal medya, post tasarımı, "
+        "çekim, Reels, reklam ve otomasyon ihtiyaçlarını yalnızca katalog ve kanıt üzerinden değerlendir."
     ),
 }
 
-AI_PROMPT_VERSION = 3
+AI_PROMPT_VERSION = 4
 
 
 def _system(sector: str) -> str:

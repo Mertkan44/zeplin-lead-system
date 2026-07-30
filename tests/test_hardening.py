@@ -10,7 +10,7 @@ from src import auth
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
-from src.services import estimate_value, match_services, recommended_package
+from src.services import ZEPLIN_SERVICES, estimate_value, match_services, recommended_package
 from src.storage.supabase import _lead_row
 
 
@@ -57,15 +57,36 @@ class HardeningTests(unittest.TestCase):
         second = _lead_row({**base, "maps_url": "https://www.google.com/maps/place/test?two"})
         self.assertEqual(first["external_id"], second["external_id"])
 
-    def test_low_reviews_does_not_recommend_ads(self):
+    def test_catalog_contains_only_owner_approved_services(self):
+        self.assertEqual(
+            {service["slug"] for service in ZEPLIN_SERVICES},
+            {
+                "website_creation",
+                "seo_organic",
+                "social_media",
+                "post_design",
+                "ad_management",
+                "photo_video_shoot",
+                "menu_shoot",
+                "reels_production",
+                "chatbot_voicebot",
+                "ai_ad_videos",
+            },
+        )
+
+    def test_low_reviews_does_not_recommend_a_service(self):
         services = match_services({"review_count": 8})
         slugs = {service["slug"] for service in services}
-        self.assertEqual(slugs, {"google_business_local"})
+        self.assertEqual(slugs, set())
 
-    def test_missing_whatsapp_does_not_recommend_crm_or_ai(self):
+    def test_missing_whatsapp_does_not_recommend_chatbot(self):
         services = match_services({"website": {"has_whatsapp": False}})
         slugs = {service["slug"] for service in services}
-        self.assertEqual(slugs, {"whatsapp_business"})
+        self.assertEqual(slugs, set())
+
+    def test_restaurant_menu_shoot_requires_discovery(self):
+        services = match_services({"sector": "restaurant"})
+        self.assertNotIn("menu_shoot", {service["slug"] for service in services})
 
     def test_unknown_metrics_do_not_create_false_findings(self):
         services = match_services(

@@ -452,7 +452,7 @@
       { label: 'Telefon / adres', ready: hasContactInfo(lead) },
       { label: 'AI raporu', ready: Boolean(lead.ai_report) },
       { label: 'Mail taslagi', ready: Boolean(lead.ai_email) },
-      { label: 'Paket eslesmesi', ready: Boolean(lead.matched_services && lead.matched_services.length) },
+      { label: 'Hizmet eşleşmesi', ready: Boolean(lead.matched_services && lead.matched_services.length) },
     ];
   }
 
@@ -1686,19 +1686,21 @@
     const svcMap = {};
     leads.forEach(l => {
       (l.matched_services || []).forEach(svc => {
-        if (!svcMap[svc.slug]) svcMap[svc.slug] = { svc, leads: [], totalVal: 0 };
+        if (!svcMap[svc.slug]) svcMap[svc.slug] = { svc, leads: [] };
         svcMap[svc.slug].leads.push(l);
-        const mid = ((svc.price_min || 0) + (svc.price_max || 0)) / 2;
-        svcMap[svc.slug].totalVal += svc.monthly ? mid : mid / 12;
       });
     });
 
     const entries = services.map(svc => {
-      const active = svcMap[svc.slug] || { leads: [], totalVal: 0 };
-      return { svc, leads: active.leads, totalVal: active.totalVal };
+      const active = svcMap[svc.slug] || { leads: [] };
+      return { svc, leads: active.leads };
     }).sort((a, b) => b.leads.length - a.leads.length);
 
-    const totalMonthly = Math.round(entries.reduce((a, e) => a + e.totalVal, 0));
+    const serviceTypeLabel = type => ({
+      monthly: 'Aylık',
+      project: 'Proje',
+      project_or_monthly: 'Proje / Aylık',
+    }[type] || 'Kapsamlanacak');
 
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
@@ -1706,15 +1708,15 @@
           <div>
             <div style={pv.pageEyebrow}>HİZMETLER</div>
             <h1 style={pv.pageTitle}>Zeplin Media Hizmetleri</h1>
-            <p style={pv.pageSub}>{entries.length} hizmet · {entries.reduce((a,e)=>a+e.leads.length,0)} aktif eşleşme · ~{totalMonthly.toLocaleString('tr-TR')} ₺/ay potansiyel</p>
+            <p style={pv.pageSub}>{entries.length} onaylı hizmet · {entries.reduce((a,e)=>a+e.leads.length,0)} kanıtlı eşleşme · Fiyatlar yönetim onayı bekliyor</p>
           </div>
         </div>
         <div style={hv.grid}>
-          {entries.map(({ svc, leads: matched, totalVal }) => (
+          {entries.map(({ svc, leads: matched }) => (
             <div key={svc.slug} style={hv.card}>
               <div style={hv.cardTop}>
                 <span style={{ ...hv.badge, background: svc.monthly ? 'rgba(124,197,255,0.14)' : 'rgba(197,242,74,0.12)', color: svc.monthly ? '#7cc5ff' : 'var(--accent)' }}>
-                  {svc.monthly ? 'Aylık' : 'Tek Seferlik'}
+                  {serviceTypeLabel(svc.service_type)}
                 </span>
                 <span style={{ ...hv.badge, background: 'var(--raised)', color: 'var(--sub)' }}>{svc.category || 'Genel'}</span>
               </div>
@@ -1723,9 +1725,9 @@
               {svc.detects && <div style={hv.detects}><strong style={{ color: 'var(--sub)' }}>Bot tespit eder:</strong> {svc.detects}</div>}
               <div style={hv.cardStats}>
                 <div><div style={hv.statVal}>{matched.length}</div><div style={hv.statLbl}>Eşleşen Lead</div></div>
-                <div><div style={{ ...hv.statVal, color: 'var(--accent)' }}>~{Math.round(totalVal).toLocaleString('tr-TR')} ₺</div><div style={hv.statLbl}>{svc.monthly ? 'Aylık' : 'Yıllık'}</div></div>
+                <div><div style={{ ...hv.statVal, color: 'var(--accent)' }}>{svc.recommendation_mode === 'discovery_only' ? 'Keşif' : 'Kanıt'}</div><div style={hv.statLbl}>Öneri Türü</div></div>
               </div>
-              <div style={hv.price}>₺{(svc.price_min||0).toLocaleString('tr-TR')} – ₺{(svc.price_max||0).toLocaleString('tr-TR')} <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>{svc.monthly ? '/ ay' : '/ proje'}</span></div>
+              <div style={hv.price}>Fiyat ve kapsam görüşme sonrasında yönetim onayıyla belirlenir.</div>
             </div>
           ))}
         </div>
