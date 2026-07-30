@@ -247,29 +247,36 @@
 
   function startLeadAction(lead) {
     const nextAction = lead.next_action || 'Sonraki aksiyon başlatıldı';
-    const needsContactCompletion = /telefon|adres/i.test(nextAction) || (!lead.phone && !lead.address);
+    const meta = getPrimaryActionMeta(lead);
 
-    if (needsContactCompletion) {
+    if (meta.intent === 'enrich' || meta.intent === 'verify') {
       openExternal(lead.maps_url || lead.website?.website_url || lead.social?.instagram_url);
       return addOutreach(
         lead.name,
         'data_enrichment_started',
         new Date().toISOString(),
         nextAction
-      ).then(() => ({ feedback: 'Veri tamamlama aksiyonu kaydedildi.' }));
+      ).then(() => ({
+        feedback: meta.intent === 'verify'
+          ? 'Doğrulama kaynağı açıldı; uygun hizmeti görüşmede netleştir.'
+          : 'Veri tamamlama aksiyonu kaydedildi.',
+      }));
     }
 
-    if (lead.phone) {
-      window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
-      return addOutreach(
+    if (meta.intent === 'generate_ai') {
+      return fetchJSON('/api/lead_ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: lead.name }),
+      }).then(() => addOutreach(
         lead.name,
-        'call_started',
+        'email_drafted',
         new Date().toISOString(),
-        nextAction
-      ).then(() => ({ feedback: 'Arama ekranı açıldı. Görüşme bitince sonucu ayrıca kaydet.' }));
+        'AI ihtiyaç özeti ve e-posta taslağı üretildi'
+      )).then(() => ({ feedback: 'AI raporu ve e-posta taslağı hazırlandı.' }));
     }
 
-    if (lead.ai_email) {
+    if (meta.intent === 'draft' && lead.ai_email) {
       if (navigator.clipboard?.writeText) {
         navigator.clipboard.writeText(lead.ai_email).catch(() => {});
       }
@@ -279,6 +286,16 @@
         new Date().toISOString(),
         'Hazır taslak panoya kopyalandı'
       ).then(() => ({ feedback: 'Mail taslağı panoya kopyalandı.' }));
+    }
+
+    if (meta.intent === 'call' && lead.phone) {
+      window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
+      return addOutreach(
+        lead.name,
+        'call_started',
+        new Date().toISOString(),
+        nextAction
+      ).then(() => ({ feedback: 'Arama ekranı açıldı. Görüşme bitince sonucu ayrıca kaydet.' }));
     }
 
     return addOutreach(
@@ -422,22 +439,36 @@
     if (needsContactCompletion(lead)) {
       return {
         label: 'Veriyi tamamla',
-        helper: 'Maps ya da siteyi acar, status degismez.',
+        helper: 'Maps ya da siteyi açar; pipeline durumu değişmez.',
         intent: 'enrich',
       };
     }
-    if (lead.phone) {
+    if (!lead.matched_services || !lead.matched_services.length) {
       return {
-        label: 'Aramayi kaydet',
-        helper: 'Temasta durumuna tasir ve zaman cizelgesine ekler.',
-        intent: 'call',
+        label: 'İhtiyacı doğrula',
+        helper: 'Kaynağı açar; kanıt olmadan hizmet veya AI taslağı üretmez.',
+        intent: 'verify',
+      };
+    }
+    if (!lead.ai_report || !lead.ai_email) {
+      return {
+        label: 'AI taslağı üret',
+        helper: 'Kanıtlanan açık ve eşleşen hizmetten rapor ile e-posta taslağı oluşturur.',
+        intent: 'generate_ai',
       };
     }
     if (lead.ai_email) {
       return {
-        label: 'Taslagi kopyala',
-        helper: 'Hazir e-postayi panoya kopyalar, otomatik gondermez.',
+        label: 'Taslağı kopyala',
+        helper: 'Hazır e-postayı panoya kopyalar; otomatik göndermez.',
         intent: 'draft',
+      };
+    }
+    if (lead.phone) {
+      return {
+        label: 'Telefonu aç',
+        helper: 'Telefon bağlantısını açar; görüşme sonucunu ayrıca kaydet.',
+        intent: 'call',
       };
     }
     return {
@@ -452,7 +483,7 @@
       { label: 'Telefon / adres', ready: hasContactInfo(lead) },
       { label: 'AI raporu', ready: Boolean(lead.ai_report) },
       { label: 'Mail taslagi', ready: Boolean(lead.ai_email) },
-      { label: 'Hizmet eşleşmesi', ready: Boolean(lead.matched_services && lead.matched_services.length) },
+      { label: 'Kanıtlı hizmet', ready: Boolean(lead.matched_services && lead.matched_services.length) },
     ];
   }
 
@@ -1116,7 +1147,10 @@
     const [busy,       setBusy]       = React.useState(false);
     const issues     = lead.scoring.issues || [];
     const serviceMatches = lead.matched_services || [];
-    const hasRecommendation = serviceMatches.length > 0;
+    const discoveryMatches = lead.discovery_services || [];
+    const displayedServices = serviceMatches.length > 0 ? serviceMatches : discoveryMatches;
+    const hasRecommendation = displayedServices.length > 0;
+    const isDiscoveryOnly = serviceMatches.length === 0;
     const svc = lead.recommended_package || {};
     const events     = getLeadEvents(lead.name);
     const actionMeta = getPrimaryActionMeta(lead);
@@ -1258,7 +1292,7 @@
               <div style={ld.packCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={ld.eyebrow}>BİRİNCİL HİZMET ÖNERİSİ</div>
+                    <div style={ld.eyebrow}>{isDiscoveryOnly ? 'GÖRÜŞMEDE DOĞRULA' : 'BİRİNCİL HİZMET ÖNERİSİ'}</div>
                     <h3 style={ld.packTitle}>{svc.primary_service || svc.name}</h3>
                     <div style={ld.packDesc}>{svc.summary || 'Öneri, doğrulanan tarama sinyallerine dayanır.'}</div>
                   </div>
@@ -1273,7 +1307,7 @@
             ) : (
               <div style={{ ...ld.packCard, background: 'var(--panel2)' }}>
                 <div style={ld.eyebrow}>HİZMET ÖNERİSİ</div>
-                <div style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8 }}>Güvenilir bir hizmet önerisi için önce eksik verileri doğrula.</div>
+                <div style={{ fontSize: 14, color: 'var(--sub)', marginTop: 8 }}>İşletmeye uygun hizmet yönünü belirlemek için önce eksik verileri doğrula.</div>
               </div>
             )}
 
@@ -1281,12 +1315,12 @@
               <div style={ld.opportunitySection}>
                 <div style={ld.findHeader}>
                   <div>
-                    <div style={ld.eyebrow}>KANITLANAN İHTİYAÇLAR</div>
+                    <div style={ld.eyebrow}>{isDiscoveryOnly ? 'UYGUN OLABİLECEK HİZMETLER' : 'KANITLANAN İHTİYAÇLAR'}</div>
                     <div style={ld.cardTitle}>Ne gördük, ne sunabiliriz?</div>
                   </div>
-                  <span style={ld.countBadge}>{serviceMatches.length} hizmet sinyali</span>
+                  <span style={ld.countBadge}>{isDiscoveryOnly ? `${displayedServices.length} keşif başlığı` : `${serviceMatches.length} hizmet sinyali`}</span>
                 </div>
-                {serviceMatches.slice(0, 4).map((service, serviceIndex) => (
+                {displayedServices.slice(0, 4).map((service, serviceIndex) => (
                   <div key={service.slug || serviceIndex} style={ld.opportunityRow}>
                     <div style={ld.opportunityTop}>
                       <div>
@@ -1300,14 +1334,14 @@
                     </div>
 
                     <div className="responsive-opportunity-columns" style={ld.opportunityColumns}>
-                      <div>
+                      {(service.evidence || []).length > 0 && <div>
                         <div style={ld.miniLabel}>TESPİT EDİLEN AÇIK</div>
                         <div style={ld.evidenceList}>
                           {(service.evidence || []).map((item, i) => (
                             <div key={i} style={ld.evidenceItem}><span style={ld.evidenceDot}></span>{item}</div>
                           ))}
                         </div>
-                      </div>
+                      </div>}
                       <div>
                         <div style={ld.miniLabel}>BİZ NE TESLİM EDERİZ?</div>
                         <ul style={ld.cleanList}>

@@ -139,9 +139,12 @@ gereken stok/oyuncu içerikleri.
 
 ## Öneri Sistemi
 
-### Otomatik eşleşebilenler
+### Otomatik veya koşullu eşleşebilenler
 
 - Website yoksa: **Website Oluşturma**
+- SSL, mobil uyum, sayfa hızı, Schema.org veya Open Graph sorunu teknik olarak
+  doğrulanırsa: **SEO ve Organik Görünürlük**. Çalışan hedef ve erişimi
+  görüşmede doğrular.
 - Instagram yoksa veya doğrulanmış sosyal performans sinyali zayıfsa:
   **Sosyal Medya Yönetimi**
 - Doğrulanmış Instagram etkileşimi düşükse: **Reels Çekim ve Edit**
@@ -150,7 +153,6 @@ gereken stok/oyuncu içerikleri.
 
 - Post Tasarımları
 - Reklam Yönetimi
-- SEO ve Organik Görünürlük
 - Video ve Fotoğraf Çekimi
 - Menü Çekimi
 - Chatbot ve Seslibot Kurulumu

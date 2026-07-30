@@ -10,8 +10,9 @@ from src import auth
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
-from src.services import ZEPLIN_SERVICES, estimate_value, match_services, recommended_package
+from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
 from src.storage.supabase import _lead_row
+from scripts.migrate_leads import normalize_lead
 
 
 class HardeningTests(unittest.TestCase):
@@ -88,6 +89,23 @@ class HardeningTests(unittest.TestCase):
         services = match_services({"sector": "restaurant"})
         self.assertNotIn("menu_shoot", {service["slug"] for service in services})
 
+    def test_missing_schema_conditionally_recommends_seo(self):
+        services = match_services({"website": {"has_schema": False}})
+        self.assertEqual({service["slug"] for service in services}, {"seo_organic"})
+        self.assertTrue(services[0]["requires_discovery"])
+
+    def test_missing_service_match_precedes_ai_generation(self):
+        lead = normalize_lead(
+            {
+                "name": "Test Lead",
+                "phone": "0212 000 00 00",
+                "website": {"has_website": True},
+                "social": {"has_instagram": True, "stats": {}},
+                "scoring": {"score": 70},
+            }
+        )
+        self.assertEqual(lead["next_action"], "Derin audit yap")
+
     def test_unknown_metrics_do_not_create_false_findings(self):
         services = match_services(
             {
@@ -97,7 +115,18 @@ class HardeningTests(unittest.TestCase):
             }
         )
         self.assertEqual(services, [])
-        self.assertEqual(recommended_package({})["kind"], "verification")
+        recommendation = recommended_package({})
+        self.assertEqual(recommendation["kind"], "discovery_recommendation")
+        self.assertEqual(recommendation["confidence"], 0)
+        self.assertEqual(recommendation["evidence"], [])
+
+    def test_discovery_options_fill_empty_state_without_claiming_evidence(self):
+        lead = {"sector": "restaurant", "website": {"has_website": True}}
+        options = discovery_services(lead)
+        self.assertEqual(options[0]["slug"], "menu_shoot")
+        self.assertTrue(all(item["requires_discovery"] for item in options))
+        self.assertTrue(all(not item["evidence"] for item in options))
+        self.assertEqual(recommended_package(lead)["primary_service"], "Menü Çekimi")
 
     def test_unapproved_prices_do_not_create_revenue_estimates(self):
         lead = {"website": {"has_website": False}}

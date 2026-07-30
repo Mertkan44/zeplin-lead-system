@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.dashboard.build import build_dashboard
 from src.ai.generator import AI_PROMPT_VERSION
-from src.services import estimate_value, match_services, recommended_package
+from src.services import discovery_services, estimate_value, match_services, recommended_package
 
 
 WEBSITE_DEFAULTS = {
@@ -68,11 +68,19 @@ def deep_merge(defaults: dict, current: dict | None) -> dict:
 
 
 def infer_sector(lead: dict) -> str:
-    if lead.get("sector"):
+    if lead.get("sector") and lead.get("sector") != "default":
         return lead["sector"]
     text = " ".join(str(lead.get(k) or "") for k in ("query", "category", "name")).lower()
     if any(token in text for token in ("restoran", "restaurant", "cafe", "kafe", "teras", "lokanta")):
         return "restaurant"
+    if any(token in text for token in ("diş", "dental", "klinik", "clinic", "sağlık", "doktor", "estetik")):
+        return "health"
+    if any(token in text for token in ("kuaför", "güzellik", "salon", "berber", "hair", "beauty")):
+        return "salon"
+    if any(token in text for token in ("mağaza", "butik", "store", "shop", "perakende")):
+        return "retail"
+    if any(token in text for token in ("oto", "otomotiv", "galeri", "servis", "automotive")):
+        return "auto"
     return "default"
 
 
@@ -148,12 +156,12 @@ def priority_model(lead: dict) -> tuple[int, str, str]:
     if not has_contact:
         action = "Telefon/adres tamamla"
         reason = "Ulaşım bilgisi eksik olduğu için satış aksiyonu başlamadan önce veri tamamlanmalı."
-    elif not has_ai:
-        action = "AI rapor ve mail üret"
-        reason = "İlk temas içeriği eksik."
     elif not has_services:
         action = "Derin audit yap"
         reason = "Satılabilir hizmet eşleşmesi oluşmamış."
+    elif not has_ai:
+        action = "AI rapor ve mail üret"
+        reason = "İlk temas içeriği eksik."
     elif score < 55:
         action = "Öncelikli arama yap"
         reason = "Dijital açık net ve çözüm potansiyeli yüksek."
@@ -182,6 +190,7 @@ def normalize_lead(lead: dict) -> dict:
     normalized["delivery"] = deep_merge(DELIVERY_DEFAULTS, normalized.get("delivery"))
     normalized["scoring"] = normalize_score(normalized.get("scoring") or {})
     normalized["matched_services"] = match_services(normalized)
+    normalized["discovery_services"] = discovery_services(normalized)
     normalized["recommended_package"] = recommended_package(normalized)
     normalized["estimated_value_tl"] = estimate_value(normalized)
     if normalized.get("ai_prompt_version") != AI_PROMPT_VERSION:

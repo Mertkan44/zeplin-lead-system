@@ -79,8 +79,8 @@ ZEPLIN_SERVICES = [
         category="SEO",
         desc="İşletmenin arama motorlarında doğru sorgularda görünmesini ve organik talep kazanmasını geliştiren SEO çalışması.",
         service_type="monthly",
-        recommendation_mode="discovery_only",
-        triggers=[],
+        recommendation_mode="conditional",
+        triggers=["no_ssl", "not_mobile", "slow_site", "no_schema", "no_og"],
         deliverables=[
             "Teknik SEO denetimi ve öncelikli aksiyon planı",
             "Anahtar kelime, rakip ve arama niyeti araştırması",
@@ -294,6 +294,59 @@ TRIGGER_LABELS = {
     "no_analytics": "Görünür analytics etiketi bulunamadı",
 }
 
+DISCOVERY_SERVICE_ORDER = {
+    "restaurant": [
+        "menu_shoot",
+        "reels_production",
+        "social_media",
+        "photo_video_shoot",
+        "ad_management",
+        "post_design",
+        "ai_ad_videos",
+        "chatbot_voicebot",
+        "seo_organic",
+    ],
+    "health": [
+        "social_media",
+        "reels_production",
+        "ad_management",
+        "chatbot_voicebot",
+        "post_design",
+        "photo_video_shoot",
+        "ai_ad_videos",
+        "seo_organic",
+    ],
+    "salon": [
+        "social_media",
+        "reels_production",
+        "post_design",
+        "photo_video_shoot",
+        "ad_management",
+        "chatbot_voicebot",
+        "ai_ad_videos",
+    ],
+    "retail": [
+        "social_media",
+        "post_design",
+        "reels_production",
+        "ad_management",
+        "photo_video_shoot",
+        "ai_ad_videos",
+        "chatbot_voicebot",
+        "seo_organic",
+    ],
+    "default": [
+        "social_media",
+        "post_design",
+        "ad_management",
+        "photo_video_shoot",
+        "reels_production",
+        "chatbot_voicebot",
+        "ai_ad_videos",
+        "seo_organic",
+    ],
+}
+
 
 def lead_triggers(lead: dict) -> set[str]:
     triggers: set[str] = set()
@@ -379,6 +432,36 @@ def match_services(lead: dict) -> list[dict]:
     )
 
 
+def discovery_services(lead: dict, *, limit: int = 3) -> list[dict]:
+    """Return sector-fit options without presenting them as proven needs."""
+    sector = lead.get("sector") or "default"
+    order = DISCOVERY_SERVICE_ORDER.get(sector, DISCOVERY_SERVICE_ORDER["default"])
+    catalog = {service["slug"]: service for service in ZEPLIN_SERVICES}
+    matched_slugs = {service["slug"] for service in match_services(lead)}
+    candidates = []
+
+    for slug in order:
+        service = catalog.get(slug)
+        if not service or slug in matched_slugs:
+            continue
+        if service["sectors"] and sector not in service["sectors"]:
+            continue
+        candidates.append(
+            {
+                **service,
+                "matched_triggers": [],
+                "evidence": [],
+                "confidence": 0,
+                "requires_discovery": True,
+                "discovery_reason": "Sektöre uygun olabilir; ihtiyaç görüşmede doğrulanmalı.",
+            }
+        )
+        if len(candidates) >= limit:
+            break
+
+    return candidates
+
+
 def recommended_package(lead: dict) -> dict:
     """
     Eski veri semasi icin alan adi korunur; donen deger artik paket degil, kanita
@@ -386,17 +469,26 @@ def recommended_package(lead: dict) -> dict:
     """
     services = match_services(lead)
     if not services:
+        candidates = discovery_services(lead)
+        primary = candidates[0] if candidates else None
         return {
-            "kind": "verification",
-            "name": "Önce ihtiyacı doğrula",
-            "summary": "Otomatik hizmet önermek için yeterli ve güvenilir kanıt yok.",
-            "primary_service": None,
-            "included_services": [],
-            "owner": "Sales",
+            "kind": "discovery_recommendation" if primary else "verification",
+            "name": primary["name"] if primary else "Önce ihtiyacı doğrula",
+            "summary": (
+                "Bu hizmet işletme tipine uygun olabilir; ihtiyaç görüşmede doğrulanmalı."
+                if primary
+                else "Otomatik hizmet önermek için yeterli ve güvenilir kanıt yok."
+            ),
+            "primary_service": primary["name"] if primary else None,
+            "included_services": [service["name"] for service in candidates],
+            "owner": primary["owner"] if primary else "Sales",
             "stage": "Keşif",
             "confidence": 0,
             "evidence": [],
-            "discovery_questions": [],
+            "deliverables": primary["deliverables"][:3] if primary else [],
+            "discovery_questions": primary["discovery_questions"][:3] if primary else [],
+            "exclusions": primary["exclusions"] if primary else [],
+            "requires_discovery": True,
         }
 
     primary = services[0]
