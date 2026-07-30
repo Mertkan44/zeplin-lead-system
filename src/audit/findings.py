@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-AUDIT_MODEL_VERSION = 3
+AUDIT_MODEL_VERSION = 4
 
 
 def _now() -> str:
@@ -61,6 +61,7 @@ def _finding(
     expected: str | None = None,
     service_slugs: list[str] | None = None,
     recommendation_strength: str = "conditional",
+    finding_type: str = "gap",
     talking_point: str | None = None,
     verification: str | None = None,
 ) -> dict[str, Any]:
@@ -80,6 +81,7 @@ def _finding(
         "expected": expected,
         "service_slugs": service_slugs or [],
         "recommendation_strength": recommendation_strength,
+        "finding_type": finding_type,
         "talking_point": talking_point or impact,
         "verification": verification,
     }
@@ -1294,10 +1296,296 @@ def _maps_profile(lead: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict
     return findings, checks
 
 
+def _commercial_profile(lead: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build service opportunities only from observable public signals.
+
+    These findings do not affect the technical health score. They explain why a
+    service is worth discussing while keeping subjective creative judgments out
+    of the automated audit.
+    """
+    website = lead.get("website") or {}
+    social = lead.get("social") or {}
+    stats = social.get("stats") or {}
+    sector = lead.get("sector") or "default"
+    findings: list[dict[str, Any]] = []
+    source_url = website.get("final_url") or website.get("website_url") or lead.get("maps_url")
+    checked_at = website.get("checked_at") or social.get("checked_at") or lead.get("last_analyzed")
+    website_checked = (
+        int(website.get("audit_version") or 0) >= 4
+        and website.get("audit_status") == "ok"
+        and not website.get("placeholder_detected")
+    )
+    visual_sector = sector in {"restaurant", "health", "retail", "salon"}
+    instagram_verified = (
+        social.get("has_instagram") is True
+        and int(social.get("identity_confidence") or 0) >= 70
+    )
+    stats_verified = instagram_verified and stats.get("lookup_status") == "found"
+
+    if website_checked and not website.get("instagram_links"):
+        findings.append(
+            _finding(
+                code="social.website_link_missing",
+                title="Website resmi Instagram profiline yönlendirmiyor",
+                category="social",
+                severity="low",
+                confidence=78,
+                evidence="Ana sayfadaki bağlantılar içinde işletmeyle ilişkilendirilebilen bir Instagram profil bağlantısı bulunmadı.",
+                impact="Website ziyaretçisi güncel içeriklere ve sosyal mesajlaşma kanalına doğrudan geçemiyor olabilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Instagram bağlantısı yok",
+                expected="Website üzerinde doğrulanmış resmi sosyal profil bağlantısı",
+                service_slugs=["social_media"],
+                recommendation_strength="conditional",
+                talking_point="Website ile sosyal hesaplar arasındaki geçişi ve güncel içerik akışını birlikte düzenleyebiliriz.",
+                verification="İşletmenin farklı kullanıcı adıyla kullandığı aktif bir hesap olup olmadığını sor.",
+            )
+        )
+
+    post_count = stats.get("post_count")
+    if stats_verified and post_count is not None and int(post_count) < 30:
+        findings.append(
+            _finding(
+                code="social.content_archive_sparse",
+                title="Doğrulanmış Instagram hesabındaki içerik arşivi sınırlı",
+                category="social",
+                severity="medium",
+                confidence=88,
+                evidence=f"Resmi Instagram profilinde toplam {int(post_count)} gönderi görünüyor.",
+                impact="Sınırlı içerik arşivi; hizmet çeşitliliğini, güven unsurlarını ve düzenli marka görünümünü anlatmayı zorlaştırabilir.",
+                source_url=social.get("instagram_url"),
+                checked_at=stats.get("checked_at") or checked_at,
+                observed=f"{int(post_count)} gönderi",
+                expected="Hedef kitleye ve satış döngüsüne göre sürdürülebilir içerik planı",
+                service_slugs=[
+                    "social_media",
+                    "post_design",
+                    "photo_video_shoot",
+                    "reels_production",
+                ],
+                recommendation_strength="conditional",
+                talking_point="Mevcut hesabı sıfırdan değiştirmeden düzenli post, çekim ve Reels üretim planına çevirebiliriz.",
+                verification="Son paylaşım tarihini, arşivlenmiş gönderileri ve mevcut içerik üretim kapasitesini sor.",
+            )
+        )
+
+    followers = stats.get("followers")
+    if (
+        stats_verified
+        and followers is not None
+        and int(followers) >= 2_000
+        and post_count is not None
+        and int(post_count) >= 30
+    ):
+        findings.append(
+            _finding(
+                code="social.established_audience",
+                title="Doğrulanmış sosyal kitle düzenli kreatif üretimi için uygun",
+                category="growth",
+                severity="info",
+                confidence=64,
+                evidence=f"Resmi Instagram profilinde {int(followers):,} takipçi ve {int(post_count):,} gönderi bulunuyor.".replace(",", "."),
+                impact="Mevcut kitle, kampanya ve içerik varyasyonlarını sıfırdan hesap büyütmeye göre daha hızlı test etme imkanı sunabilir.",
+                source_url=social.get("instagram_url"),
+                checked_at=stats.get("checked_at") or checked_at,
+                observed=f"{int(followers):,} takipçi".replace(",", "."),
+                expected="İçerik hedefleri, marka şablonları ve performans verisiyle yönetilen kreatif üretim",
+                service_slugs=["post_design"],
+                recommendation_strength="opportunity",
+                finding_type="opportunity",
+                talking_point="Hazır kitleniz için kampanya, carousel ve story formatlarını tutarlı bir tasarım sistemiyle çoğaltabiliriz.",
+                verification="Son 90 günlük erişim, kaydetme, profil ziyareti ve içerik formatı performansını iste.",
+            )
+        )
+
+    image_count = website.get("image_count")
+    if website_checked and visual_sector and image_count is not None and int(image_count) <= 5:
+        service_slugs = ["photo_video_shoot", "post_design"]
+        if sector == "restaurant":
+            service_slugs.append("menu_shoot")
+        findings.append(
+            _finding(
+                code="content.visual_depth",
+                title="Ana sayfadaki görsel içerik kapsamı sınırlı",
+                category="creative",
+                severity="medium",
+                confidence=74,
+                evidence=f"Ana HTML içinde {int(image_count)} görsel öğesi bulundu; sektör görsel sunuma yüksek ölçüde bağlı.",
+                impact="Mekan, ürün, ekip veya hizmet deneyimi yeterince gösterilmiyorsa müşteri karar vermeden önce aradığı güveni bulamayabilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed=f"{int(image_count)} görsel öğesi",
+                expected="İşletmenin temel ürün, mekan, ekip ve hizmetlerini kapsayan güncel görsel arşiv",
+                service_slugs=service_slugs,
+                recommendation_strength="conditional",
+                talking_point="Sitenin ve sosyal hesapların birlikte kullanabileceği planlı bir fotoğraf/video içerik arşivi oluşturabiliriz.",
+                verification="CSS arka planlarını, galerileri ve harici yüklenen görselleri görsel incelemede ayrıca kontrol et.",
+            )
+        )
+
+    if website_checked and visual_sector and website.get("has_video_content") is False:
+        findings.append(
+            _finding(
+                code="content.video_format_opportunity",
+                title="Ana sayfada video veya gömülü hareketli içerik görünmüyor",
+                category="creative",
+                severity="info",
+                confidence=66,
+                evidence="HTML5 video, YouTube, Vimeo, Wistia veya Vidyard içeriği ana sayfa kaynak kodunda bulunmadı.",
+                impact="Hizmet deneyimi, mekan atmosferi veya ürün kullanımı kısa video formatıyla henüz desteklenmiyor olabilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Ana sayfada video sinyali yok",
+                expected="Hedefe uygunsa kısa video, Reels veya açıklayıcı hareketli içerik",
+                service_slugs=["reels_production", "photo_video_shoot"],
+                recommendation_strength="opportunity",
+                finding_type="opportunity",
+                talking_point="Mekan, ürün veya hizmeti kısa dikey videolara dönüştürüp site ve sosyal kanallarda birlikte kullanabiliriz.",
+                verification="Instagram Reels arşivini ve harici yüklenen videoları görüşmeden önce manuel kontrol et.",
+            )
+        )
+
+    if (
+        website_checked
+        and sector == "restaurant"
+        and not website.get("menu_page_urls")
+    ):
+        findings.append(
+            _finding(
+                code="restaurant.menu_visibility",
+                title="Website üzerinde erişilebilir menü bağlantısı bulunamadı",
+                category="conversion",
+                severity="medium",
+                confidence=76,
+                evidence="Ana sayfa bağlantılarında menü veya menu ifadesiyle eşleşen bir hedef bulunmadı.",
+                impact="Müşteri ziyaret ya da sipariş kararı vermeden önce ürün ve fiyatları kolayca inceleyemeyebilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Menü bağlantısı yok",
+                expected="Güncel, mobil okunabilir ve görsel olarak güçlü dijital menü",
+                service_slugs=["menu_shoot"],
+                recommendation_strength="conditional",
+                talking_point="Ürünleri çekip mobilde kolay incelenen güncel bir dijital menü içeriğine dönüştürebiliriz.",
+                verification="Menünün QR, teslimat platformu veya ayrı alan adında sunulup sunulmadığını sor.",
+            )
+        )
+
+    conversion_action = any(
+        website.get(field) is True
+        for field in (
+            "has_contact_form",
+            "has_phone_link",
+            "has_whatsapp",
+            "has_reservation_signal",
+            "has_order_signal",
+        )
+    )
+    if website_checked and website.get("has_analytics") is False:
+        findings.append(
+            _finding(
+                code="ads.measurement_absent",
+                title="Website kaynak kodunda görünür ölçüm altyapısı bulunamadı",
+                category="advertising",
+                severity="high",
+                confidence=82,
+                evidence="Google Analytics/Tag Manager, Meta Pixel, Google Ads, Clarity veya Hotjar etiketi ana HTML içinde tespit edilmedi.",
+                impact="Reklam ve içerik kaynaklı ziyaretlerin hangi aksiyona dönüştüğü güvenilir biçimde ölçülemeyebilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Görünür ölçüm etiketi yok",
+                expected="Onaylı çerez yapısıyla çalışan analiz ve dönüşüm ölçümü",
+                service_slugs=["ad_management"],
+                recommendation_strength="direct",
+                talking_point="Reklam vermeden önce ölçümü kurup hangi kampanyanın arama, form veya rezervasyon getirdiğini takip edebiliriz.",
+                verification="Etiketlerin consent sonrası veya sunucu tarafında çalışıp çalışmadığını işletme hesabından doğrula.",
+            )
+        )
+    elif (
+        website_checked
+        and conversion_action
+        and website.get("has_conversion_tracking") is False
+    ):
+        findings.append(
+            _finding(
+                code="ads.conversion_tracking_unverified",
+                title="Dönüşüm aksiyonları var ancak reklam dönüşüm etiketi görünmüyor",
+                category="advertising",
+                severity="medium",
+                confidence=68,
+                evidence="Website iletişim/rezervasyon/sipariş aksiyonu içeriyor; ana HTML içinde Meta Pixel veya Google Ads dönüşüm etiketi bulunmadı.",
+                impact="Form, arama, WhatsApp veya rezervasyon aksiyonları reklam kampanyalarına doğru bağlanmıyor olabilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Dönüşüm aksiyonu var, görünür reklam etiketi yok",
+                expected="Ana müşteri aksiyonlarını reklam hesabına bağlayan ölçüm planı",
+                service_slugs=["ad_management"],
+                recommendation_strength="conditional",
+                talking_point="Mevcut iletişim aksiyonlarını reklam hesabına bağlayıp gerçek lead maliyetini izleyebiliriz.",
+                verification="Google Tag Manager, consent mode ve sunucu tarafı event kurulumunu hesap erişimiyle doğrula.",
+            )
+        )
+
+    if (
+        website_checked
+        and conversion_action
+        and website.get("has_bot_signal") is False
+    ):
+        findings.append(
+            _finding(
+                code="automation.conversation_opportunity",
+                title="Müşteri aksiyonu var; otomatik karşılama veya bot sinyali görünmüyor",
+                category="automation",
+                severity="info",
+                confidence=65,
+                evidence="Website iletişim, WhatsApp, rezervasyon veya sipariş aksiyonu içeriyor; bilinen chatbot/seslibot sağlayıcısı tespit edilmedi.",
+                impact="Tekrarlanan sorular, ön bilgi toplama ve mesai dışı yönlendirme tamamen insan takibine bağlı olabilir.",
+                source_url=source_url,
+                checked_at=checked_at,
+                observed="Görünür bot entegrasyonu yok",
+                expected="İhtiyaç varsa soruları karşılayan ve uygun kişiye aktaran kontrollü otomasyon",
+                service_slugs=["chatbot_voicebot"],
+                recommendation_strength="opportunity",
+                finding_type="opportunity",
+                talking_point="Sık sorulan soruları cevaplayan, iletişim bilgisi toplayan ve gerektiğinde ekibe aktaran kontrollü bir bot kurabiliriz.",
+                verification="Instagram DM, WhatsApp Business, telefon ve CRM tarafında mevcut otomasyon olup olmadığını sor.",
+            )
+        )
+
+    if (
+        stats_verified
+        and followers is not None
+        and int(followers) >= 5_000
+        and visual_sector
+    ):
+        findings.append(
+            _finding(
+                code="creative.ai_video_test_opportunity",
+                title="Doğrulanmış sosyal kitle video kreatif testi için uygun",
+                category="growth",
+                severity="info",
+                confidence=62,
+                evidence=f"Resmi Instagram profilinde {int(followers):,} takipçi bulunuyor.".replace(",", "."),
+                impact="Mevcut kitle ve marka bilinirliği, farklı reklam açılışlarını ve yapay zeka destekli video varyasyonlarını test etmeyi anlamlı kılabilir.",
+                source_url=social.get("instagram_url"),
+                checked_at=stats.get("checked_at") or checked_at,
+                observed=f"{int(followers):,} doğrulanmış takipçi".replace(",", "."),
+                expected="Net kampanya hedefi ve performans ölçümüyle test edilen video kreatifleri",
+                service_slugs=["ai_ad_videos"],
+                recommendation_strength="opportunity",
+                finding_type="opportunity",
+                talking_point="Mevcut kitleniz için farklı açılış ve mesajlara sahip yapay zeka destekli reklam videolarını kontrollü test edebiliriz.",
+                verification="Aktif reklam hesabını, kreatif yorgunluğunu ve son kampanyaların video performansını sor.",
+            )
+        )
+
+    return findings, []
+
+
 def analyze_lead(lead: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
     checks: list[dict[str, Any]] = []
-    for builder in (_website_profile, _social_profile, _maps_profile):
+    for builder in (_website_profile, _social_profile, _maps_profile, _commercial_profile):
         new_findings, new_checks = builder(lead)
         findings.extend(new_findings)
         checks.extend(new_checks)

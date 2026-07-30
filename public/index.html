@@ -1190,6 +1190,8 @@
     const [feedback,   setFeedback]   = React.useState('');
     const [busy,       setBusy]       = React.useState(false);
     const findings   = lead.audit_findings || [];
+    const opportunityFindings = findings.filter(finding => finding.finding_type === 'opportunity');
+    const gapFindings = findings.filter(finding => finding.finding_type !== 'opportunity');
     const unknownChecks = (lead.audit_checks || []).filter(check => check.status === 'unknown');
     const serviceMatches = lead.matched_services || [];
     const discoveryMatches = lead.discovery_services || [];
@@ -1420,8 +1422,8 @@
               <div style={ld.findHeader}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end' }}>
                   <div>
-                    <div style={ld.eyebrow}>KANITLI TARAMA BULGULARI</div>
-                    <div style={ld.cardTitle}>{findings.length > 0 ? `${findings.length} doğrulanmış/olası açık` : 'Kanıtlı açık yok'}</div>
+                    <div style={ld.eyebrow}>TARAMA BULGULARI VE FIRSATLAR</div>
+                    <div style={ld.cardTitle}>{findings.length > 0 ? `${gapFindings.length} açık · ${opportunityFindings.length} büyüme fırsatı` : 'Kanıtlı açık yok'}</div>
                   </div>
                   <span style={ld.countBadge}>%{lead.scoring?.coverage || 0} kapsam · %{lead.scoring?.confidence || 0} güven</span>
                 </div>
@@ -1434,7 +1436,7 @@
                     const sev = findingSeverity(finding);
                     return (
                       <div key={finding.code || i} style={{ ...ld.findRow, alignItems: 'flex-start' }}>
-                        <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{sev}</div>
+                        <div style={{ ...ld.sevPill, ...sevStyle(sev) }}>{finding.finding_type === 'opportunity' ? 'Fırsat' : sev}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={ld.findTitle}>{finding.title}</div>
                           <div style={ld.findEvidence}><strong>Kanıt:</strong> {finding.evidence}</div>
@@ -1814,15 +1816,18 @@
     const svcMap = {};
     leads.forEach(l => {
       (l.matched_services || []).forEach(svc => {
-        if (!svcMap[svc.slug]) svcMap[svc.slug] = { svc, leads: [] };
-        svcMap[svc.slug].leads.push(l);
+        if (!svcMap[svc.slug]) svcMap[svc.slug] = { svc, matches: [] };
+        svcMap[svc.slug].matches.push({ lead: l, match: svc });
       });
     });
 
     const entries = services.map(svc => {
-      const active = svcMap[svc.slug] || { leads: [] };
-      return { svc, leads: active.leads };
-    }).sort((a, b) => b.leads.length - a.leads.length);
+      const active = svcMap[svc.slug] || { matches: [] };
+      const confirmed = active.matches.filter(item => item.match.match_type === 'confirmed_gap');
+      const conditional = active.matches.filter(item => item.match.match_type === 'conditional_gap');
+      const opportunities = active.matches.filter(item => item.match.match_type === 'qualified_opportunity');
+      return { svc, matches: active.matches, confirmed, conditional, opportunities };
+    }).sort((a, b) => b.matches.length - a.matches.length);
 
     const serviceTypeLabel = type => ({
       monthly: 'Aylık',
@@ -1836,11 +1841,11 @@
           <div>
             <div style={pv.pageEyebrow}>HİZMETLER</div>
             <h1 style={pv.pageTitle}>Zeplin Media Hizmetleri</h1>
-            <p style={pv.pageSub}>{entries.length} onaylı hizmet · {entries.reduce((a,e)=>a+e.leads.length,0)} kanıtlı eşleşme · Fiyatlar yönetim onayı bekliyor</p>
+            <p style={pv.pageSub}>{entries.length} onaylı hizmet · {entries.reduce((a,e)=>a+e.matches.length,0)} ölçülebilir hizmet sinyali · Kesin açık ve görüşme fırsatı ayrı gösterilir</p>
           </div>
         </div>
         <div style={hv.grid}>
-          {entries.map(({ svc, leads: matched }) => (
+          {entries.map(({ svc, matches, confirmed, conditional, opportunities }) => (
             <div key={svc.slug} style={hv.card}>
               <div style={hv.cardTop}>
                 <span style={{ ...hv.badge, background: svc.monthly ? 'rgba(124,197,255,0.14)' : 'rgba(197,242,74,0.12)', color: svc.monthly ? '#7cc5ff' : 'var(--accent)' }}>
@@ -1852,8 +1857,9 @@
               {svc.desc && <div style={hv.cardDesc}>{svc.desc}</div>}
               {svc.detects && <div style={hv.detects}><strong style={{ color: 'var(--sub)' }}>Bot tespit eder:</strong> {svc.detects}</div>}
               <div style={hv.cardStats}>
-                <div><div style={hv.statVal}>{matched.length}</div><div style={hv.statLbl}>Eşleşen Lead</div></div>
-                <div><div style={{ ...hv.statVal, color: 'var(--accent)' }}>{svc.recommendation_mode === 'discovery_only' ? 'Keşif' : 'Kanıt'}</div><div style={hv.statLbl}>Öneri Türü</div></div>
+                <div><div style={hv.statVal}>{matches.length}</div><div style={hv.statLbl}>Toplam Sinyal</div></div>
+                <div><div style={{ ...hv.statVal, color: 'var(--accent)' }}>{confirmed.length}</div><div style={hv.statLbl}>Kesin Açık</div></div>
+                <div><div style={{ ...hv.statVal, color: '#ffcf4a' }}>{conditional.length + opportunities.length}</div><div style={hv.statLbl}>Görüşmede Doğrula</div></div>
               </div>
               <div style={hv.price}>Fiyat ve kapsam görüşme sonrasında yönetim onayıyla belirlenir.</div>
             </div>

@@ -40,7 +40,7 @@ SECTOR_VOICE = {
     ),
 }
 
-AI_PROMPT_VERSION = 6
+AI_PROMPT_VERSION = 7
 
 
 def has_email_evidence(lead: dict[str, Any]) -> bool:
@@ -48,6 +48,7 @@ def has_email_evidence(lead: dict[str, Any]) -> bool:
         finding.get("status") == "confirmed"
         and int(finding.get("confidence") or 0) >= 80
         and bool(finding.get("service_slugs"))
+        and finding.get("finding_type", "gap") != "opportunity"
         for finding in (lead.get("audit_findings") or [])
     )
 
@@ -84,6 +85,8 @@ def _lead_context(lead: dict[str, Any]) -> str:
             "talking_point": finding.get("talking_point"),
             "verification": finding.get("verification"),
             "service_slugs": finding.get("service_slugs") or [],
+            "finding_type": finding.get("finding_type") or "gap",
+            "recommendation_strength": finding.get("recommendation_strength"),
         }
         for finding in (lead.get("audit_findings") or [])
         if finding.get("status") in {"confirmed", "likely"}
@@ -265,6 +268,8 @@ def generate_research_brief(lead: dict[str, Any], *, force: bool = False) -> str
         "4. GÖRÜŞMEDE SOR\n"
         "5. DOĞRULANMAYANLAR\n\n"
         "Yalnızca verified_findings alanındaki bulguları tespit olarak kullan. "
+        "finding_type `opportunity` olan kayıtları açık veya eksik gibi anlatma; bunları yalnızca "
+        "görüşmede doğrulanacak büyüme alanı olarak yaz. "
         "Kaynak ve güven değerini dikkate al; unverified_checks içeriğini açık gibi anlatma. "
         "Teknik tespiti sade iş etkisine çevir. Maksimum 190 kelime.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
@@ -276,6 +281,8 @@ def generate_report(lead: dict[str, Any], *, force: bool = False) -> str:
     prompt = (
         "Bu işletme için satış çalışanının kullanacağı kanıta dayalı bir ihtiyaç özeti yaz.\n"
         "Yalnızca verified_findings içindeki evidence alanlarını tespit olarak kullan.\n"
+        "finding_type `gap` olanları açık, `opportunity` olanları yalnızca büyüme hipotezi olarak ayır; "
+        "fırsat kaydını eksik, hata veya kesin ihtiyaç gibi sunma.\n"
         "Formatı aynen koru:\n"
         "NE TESPİT ETTİK?\n"
         "- En fazla 3 madde: açık, kanıt ve güven yüzdesi\n"

@@ -104,8 +104,19 @@ class HardeningTests(unittest.TestCase):
                 }
             ]
         }
+        opportunity = {
+            "audit_findings": [
+                {
+                    "status": "confirmed",
+                    "confidence": 90,
+                    "service_slugs": ["ai_ad_videos"],
+                    "finding_type": "opportunity",
+                }
+            ]
+        }
         self.assertFalse(has_email_evidence(low_confidence))
         self.assertTrue(has_email_evidence(verified))
+        self.assertFalse(has_email_evidence(opportunity))
 
     def test_missing_website_is_a_finding_only_when_maps_confirmed_it(self):
         unknown = normalize_lead({"name": "Test", "website": {"audit_version": 3, "audit_status": "missing", "lookup_status": "unknown"}})
@@ -198,6 +209,105 @@ class HardeningTests(unittest.TestCase):
     def test_restaurant_menu_shoot_requires_discovery(self):
         services = match_services({"sector": "restaurant"})
         self.assertNotIn("menu_shoot", {service["slug"] for service in services})
+
+    def test_commercial_signals_require_version_four_measurements(self):
+        audit = analyze_lead(
+            {
+                "sector": "restaurant",
+                "website": {
+                    "audit_version": 3,
+                    "audit_status": "ok",
+                    "image_count": 0,
+                    "has_video_content": False,
+                    "has_analytics": False,
+                },
+            }
+        )
+        codes = {item["code"] for item in audit["findings"]}
+        self.assertNotIn("restaurant.menu_visibility", codes)
+        self.assertNotIn("content.video_format_opportunity", codes)
+        self.assertNotIn("ads.measurement_absent", codes)
+
+    def test_restaurant_commercial_audit_maps_measured_signals_to_services(self):
+        lead = normalize_lead(
+            {
+                "name": "Test Restoran",
+                "sector": "restaurant",
+                "website": {
+                    "audit_version": 4,
+                    "audit_status": "ok",
+                    "lookup_status": "found",
+                    "website_url": "https://example.com",
+                    "final_url": "https://example.com",
+                    "placeholder_detected": False,
+                    "instagram_links": [],
+                    "image_count": 3,
+                    "menu_page_urls": [],
+                    "has_video_content": False,
+                    "has_analytics": False,
+                    "has_conversion_tracking": False,
+                    "has_bot_signal": False,
+                    "has_phone_link": True,
+                },
+            }
+        )
+        matches = {service["slug"]: service for service in lead["matched_services"]}
+        self.assertTrue(
+            {
+                "social_media",
+                "post_design",
+                "ad_management",
+                "photo_video_shoot",
+                "menu_shoot",
+                "reels_production",
+                "chatbot_voicebot",
+            }.issubset(matches)
+        )
+        self.assertEqual(matches["ad_management"]["match_type"], "confirmed_gap")
+        self.assertEqual(matches["reels_production"]["match_type"], "qualified_opportunity")
+
+    def test_ai_video_opportunity_requires_verified_social_audience(self):
+        base = {
+            "sector": "retail",
+            "website": {"audit_version": 4, "audit_status": "blocked"},
+        }
+        unknown = analyze_lead(
+            {
+                **base,
+                "social": {
+                    "has_instagram": True,
+                    "identity_confidence": 20,
+                    "stats": {
+                        "lookup_status": "found",
+                        "followers": 50_000,
+                        "post_count": 200,
+                    },
+                },
+            }
+        )
+        verified = analyze_lead(
+            {
+                **base,
+                "social": {
+                    "has_instagram": True,
+                    "identity_confidence": 98,
+                    "instagram_url": "https://instagram.com/example",
+                    "stats": {
+                        "lookup_status": "found",
+                        "followers": 50_000,
+                        "post_count": 200,
+                    },
+                },
+            }
+        )
+        self.assertNotIn(
+            "creative.ai_video_test_opportunity",
+            {item["code"] for item in unknown["findings"]},
+        )
+        self.assertIn(
+            "creative.ai_video_test_opportunity",
+            {item["code"] for item in verified["findings"]},
+        )
 
     def test_missing_schema_conditionally_recommends_seo(self):
         services = match_services({"website": {"has_schema": False}})

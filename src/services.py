@@ -441,6 +441,12 @@ def match_services(lead: dict) -> list[dict]:
                 finding.get("recommendation_strength") == "direct"
                 for finding in service_findings
             )
+            evidence_types = list(
+                dict.fromkeys(
+                    finding.get("finding_type") or "gap"
+                    for finding in service_findings
+                )
+            )
             confidence = round(
                 sum(int(finding.get("confidence") or 0) for finding in service_findings)
                 / len(service_findings)
@@ -476,6 +482,14 @@ def match_services(lead: dict) -> list[dict]:
                     ],
                     "confidence": confidence,
                     "requires_discovery": not direct,
+                    "evidence_types": evidence_types,
+                    "match_type": (
+                        "confirmed_gap"
+                        if direct
+                        else "qualified_opportunity"
+                        if "opportunity" in evidence_types
+                        else "conditional_gap"
+                    ),
                 }
             )
         return sorted(
@@ -508,6 +522,8 @@ def match_services(lead: dict) -> list[dict]:
                 "evidence": [TRIGGER_LABELS.get(trigger, trigger) for trigger in matched_triggers],
                 "confidence": confidence,
                 "requires_discovery": mode != "direct",
+                "evidence_types": ["gap"],
+                "match_type": "confirmed_gap" if mode == "direct" else "conditional_gap",
             }
         )
 
@@ -542,6 +558,8 @@ def discovery_services(lead: dict, *, limit: int = 3) -> list[dict]:
                 "evidence": [],
                 "confidence": 0,
                 "requires_discovery": True,
+                "evidence_types": [],
+                "match_type": "sector_discovery",
                 "discovery_reason": "Sektöre uygun olabilir; ihtiyaç görüşmede doğrulanmalı.",
             }
         )

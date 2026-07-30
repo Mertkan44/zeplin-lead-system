@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from src.net_security import assert_safe_public_url
 
 
-AUDIT_VERSION = 3
+AUDIT_VERSION = 4
 MAX_HTML_BYTES = 2_000_000
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -116,6 +116,16 @@ def _empty_website(
         "has_reservation_signal": None,
         "has_order_signal": None,
         "has_analytics": None,
+        "has_google_tracking": None,
+        "has_meta_pixel": None,
+        "has_google_ads_tag": None,
+        "has_conversion_tracking": None,
+        "has_chat_widget": None,
+        "has_bot_signal": None,
+        "chat_providers": [],
+        "has_video_content": None,
+        "video_embed_count": None,
+        "video_platforms": [],
         "phone_numbers": [],
         "emails": [],
         "contact_page_urls": [],
@@ -576,14 +586,93 @@ async def audit_website(
             result["has_order_signal"] = bool(
                 re.search(r"online sipariş|sipariş ver|yemeksepeti|getir|trendyol yemek|order online", visible_text, re.I)
             )
-            result["has_analytics"] = bool(
+            result["has_google_tracking"] = bool(
                 re.search(
-                    r"googletagmanager\.com|google-analytics\.com|gtag\(|G-[A-Z0-9]{6,}|"
-                    r"connect\.facebook\.net/.+fbevents|clarity\.ms/tag|hotjar",
+                    r"googletagmanager\.com|google-analytics\.com|gtag\(|"
+                    r"\bG-[A-Z0-9]{6,}\b|\bUA-\d+-\d+\b",
                     raw_html,
                     re.I,
                 )
             )
+            result["has_meta_pixel"] = bool(
+                re.search(
+                    r"connect\.facebook\.net/.+fbevents|fbq\s*\(|"
+                    r"facebook\.com/tr\?id=",
+                    raw_html,
+                    re.I,
+                )
+            )
+            result["has_google_ads_tag"] = bool(
+                re.search(
+                    r"\bAW-\d{6,}\b|googleadservices\.com/pagead/conversion|"
+                    r"googleads\.g\.doubleclick\.net",
+                    raw_html,
+                    re.I,
+                )
+            )
+            result["has_conversion_tracking"] = bool(
+                result["has_meta_pixel"] or result["has_google_ads_tag"]
+            )
+            result["has_analytics"] = bool(
+                result["has_google_tracking"]
+                or result["has_conversion_tracking"]
+                or re.search(r"clarity\.ms/tag|hotjar", raw_html, re.I)
+            )
+
+            chat_markers = {
+                "Tawk.to": r"tawk\.to|embed\.tawk\.to",
+                "Intercom": r"intercom(?:cdn|assets)?\.com|intercomSettings",
+                "Crisp": r"client\.crisp\.chat|CRISP_WEBSITE_ID",
+                "LiveChat": r"cdn\.livechatinc\.com|__lc\.license",
+                "JivoChat": r"jivosite\.com|jivochat",
+                "Tidio": r"code\.tidio\.co|tidiochat",
+                "Zendesk": r"static\.zendesk\.com|zopim",
+                "HubSpot Chat": r"js\.usemessages\.com|hubspot.*conversations",
+                "Chatwoot": r"chatwoot",
+                "Kommunicate": r"kommunicate",
+                "Botpress": r"botpress",
+                "Dialogflow": r"dialogflow",
+                "ManyChat": r"manychat",
+                "Landbot": r"landbot",
+                "Voiceflow": r"voiceflow",
+            }
+            result["chat_providers"] = [
+                provider
+                for provider, pattern in chat_markers.items()
+                if re.search(pattern, raw_html, re.I)
+            ]
+            result["has_chat_widget"] = bool(result["chat_providers"])
+            result["has_bot_signal"] = any(
+                provider in {"Kommunicate", "Botpress", "Dialogflow", "ManyChat", "Landbot", "Voiceflow"}
+                for provider in result["chat_providers"]
+            )
+
+            video_platform_patterns = {
+                "HTML5 video": r"<video\b|type=[\"']video/",
+                "YouTube": r"youtube(?:-nocookie)?\.com/embed|youtu\.be/",
+                "Vimeo": r"player\.vimeo\.com/video",
+                "Wistia": r"fast\.wistia\.(?:net|com)|wistia_embed",
+                "Vidyard": r"play\.vidyard\.com|vidyardEmbed",
+            }
+            result["video_platforms"] = [
+                platform
+                for platform, pattern in video_platform_patterns.items()
+                if re.search(pattern, raw_html, re.I)
+            ]
+            result["video_embed_count"] = (
+                len(soup.find_all("video"))
+                + len(
+                    soup.find_all(
+                        "iframe",
+                        src=re.compile(
+                            r"youtube(?:-nocookie)?\.com/embed|player\.vimeo\.com/video|"
+                            r"fast\.wistia\.(?:net|com)|play\.vidyard\.com",
+                            re.I,
+                        ),
+                    )
+                )
+            )
+            result["has_video_content"] = bool(result["video_platforms"])
 
             phone_values: list[str] = []
             for anchor in soup.find_all("a", href=re.compile(r"^tel:", re.I)):

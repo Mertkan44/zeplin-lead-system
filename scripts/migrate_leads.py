@@ -40,6 +40,16 @@ WEBSITE_DEFAULTS = {
     "has_order_signal": None,
     "is_indexable": None,
     "has_canonical": None,
+    "has_google_tracking": None,
+    "has_meta_pixel": None,
+    "has_google_ads_tag": None,
+    "has_conversion_tracking": None,
+    "has_chat_widget": None,
+    "has_bot_signal": None,
+    "chat_providers": [],
+    "has_video_content": None,
+    "video_embed_count": None,
+    "video_platforms": [],
     "has_local_business_schema": None,
     "schema_status": "not_checked",
     "schema_types": [],
@@ -202,6 +212,7 @@ def fallback_email(lead: dict) -> str:
         for finding in (lead.get("audit_findings") or [])
         if finding.get("status") == "confirmed"
         and int(finding.get("confidence") or 0) >= 80
+        and finding.get("finding_type", "gap") != "opportunity"
     ]
     if not verified:
         return "TASLAK İÇİN YETERLİ KANIT YOK"
@@ -223,7 +234,17 @@ def priority_model(lead: dict) -> tuple[int, str, str]:
     coverage = int(lead["scoring"].get("coverage") or 0)
     value = lead.get("estimated_value_tl") or 0
     findings = lead.get("audit_findings") or []
-    issues = [item for item in findings if item.get("status") in {"confirmed", "likely"}]
+    issues = [
+        item
+        for item in findings
+        if item.get("status") in {"confirmed", "likely"}
+        and item.get("finding_type", "gap") != "opportunity"
+    ]
+    growth_opportunities = [
+        item
+        for item in findings
+        if item.get("finding_type") == "opportunity"
+    ]
     has_contact = bool((lead.get("data_quality") or {}).get("has_contact"))
     has_report = bool(lead.get("ai_report"))
     has_email = bool(lead.get("ai_email"))
@@ -247,6 +268,7 @@ def priority_model(lead: dict) -> tuple[int, str, str]:
         {"critical": 8, "high": 5, "medium": 3, "low": 1}.get(item.get("severity"), 1)
         for item in issues
     ))
+    priority += min(4, len(growth_opportunities))
     if has_contact:
         priority += 14
     if has_report:
@@ -265,12 +287,18 @@ def priority_model(lead: dict) -> tuple[int, str, str]:
     elif score_status == "insufficient":
         action = "Derin audit yap"
         reason = f"Denetim kapsamı %{coverage}; satış iddiasından önce daha fazla kaynak kontrol edilmeli."
-    elif not has_report:
+    elif not has_report and issues:
         action = "İhtiyaç raporu üret"
         reason = (
             "Kanıtlı bulgular var; çalışan için görüşme özeti"
             + (" ve kontrollü mail taslağı" if has_email_evidence(lead) else "")
             + " hazırlanmalı."
+        )
+    elif not has_report:
+        action = "Keşif görüşmesi hazırla"
+        reason = (
+            f"{len(growth_opportunities)} büyüme fırsatı bulundu; bunlar açık gibi sunulmadan "
+            "işletmenin hedefleri görüşmede doğrulanmalı."
         )
     elif not has_email:
         action = "Kanıtlı bulguları telefonla görüş"
