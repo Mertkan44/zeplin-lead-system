@@ -8,11 +8,15 @@ from pathlib import Path
 
 from src import auth
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
+from src.audit.findings import analyze_lead
+from src.audit.website import _robots_blocks_all
+from src.ai.generator import has_email_evidence
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
 from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
 from src.storage.supabase import _lead_row
 from scripts.migrate_leads import normalize_lead
+from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
@@ -26,6 +30,112 @@ class HardeningTests(unittest.TestCase):
         parsed = _parse_maps_search_card("Örnek Klinik\n4,8\n(1.234)\nDiş Kliniği · Kadıköy")
         self.assertEqual(parsed["rating"], 4.8)
         self.assertEqual(parsed["review_count"], 1234)
+
+    def test_robots_parser_respects_user_agent_groups(self):
+        cloudflare = """
+        User-agent: *
+        Allow: /
+        User-agent: GPTBot
+        Disallow: /
+        """
+        blocked = """
+        User-agent: *
+        Disallow: /
+        User-agent: Googlebot
+        Allow: /
+        """
+        self.assertFalse(_robots_blocks_all(cloudflare))
+        self.assertTrue(_robots_blocks_all(blocked))
+
+    def test_theme_vendor_instagram_is_not_treated_as_official(self):
+        lead = {
+            "name": "Kanlıca Paysage Restaurant",
+            "website": {"website_url": "https://paysagerestaurant.com/"},
+        }
+        self.assertFalse(
+            _official_instagram_matches(
+                lead,
+                "https://www.instagram.com/themerex_net/",
+            )
+        )
+        self.assertTrue(
+            _official_instagram_matches(
+                lead,
+                "https://www.instagram.com/paysagerestaurant/",
+            )
+        )
+
+    def test_placeholder_page_does_not_create_cascading_seo_findings(self):
+        audit = analyze_lead(
+            {
+                "name": "Test İşletme",
+                "website": {
+                    "audit_version": 3,
+                    "audit_status": "ok",
+                    "lookup_status": "found",
+                    "website_url": "https://example.com",
+                    "final_url": "https://example.com",
+                    "http_status": 200,
+                    "placeholder_detected": True,
+                    "placeholder_reason": "Coming soon page",
+                    "title": "Çok Yakında",
+                },
+            }
+        )
+        codes = {item["code"] for item in audit["findings"]}
+        self.assertEqual(codes, {"website.placeholder"})
+
+    def test_email_requires_confirmed_high_confidence_service_evidence(self):
+        low_confidence = {
+            "audit_findings": [
+                {
+                    "status": "confirmed",
+                    "confidence": 66,
+                    "service_slugs": ["website_creation"],
+                }
+            ]
+        }
+        verified = {
+            "audit_findings": [
+                {
+                    "status": "confirmed",
+                    "confidence": 94,
+                    "service_slugs": ["website_creation"],
+                }
+            ]
+        }
+        self.assertFalse(has_email_evidence(low_confidence))
+        self.assertTrue(has_email_evidence(verified))
+
+    def test_missing_website_is_a_finding_only_when_maps_confirmed_it(self):
+        unknown = normalize_lead({"name": "Test", "website": {"audit_version": 3, "audit_status": "missing", "lookup_status": "unknown"}})
+        confirmed = normalize_lead({"name": "Test", "website": {"audit_version": 3, "audit_status": "missing", "lookup_status": "not_found"}})
+        self.assertFalse(any(item["code"] == "website.absent" for item in unknown["audit_findings"]))
+        self.assertTrue(any(item["code"] == "website.absent" for item in confirmed["audit_findings"]))
+
+    def test_invalid_messaging_link_is_not_a_website(self):
+        lead = {
+            "name": "Test",
+            "website": {
+                "audit_version": 3,
+                "audit_status": "invalid_candidate",
+                "lookup_status": "found",
+                "candidate_kind": "social_or_messaging",
+                "website_url": "https://wa.me/905000000000",
+            },
+        }
+        audit = analyze_lead(lead)
+        self.assertIn("website.invalid_candidate", {item["code"] for item in audit["findings"]})
+        self.assertNotIn("seo.schema", {item["code"] for item in audit["findings"]})
+
+    def test_empty_structured_audit_does_not_fall_back_to_legacy_flags(self):
+        services = match_services(
+            {
+                "audit": {"version": 3, "findings": []},
+                "website": {"has_website": False, "has_schema": False},
+            }
+        )
+        self.assertEqual(services, [])
 
     def test_instagram_decimal_suffix(self):
         self.assertEqual(_parse_ig_num("5.8K"), 5800)

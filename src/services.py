@@ -294,6 +294,19 @@ TRIGGER_LABELS = {
     "no_analytics": "Görünür analytics etiketi bulunamadı",
 }
 
+FINDING_TRIGGER_MAP = {
+    "website.absent": "no_website",
+    "website.invalid_candidate": "no_website",
+    "website.https": "no_ssl",
+    "website.viewport": "not_mobile",
+    "performance.origin_response": "slow_site",
+    "seo.schema": "no_schema",
+    "seo.local_schema": "no_schema",
+    "social.open_graph": "no_og",
+    "social.instagram_absent": "no_instagram",
+    "social.low_engagement": "low_engagement",
+}
+
 DISCOVERY_SERVICE_ORDER = {
     "restaurant": [
         "menu_shoot",
@@ -349,22 +362,33 @@ DISCOVERY_SERVICE_ORDER = {
 
 
 def lead_triggers(lead: dict) -> set[str]:
+    audit = lead.get("audit") or {}
+    findings = audit.get("findings") or lead.get("audit_findings") or []
+    if int(audit.get("version") or 0) >= 3 or "audit_findings" in lead:
+        return {
+            trigger
+            for finding in findings
+            if finding.get("status") in {"confirmed", "likely"}
+            for trigger in [FINDING_TRIGGER_MAP.get(finding.get("code"))]
+            if trigger
+        }
+
     triggers: set[str] = set()
     website = lead.get("website") or {}
     social = lead.get("social") or {}
     instagram_stats = social.get("stats") or {}
 
-    if website.get("has_website") is False:
+    if website.get("has_website") is False and website.get("lookup_status") in {None, "not_found"}:
         triggers.add("no_website")
-    if website.get("has_ssl") is False:
+    if website.get("has_website") is not False and website.get("has_ssl") is False:
         triggers.add("no_ssl")
-    if website.get("is_mobile_friendly") is False:
+    if website.get("has_website") is not False and website.get("is_mobile_friendly") is False:
         triggers.add("not_mobile")
     if website.get("load_time_ms") and website["load_time_ms"] > 3000:
         triggers.add("slow_site")
-    if website.get("has_schema") is False:
+    if website.get("has_website") is not False and website.get("has_schema") is False:
         triggers.add("no_schema")
-    if website.get("has_og") is False:
+    if website.get("has_website") is not False and website.get("has_og") is False:
         triggers.add("no_og")
     if website.get("has_email_capture") is False:
         triggers.add("no_email_capture")
@@ -373,15 +397,14 @@ def lead_triggers(lead: dict) -> set[str]:
     if website.get("has_analytics") is False:
         triggers.add("no_analytics")
 
-    if social.get("has_instagram") is False:
+    if social.get("has_instagram") is False and social.get("lookup_status") == "not_found":
         triggers.add("no_instagram")
     elif social.get("has_instagram") is True:
         engagement = instagram_stats.get("engagement_rate")
-        followers = instagram_stats.get("followers")
-        if engagement is not None and engagement < 1:
+        sample_size = int(instagram_stats.get("engagement_sample_size") or 0)
+        identity_confidence = int(social.get("identity_confidence") or 0)
+        if engagement is not None and engagement < 1 and sample_size >= 6 and identity_confidence >= 70:
             triggers.add("low_engagement")
-        if followers is not None and followers < 500:
-            triggers.add("low_followers")
 
     tiktok = social.get("tiktok") or {}
     if tiktok.get("has_tiktok") is False:
@@ -398,6 +421,72 @@ def lead_triggers(lead: dict) -> set[str]:
 
 
 def match_services(lead: dict) -> list[dict]:
+    audit = lead.get("audit") or {}
+    findings = audit.get("findings") or lead.get("audit_findings") or []
+    if int(audit.get("version") or 0) >= 3 or "audit_findings" in lead:
+        matched = []
+        sector = lead.get("sector", "default")
+        for service in ZEPLIN_SERVICES:
+            if service["sectors"] and sector not in service["sectors"]:
+                continue
+            service_findings = [
+                finding
+                for finding in findings
+                if service["slug"] in (finding.get("service_slugs") or [])
+                and finding.get("status") in {"confirmed", "likely"}
+            ]
+            if not service_findings:
+                continue
+            direct = any(
+                finding.get("recommendation_strength") == "direct"
+                for finding in service_findings
+            )
+            confidence = round(
+                sum(int(finding.get("confidence") or 0) for finding in service_findings)
+                / len(service_findings)
+            )
+            matched.append(
+                {
+                    **service,
+                    "matched_triggers": [
+                        FINDING_TRIGGER_MAP[code]
+                        for code in dict.fromkeys(
+                            finding.get("code") for finding in service_findings
+                        )
+                        if code in FINDING_TRIGGER_MAP
+                    ],
+                    "matched_finding_codes": [
+                        finding.get("code") for finding in service_findings
+                    ],
+                    "evidence": [
+                        finding.get("title") for finding in service_findings
+                    ],
+                    "evidence_details": [
+                        {
+                            "code": finding.get("code"),
+                            "title": finding.get("title"),
+                            "evidence": finding.get("evidence"),
+                            "impact": finding.get("impact"),
+                            "source_url": finding.get("source_url"),
+                            "checked_at": finding.get("checked_at"),
+                            "confidence": finding.get("confidence"),
+                            "verification": finding.get("verification"),
+                        }
+                        for finding in service_findings
+                    ],
+                    "confidence": confidence,
+                    "requires_discovery": not direct,
+                }
+            )
+        return sorted(
+            matched,
+            key=lambda service: (
+                service["requires_discovery"],
+                -service["confidence"],
+                service["name"],
+            ),
+        )
+
     triggers = lead_triggers(lead)
     sector = lead.get("sector", "default")
     matched = []

@@ -1,12 +1,14 @@
 import asyncio
+import html
 import json
 import re
 import httpx
-import time
-from urllib.parse import quote_plus
+import unicodedata
+from datetime import datetime, timezone
+from urllib.parse import quote_plus, urlparse
 from playwright.async_api import async_playwright
 from rich.console import Console
-from src.net_security import assert_safe_public_url
+from src.audit.website import audit_website
 
 console = Console()
 
@@ -35,6 +37,29 @@ def detect_sector(category: str | None) -> str:
 
 def _normalize_maps_card_text(text: str) -> str:
     return re.sub(r"\s+", "\n", text or "").strip()
+
+
+def _entity_tokens(value: str | None) -> set[str]:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    normalized = normalized.casefold().replace("ı", "i")
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]+", normalized)
+        if len(token) > 1 and token not in {"ve", "the", "at", "istanbul"}
+    }
+
+
+def _entity_similarity(expected: str | None, observed: str | None) -> int:
+    expected_tokens = _entity_tokens(expected)
+    observed_tokens = _entity_tokens(observed)
+    if not expected_tokens or not observed_tokens:
+        return 0
+    intersection = len(expected_tokens & observed_tokens)
+    union = len(expected_tokens | observed_tokens)
+    containment = intersection / max(1, min(len(expected_tokens), len(observed_tokens)))
+    jaccard = intersection / max(1, union)
+    return round(max(containment * 90, jaccard * 100))
 
 
 def _parse_maps_search_card(text: str) -> dict:
@@ -118,10 +143,29 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
     result = {
         "website_url": None, "phone": None, "address": None,
         "rating": None, "review_count": None, "category": None,
+        "source_status": "unknown",
+        "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "identity_name": None,
+        "identity_confidence": 0,
+        "website_lookup_status": "unknown",
+        "phone_lookup_status": "unknown",
+        "address_lookup_status": "unknown",
+        "rating_lookup_status": "unknown",
+        "review_count_lookup_status": "unknown",
     }
     try:
         await page.goto(maps_url, wait_until="domcontentloaded")
         await page.wait_for_timeout(3000)
+        result["source_status"] = "ok"
+
+        for sel in ["h1.DUwDvf", "h1", '[role="main"] h1']:
+            heading = await page.query_selector(sel)
+            if heading:
+                identity_name = (await heading.inner_text()).strip()
+                if identity_name:
+                    result["identity_name"] = identity_name
+                    result["identity_confidence"] = _entity_similarity(business_name, identity_name)
+                    break
 
         # Web sitesi
         for sel in [
@@ -134,7 +178,10 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
                 href = await btn.get_attribute("href")
                 if href and "google" not in href:
                     result["website_url"] = href
+                    result["website_lookup_status"] = "found"
                     break
+        if result["website_lookup_status"] != "found" and result["identity_confidence"] >= 70:
+            result["website_lookup_status"] = "not_found"
 
         # Telefon
         for sel in ['button[data-item-id*="phone:"]', 'button[data-item-id*="phone"]']:
@@ -144,7 +191,10 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
                 phone = re.sub(r'^[^:]+:\s*', '', label).strip()
                 if phone:
                     result["phone"] = phone
+                    result["phone_lookup_status"] = "found"
                 break
+        if result["phone_lookup_status"] != "found" and result["identity_confidence"] >= 70:
+            result["phone_lookup_status"] = "not_found"
 
         # Adres
         for sel in ['button[data-item-id="address"]', 'button[aria-label*="Adres"]', '[data-item-id="address"]']:
@@ -154,6 +204,7 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
                 addr = re.sub(r'^[^:]+:\s*', '', label).strip()
                 if addr:
                     result["address"] = addr
+                    result["address_lookup_status"] = "found"
                 break
 
         content = await page.content()
@@ -168,6 +219,10 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
             m = re.search(rf'{re.escape(business_name)}.*?\n(?:[\d][,.][\d]\n)?(?:.+?·.+?\n)?([^\n]+/(?:İstanbul|Istanbul))', body_text, re.S)
             if m:
                 result["address"] = m.group(1).strip()
+        if result["address"]:
+            result["address_lookup_status"] = "found"
+        elif result["identity_confidence"] >= 70:
+            result["address_lookup_status"] = "not_found"
 
         # Rating — aria-label "4,5 yıldız" veya "4.5 stars" formatı
         for sel in ['span[aria-label*="yıldız"]', 'span[aria-label*="star"]', 'div[aria-label*="yıldız"]']:
@@ -177,6 +232,7 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
                 m = re.search(r'([\d][,.][\d])', label)
                 if m:
                     result["rating"] = float(m.group(1).replace(',', '.'))
+                    result["rating_lookup_status"] = "found"
                     break
 
         # Rating fallback — JSON embedded
@@ -190,25 +246,37 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
             m = re.search(rf'{re.escape(business_name)}\n([\d][,.][\d])\n', body_text)
             if m:
                 result["rating"] = float(m.group(1).replace(',', '.'))
+        if result["rating"] is not None:
+            result["rating_lookup_status"] = "found"
 
-        # Review count — "(1.234 yorum)" veya "(1,234 reviews)"
-        for pattern in [
-            r'\(([\d\.]+)\s*yorum',
-            r'\(([\d,\.]+)\s*review',
-            r'"reviewCount"\s*:\s*"?(\d+)"?',
-            r'"userRatingCount"\s*:\s*(\d+)',
+        # Yorum sayısı yalnızca seçili işletme panelindeki etiketlerden okunur.
+        # Sayfanın tamamındaki "yorum yok" metni başka kartlara ait olabilir.
+        for selector in [
+            'button[jsaction*="pane.reviewChart.moreReviews"]',
+            'button[aria-label*="yorum"]',
+            'button[aria-label*="review"]',
         ]:
-            m = re.search(pattern, content, re.I)
-            if m:
-                raw = m.group(1).replace('.','').replace(',','')
-                try:
+            for element in await page.query_selector_all(selector):
+                label = " ".join(
+                    part
+                    for part in [
+                        await element.get_attribute("aria-label") or "",
+                        (await element.inner_text()).strip(),
+                    ]
+                    if part
+                )
+                match = re.search(r"([\d.,\s]+)\s*(?:yorum|reviews?)", label, re.I)
+                if not match:
+                    continue
+                raw = re.sub(r"\D", "", match.group(1))
+                if raw:
                     result["review_count"] = int(raw)
+                    result["review_count_lookup_status"] = "found"
                     break
-                except:
-                    pass
-        if result["review_count"] is None:
-            if re.search(r'\bYorum yok\b', body_text, re.I) or re.search(r'\bNo reviews\b', body_text, re.I):
-                result["review_count"] = 0
+            if result["review_count"] is not None:
+                break
+        if result["review_count"] is None and result["identity_confidence"] >= 70:
+            result["review_count_lookup_status"] = "not_parsed"
 
         # Kategori (business type)
         for sel in ['button[jsaction*="category"]', 'span[jsaction*="category"]',
@@ -233,6 +301,7 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
                     result["category"] = candidate
 
     except Exception as e:
+        result["source_status"] = "error"
         console.print(f"[red]Maps hata: {e}[/red]")
 
     if (
@@ -245,103 +314,29 @@ async def find_from_google_maps(page, maps_url: str, business_name: str, city: s
         for key, value in fallback.items():
             if result.get(key) is None and value is not None:
                 result[key] = value
+    if result.get("review_count") is not None:
+        result["review_count_lookup_status"] = "found"
+    if result.get("rating") is not None:
+        result["rating_lookup_status"] = "found"
+    if result.get("phone"):
+        result["phone_lookup_status"] = "found"
+    if result.get("address"):
+        result["address_lookup_status"] = "found"
 
     return result
 
 # ── Web sitesi kontrol ─────────────────────────────────
-async def check_website(url: str) -> dict:
-    empty = {
-        "has_website": False, "website_url": None, "has_ssl": False,
-        "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False,
-        "has_schema": False, "has_og": False, "meta_description": None,
-        "has_robots": False, "has_sitemap": False,
-        "has_email_capture": False, "has_whatsapp": False,
-        "tiktok_url": None,   # tiktok link website'te varsa
-    }
-    if not url:
-        return empty
-    try:
-        url = assert_safe_public_url(url)
-    except ValueError:
-        return empty
-
-    r = {
-        "has_website": False, "website_url": url, "has_ssl": url.startswith("https"),
-        "is_mobile_friendly": False, "load_time_ms": None, "website_loads": False,
-        "has_schema": False, "has_og": False, "meta_description": None,
-        "has_robots": False, "has_sitemap": False,
-        "has_email_capture": False, "has_whatsapp": False,
-        "tiktok_url": None,
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
-            # Ana sayfa
-            t0 = time.time()
-            resp = await client.get(url, headers={
-                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
-            })
-            r["load_time_ms"] = int((time.time() - t0) * 1000)
-            r["website_loads"] = resp.status_code == 200
-            assert_safe_public_url(str(resp.url))
-            r["has_website"] = r["website_loads"]
-            r["website_url"] = str(resp.url)
-            r["has_ssl"] = str(resp.url).startswith("https")
-
-            html = resp.text
-            html_lower = html.lower()
-
-            r["is_mobile_friendly"] = "viewport" in html_lower
-
-            # Schema.org / JSON-LD
-            r["has_schema"] = 'application/ld+json' in html_lower
-
-            # Open Graph
-            r["has_og"] = bool(re.search(r'property=["\']og:', html, re.I))
-
-            # Meta description
-            m = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']{10,300})',
-                          html, re.I)
-            if not m:
-                m = re.search(r'<meta[^>]+content=["\']([^"\']{10,300})["\'][^>]+name=["\']description["\']',
-                              html, re.I)
-            if m:
-                r["meta_description"] = m.group(1).strip()[:200]
-
-            # E-posta formu / mailto
-            r["has_email_capture"] = bool(re.search(
-                r'mailto:|input[^>]+type=["\']email["\']|<form[^>]+action[^>]*mail|contact.*form',
-                html, re.I))
-
-            # WhatsApp Business
-            r["has_whatsapp"] = bool(re.search(
-                r'wa\.me/|api\.whatsapp\.com|whatsapp\.com/send|whatsapp-chat',
-                html, re.I))
-
-            # TikTok linki
-            m = re.search(r'tiktok\.com/@([a-zA-Z0-9_.]{2,30})', html)
-            if m:
-                r["tiktok_url"] = f"https://www.tiktok.com/@{m.group(1)}"
-
-            # robots.txt
-            try:
-                base = re.match(r'https?://[^/]+', url).group(0)
-                rb = await client.get(f"{base}/robots.txt", timeout=4)
-                r["has_robots"] = rb.status_code == 200 and len(rb.text) > 10
-            except:
-                pass
-
-            # sitemap.xml
-            try:
-                sm = await client.get(f"{base}/sitemap.xml", timeout=4)
-                r["has_sitemap"] = sm.status_code == 200 and 'xml' in sm.headers.get('content-type','')
-            except:
-                pass
-
-    except Exception:
-        pass
-
-    return r
+async def check_website(
+    url: str | None,
+    *,
+    lookup_status: str = "unknown",
+    check_links: bool = True,
+) -> dict:
+    return await audit_website(
+        url,
+        lookup_status=lookup_status,
+        check_links=check_links,
+    )
 
 # ── TikTok bul ─────────────────────────────────────────
 async def find_tiktok(page, business_name: str, website_data: dict) -> dict:
@@ -419,8 +414,47 @@ async def check_delivery(page, business_name: str, sector: str) -> dict:
     return result
 
 # ── Instagram bul ──────────────────────────────────────
+def _instagram_identity_score(
+    business_name: str,
+    username: str,
+    profile_content: str,
+    website_url: str | None,
+) -> tuple[int, str]:
+    snippets = []
+    for pattern in [
+        r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)',
+        r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)',
+        r'"full_name"\s*:\s*"([^"]+)"',
+        r'"biography"\s*:\s*"([^"]+)"',
+    ]:
+        snippets.extend(re.findall(pattern, profile_content, re.I))
+    observed = html.unescape(" ".join(snippets))
+    expected_tokens = _entity_tokens(business_name)
+    observed_tokens = _entity_tokens(f"{username} {observed}")
+    if not expected_tokens or not observed_tokens:
+        return 0, "profile metadata could not be matched"
+    overlap = expected_tokens & observed_tokens
+    coverage = len(overlap) / len(expected_tokens)
+    precision = len(overlap) / max(1, min(len(observed_tokens), len(expected_tokens) + 2))
+    score = round((coverage * 0.75 + precision * 0.25) * 100)
+
+    if website_url:
+        website_host = (urlparse(website_url).hostname or "").removeprefix("www.")
+        if website_host and website_host in profile_content:
+            return max(score, 95), f"profile links to {website_host}"
+    return score, f"profile metadata matched {len(overlap)}/{len(expected_tokens)} business-name tokens"
+
+
 async def find_instagram(page, business_name: str, website_url: str = None) -> dict:
-    result = {"has_instagram": False, "instagram_url": None, "instagram_username": None}
+    result = {
+        "has_instagram": None,
+        "instagram_url": None,
+        "instagram_username": None,
+        "lookup_status": "unknown",
+        "identity_confidence": 0,
+        "identity_evidence": None,
+        "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    }
     bl = {"p","reel","explore","stories","accounts","about","legal","help","press","api","sharer"}
 
     if website_url:
@@ -431,7 +465,10 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
                 if m not in bl:
                     result.update(has_instagram=True,
                                   instagram_url=f"https://www.instagram.com/{m}/",
-                                  instagram_username=m)
+                                  instagram_username=m,
+                                  lookup_status="found",
+                                  identity_confidence=98,
+                                  identity_evidence="Instagram linki işletmenin websitesinde bulundu.")
                     return result
         except:
             pass
@@ -441,46 +478,66 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
         .replace('ı','i').replace('ğ','g').replace('ü','u')
         .replace('ş','s').replace('ö','o').replace('ç','c'))
     words = clean.split()
-    candidates = [''.join(words), '.'.join(words), '_'.join(words),
-                  words[0] if words else '',
-                  ''.join(words[:2]) if len(words) >= 2 else '']
-    candidates = [c for c in candidates if len(c) >= 3]
+    guessed_candidates = [''.join(words), '.'.join(words), '_'.join(words),
+                          words[0] if words else '',
+                          ''.join(words[:2]) if len(words) >= 2 else '']
+    guessed_candidates = list(dict.fromkeys(c for c in guessed_candidates if len(c) >= 3))
 
     async with httpx.AsyncClient(timeout=6, follow_redirects=True) as client:
         hdrs = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)"}
-        for u in candidates:
+        searched_candidates: list[tuple[str, str]] = []
+        try:
+            await page.goto(
+                f"https://www.google.com/search?q={quote_plus(business_name + ' instagram')}",
+                wait_until="domcontentloaded")
+            await page.wait_for_timeout(2200)
+            search_content = await page.content()
+            for username in re.findall(r'instagram\.com/([a-zA-Z0-9_.]{2,30})/?', search_content):
+                if username not in bl and username not in [item[0] for item in searched_candidates]:
+                    searched_candidates.append((username, "Google arama sonucu"))
+        except Exception:
+            search_content = ""
+
+        for username in guessed_candidates:
+            if username not in [item[0] for item in searched_candidates]:
+                searched_candidates.append((username, "İşletme adından türetilen aday"))
+
+        checked = 0
+        blocked = 0
+        for u, candidate_source in searched_candidates[:8]:
             try:
                 resp = await client.get(f"https://www.instagram.com/{u}/", headers=hdrs)
-                if resp.status_code == 200 and '"@type":"ProfilePage"' in resp.text:
+                checked += 1
+                if resp.status_code in {401, 403, 429}:
+                    blocked += 1
+                    continue
+                if resp.status_code == 200 and (
+                    '"@type":"ProfilePage"' in resp.text or 'property="og:title"' in resp.text
+                ):
+                    identity_score, identity_evidence = _instagram_identity_score(
+                        business_name,
+                        u,
+                        resp.text,
+                        website_url,
+                    )
+                    if identity_score < 70:
+                        continue
                     result.update(has_instagram=True,
                                   instagram_url=f"https://www.instagram.com/{u}/",
-                                  instagram_username=u)
+                                  instagram_username=u,
+                                  lookup_status="found",
+                                  identity_confidence=identity_score,
+                                  identity_evidence=f"{candidate_source}; {identity_evidence}.")
                     console.print(f"    [green]✓ Instagram: @{u}[/green]")
                     return result
                 await asyncio.sleep(0.4)
             except:
                 continue
-
-    try:
-        await page.goto(
-            f"https://www.google.com/search?q={business_name.replace(' ','+')}+instagram",
-            wait_until="domcontentloaded")
-        await page.wait_for_timeout(2200)
-        for m in re.findall(r'instagram\.com/([a-zA-Z0-9_.]{2,30})/?', await page.content()):
-            if m not in bl:
-                async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
-                    try:
-                        resp = await client.get(f"https://www.instagram.com/{m}/",
-                                                headers={"User-Agent": "Mozilla/5.0 (iPhone)"})
-                        if resp.status_code == 200:
-                            result.update(has_instagram=True,
-                                          instagram_url=f"https://www.instagram.com/{m}/",
-                                          instagram_username=m)
-                            return result
-                    except:
-                        pass
-    except:
-        pass
+        if checked and blocked == checked:
+            result["lookup_status"] = "blocked"
+        elif checked:
+            result["lookup_status"] = "not_found"
+            result["has_instagram"] = False
 
     return result
 
@@ -498,7 +555,9 @@ def _parse_ig_num(s: str) -> int | None:
 
 async def get_instagram_stats(page, username: str) -> dict:
     stats = {"followers": None, "following": None, "post_count": None,
-             "avg_likes": None, "avg_comments": None, "engagement_rate": None}
+             "avg_likes": None, "avg_comments": None, "engagement_rate": None,
+             "lookup_status": "not_checked", "engagement_sample_size": 0,
+             "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat()}
     if not username:
         return stats
     try:
@@ -513,6 +572,8 @@ async def get_instagram_stats(page, username: str) -> dict:
             resp = await client.get(f"https://www.instagram.com/{username}/")
             if resp.status_code == 200:
                 content = resp.text
+            elif resp.status_code in {401, 403, 429}:
+                stats["lookup_status"] = "blocked"
 
         await page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded")
         await page.wait_for_timeout(3500)
@@ -553,6 +614,7 @@ async def get_instagram_stats(page, username: str) -> dict:
 
         likes = [int(x) for x in likes_raw[:12] if int(x) > 0]
         comments = [int(x) for x in comments_raw[:12]]
+        stats["engagement_sample_size"] = max(len(likes), len(comments))
 
         if likes:
             stats["avg_likes"] = round(sum(likes) / len(likes))
@@ -564,6 +626,10 @@ async def get_instagram_stats(page, username: str) -> dict:
             avg_l = stats["avg_likes"] or 0
             avg_c = stats["avg_comments"] or 0
             stats["engagement_rate"] = round((avg_l + avg_c) / followers * 100, 2)
+        if any(stats.get(key) is not None for key in ("followers", "post_count", "avg_likes")):
+            stats["lookup_status"] = "found"
+        elif stats["lookup_status"] == "not_checked":
+            stats["lookup_status"] = "unavailable"
 
         console.print(
             f"    📊 {followers or '?'} takipçi | "
@@ -571,119 +637,30 @@ async def get_instagram_stats(page, username: str) -> dict:
             f"%{stats['engagement_rate'] or '?'} etkileşim"
         )
     except Exception as e:
+        stats["lookup_status"] = "error"
         console.print(f"[red]Instagram stats hata: {e}[/red]")
 
     return stats
 
 # ── Skor (genişletilmiş) ───────────────────────────────
 def compute_score(website, instagram, ig_stats=None, tiktok=None, maps_data=None, sector="default"):
-    score, issues, opportunities = 0, [], []
+    from src.audit.findings import analyze_lead
 
-    # ── Web varlığı (maks 55) ──────────────────────────
-    if website["has_website"]:
-        score += 20
-        if website["has_ssl"]:
-            score += 8
-        else:
-            issues.append("SSL yok")
-            opportunities.append("SSL kurulumu")
-        if website["is_mobile_friendly"]:
-            score += 7
-        else:
-            issues.append("Mobil uyumsuz")
-            opportunities.append("Mobil tasarım")
-        if website.get("load_time_ms") is None:
-            issues.append("Site hızı ölçülemedi")
-        elif website["load_time_ms"] > 3000:
-            issues.append(f"Site yavaş ({website['load_time_ms']}ms)")
-            opportunities.append("Site hız optimizasyonu")
-        else:
-            score += 4
-        if website.get("has_schema"):
-            score += 4
-        else:
-            issues.append("Schema.org yok")
-            opportunities.append("Google SEO yapılandırması")
-        if website.get("has_og"):
-            score += 3
-        else:
-            opportunities.append("Sosyal paylaşım meta etiketleri")
-        if website.get("has_email_capture"):
-            score += 4
-        else:
-            opportunities.append("E-posta toplama formu")
-        if website.get("has_whatsapp"):
-            score += 5
-        else:
-            issues.append("WhatsApp butonu yok")
-            opportunities.append("WhatsApp Business entegrasyonu")
-    else:
-        issues.append("Web sitesi yok")
-        opportunities.append("Web sitesi tasarımı")
-
-    # ── Sosyal medya (maks 28) ─────────────────────────
-    if instagram["has_instagram"]:
-        score += 12
-        if ig_stats:
-            er = ig_stats.get("engagement_rate")
-            followers = ig_stats.get("followers")
-            if er is not None:
-                if er >= 3:
-                    score += 8
-                elif er >= 1:
-                    score += 4
-                else:
-                    issues.append(f"Düşük etkileşim (%{er})")
-                    opportunities.append("İçerik stratejisi & etkileşim artırma")
-            if followers is not None and followers >= 500:
-                score += 4
-            elif followers is not None:
-                issues.append(f"Az takipçi ({followers})")
-                opportunities.append("Takipçi büyüme kampanyası")
-    else:
-        issues.append("Instagram yok")
-        opportunities.append("Instagram yönetimi")
-
-    if tiktok and tiktok.get("has_tiktok"):
-        score += 4
-    else:
-        opportunities.append("TikTok hesabı açılması")
-
-    # ── Yerel güven (maks 12) ──────────────────────────
-    if maps_data:
-        rating = maps_data.get("rating")
-        review_count = maps_data.get("review_count")
-        if rating is not None:
-            if rating >= 4.0:
-                score += 6
-            elif rating >= 3.5:
-                score += 3
-            else:
-                issues.append(f"Google puanı düşük ({rating})")
-                opportunities.append("Google yorumları yönetimi")
-        if review_count is not None and review_count >= 100:
-            score += 6
-        elif review_count is not None and review_count >= 20:
-            score += 3
-        elif review_count is not None:
-            issues.append(f"Az Google yorumu ({review_count})")
-            opportunities.append("Yorum artırma kampanyası")
-
-    # ── Delivery (restoran/cafe için maks 5) ───────────
-    if sector in ("restaurant", "cafe"):
-        delivery = maps_data.get("delivery") if maps_data else None
-        has_ys = delivery and delivery.get("has_yemeksepeti") if delivery else False
-        has_gt = delivery and delivery.get("has_getir") if delivery else False
-        if has_ys or has_gt:
-            score += 5
-        else:
-            issues.append("Online sipariş platformu yok")
-            opportunities.append("Yemeksepeti / Getir entegrasyonu")
-
-    score = min(score, 100)
-    grade = "A" if score >= 80 else "B" if score >= 55 else "C" if score >= 35 else "D"
-    return {"score": score, "max_score": 100, "grade": grade,
-            "issues": issues, "opportunities": opportunities}
+    maps_data = maps_data or {}
+    lead = {
+        "sector": sector,
+        "rating": maps_data.get("rating"),
+        "review_count": maps_data.get("review_count"),
+        "maps_url": maps_data.get("maps_url"),
+        "maps": maps_data,
+        "website": website or {},
+        "social": {
+            **(instagram or {}),
+            "stats": ig_stats or {},
+            "tiktok": tiktok or {},
+        },
+    }
+    return analyze_lead(lead)["scoring"]
 
 # ── Ana audit akışı ────────────────────────────────────
 async def audit_all(leads_file="leads_raw.json"):
@@ -714,7 +691,10 @@ async def audit_all(leads_file="leads_raw.json"):
                 console.print(f"     Kategori: {maps_data.get('category','—')}")
 
             sector = detect_sector(maps_data.get("category"))
-            website = await check_website(maps_data.get("website_url"))
+            website = await check_website(
+                maps_data.get("website_url"),
+                lookup_status=maps_data.get("website_lookup_status") or "unknown",
+            )
 
             console.print(f"  🌐 Schema:{website['has_schema']} OG:{website['has_og']} WA:{website['has_whatsapp']}")
 
@@ -735,9 +715,9 @@ async def audit_all(leads_file="leads_raw.json"):
 
             maps_data["delivery"] = delivery
 
-            scoring = compute_score(website, instagram, ig_stats, tiktok, maps_data, sector)
+            from scripts.migrate_leads import normalize_lead
 
-            results.append({
+            results.append(normalize_lead({
                 **lead,
                 "sector": sector,
                 "phone":   maps_data.get("phone"),
@@ -748,8 +728,9 @@ async def audit_all(leads_file="leads_raw.json"):
                 "website": website,
                 "social":  {**instagram, "stats": ig_stats, "tiktok": tiktok},
                 "delivery": delivery,
-                "scoring": scoring,
-            })
+                "maps": maps_data,
+                "scoring": {},
+            }))
             await asyncio.sleep(1)
 
         await browser.close()

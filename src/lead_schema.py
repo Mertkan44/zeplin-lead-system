@@ -6,6 +6,7 @@ from typing import Any
 
 
 VALID_GRADES = {"A", "B", "C", "D"}
+VALID_SCORE_STATUSES = {"reliable", "partial", "insufficient"}
 REQUIRED_TOP_LEVEL = {
     "name",
     "city",
@@ -16,6 +17,8 @@ REQUIRED_TOP_LEVEL = {
     "review_count",
     "website",
     "social",
+    "audit_findings",
+    "audit_checks",
     "scoring",
     "matched_services",
     "recommended_package",
@@ -46,7 +49,16 @@ REQUIRED_SOCIAL_STATS = {
     "avg_comments",
     "engagement_rate",
 }
-REQUIRED_SCORING = {"score", "max_score", "grade", "issues", "opportunities"}
+REQUIRED_SCORING = {
+    "score",
+    "max_score",
+    "grade",
+    "score_status",
+    "coverage",
+    "confidence",
+    "issues",
+    "opportunities",
+}
 REQUIRED_DATA_QUALITY = {
     "has_contact",
     "has_maps_rating",
@@ -139,7 +151,7 @@ def validate_leads(leads: Any) -> list[ValidationIssue]:
 
         schema_version = lead.get("schema_version")
         if schema_version is not None:
-            _check_number(issues, lead_name, "schema_version", schema_version, minimum=2)
+            _check_number(issues, lead_name, "schema_version", schema_version, minimum=3)
 
         _check_number(issues, lead_name, "estimated_value_tl", lead.get("estimated_value_tl"), minimum=0)
         _check_number(
@@ -176,8 +188,89 @@ def validate_leads(leads: Any) -> list[ValidationIssue]:
             _check_number(issues, lead_name, "scoring.max_score", scoring.get("max_score"), minimum=1)
             if scoring.get("grade") not in VALID_GRADES:
                 issues.append(ValidationIssue(lead_name, "scoring.grade", "must be A, B, C, or D"))
+            if scoring.get("score_status") not in VALID_SCORE_STATUSES:
+                issues.append(
+                    ValidationIssue(
+                        lead_name,
+                        "scoring.score_status",
+                        "must be reliable, partial, or insufficient",
+                    )
+                )
+            _check_number(
+                issues,
+                lead_name,
+                "scoring.coverage",
+                scoring.get("coverage"),
+                minimum=0,
+                maximum=100,
+            )
+            _check_number(
+                issues,
+                lead_name,
+                "scoring.confidence",
+                scoring.get("confidence"),
+                minimum=0,
+                maximum=100,
+            )
             _check_list(issues, lead_name, "scoring.issues", scoring.get("issues"))
             _check_list(issues, lead_name, "scoring.opportunities", scoring.get("opportunities"))
+
+        audit_findings = lead.get("audit_findings")
+        _check_list(issues, lead_name, "audit_findings", audit_findings)
+        if isinstance(audit_findings, list):
+            for finding_index, finding in enumerate(audit_findings):
+                field = f"audit_findings[{finding_index}]"
+                if not isinstance(finding, dict):
+                    issues.append(ValidationIssue(lead_name, field, "must be an object"))
+                    continue
+                for key in (
+                    "code",
+                    "title",
+                    "status",
+                    "severity",
+                    "confidence",
+                    "evidence",
+                    "impact",
+                    "service_slugs",
+                ):
+                    if key not in finding:
+                        issues.append(ValidationIssue(lead_name, f"{field}.{key}", "is missing"))
+                if finding.get("status") not in {"confirmed", "likely"}:
+                    issues.append(
+                        ValidationIssue(lead_name, f"{field}.status", "must be confirmed or likely")
+                    )
+                if "confidence" in finding:
+                    _check_number(
+                        issues,
+                        lead_name,
+                        f"{field}.confidence",
+                        finding.get("confidence"),
+                        minimum=0,
+                        maximum=100,
+                    )
+                if "service_slugs" in finding:
+                    _check_list(
+                        issues,
+                        lead_name,
+                        f"{field}.service_slugs",
+                        finding.get("service_slugs"),
+                    )
+
+        audit_checks = lead.get("audit_checks")
+        _check_list(issues, lead_name, "audit_checks", audit_checks)
+        if isinstance(audit_checks, list):
+            for check_index, check in enumerate(audit_checks):
+                field = f"audit_checks[{check_index}]"
+                if not isinstance(check, dict):
+                    issues.append(ValidationIssue(lead_name, field, "must be an object"))
+                    continue
+                for key in ("code", "label", "status", "confidence", "weight", "note"):
+                    if key not in check:
+                        issues.append(ValidationIssue(lead_name, f"{field}.{key}", "is missing"))
+                if check.get("status") not in {"pass", "fail", "unknown"}:
+                    issues.append(
+                        ValidationIssue(lead_name, f"{field}.status", "must be pass, fail, or unknown")
+                    )
 
         matched_services = lead.get("matched_services")
         _check_list(issues, lead_name, "matched_services", matched_services)

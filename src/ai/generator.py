@@ -40,7 +40,16 @@ SECTOR_VOICE = {
     ),
 }
 
-AI_PROMPT_VERSION = 4
+AI_PROMPT_VERSION = 6
+
+
+def has_email_evidence(lead: dict[str, Any]) -> bool:
+    return any(
+        finding.get("status") == "confirmed"
+        and int(finding.get("confidence") or 0) >= 80
+        and bool(finding.get("service_slugs"))
+        for finding in (lead.get("audit_findings") or [])
+    )
 
 
 def _system(sector: str) -> str:
@@ -62,6 +71,32 @@ def _lead_context(lead: dict[str, Any]) -> str:
     tiktok = social.get("tiktok") or {}
     delivery = lead.get("delivery") or {}
     scoring = lead.get("scoring") or {}
+    findings = [
+        {
+            "code": finding.get("code"),
+            "title": finding.get("title"),
+            "severity": finding.get("severity"),
+            "confidence": finding.get("confidence"),
+            "evidence": finding.get("evidence"),
+            "impact": finding.get("impact"),
+            "source_url": finding.get("source_url"),
+            "checked_at": finding.get("checked_at"),
+            "talking_point": finding.get("talking_point"),
+            "verification": finding.get("verification"),
+            "service_slugs": finding.get("service_slugs") or [],
+        }
+        for finding in (lead.get("audit_findings") or [])
+        if finding.get("status") in {"confirmed", "likely"}
+    ][:8]
+    unknown_checks = [
+        {
+            "label": check.get("label"),
+            "note": check.get("note"),
+            "source_url": check.get("source_url"),
+        }
+        for check in (lead.get("audit_checks") or [])
+        if check.get("status") == "unknown"
+    ][:8]
     service_recommendation = recommended_package(lead)
     triggers = sorted(lead_triggers(lead))
 
@@ -96,13 +131,25 @@ def _lead_context(lead: dict[str, Any]) -> str:
             "tiktok": tiktok.get("tiktok_url"),
         },
         "delivery": delivery,
-        "score": scoring,
+        "audit_summary": {
+            "score": scoring.get("score") if scoring.get("score_status") != "insufficient" else None,
+            "grade": scoring.get("grade") if scoring.get("score_status") != "insufficient" else None,
+            "score_status": scoring.get("score_status"),
+            "coverage": scoring.get("coverage"),
+            "confidence": scoring.get("confidence"),
+            "passed_checks": scoring.get("passed_checks"),
+            "failed_checks": scoring.get("failed_checks"),
+            "unknown_checks": scoring.get("unknown_checks"),
+        },
+        "verified_findings": findings,
+        "unverified_checks": unknown_checks,
         "triggers": triggers,
         "matched_services": [
             {
                 "name": service.get("name"),
                 "owner": service.get("owner"),
                 "evidence": service.get("evidence"),
+                "evidence_details": service.get("evidence_details"),
                 "confidence": service.get("confidence"),
                 "requires_discovery": service.get("requires_discovery"),
                 "deliverables": service.get("deliverables"),
@@ -210,14 +257,16 @@ def _generate_cached(
 
 def generate_research_brief(lead: dict[str, Any], *, force: bool = False) -> str:
     prompt = (
-        "Aşağıdaki lead verisinden satış ekibi için kısa ama derin bir araştırma özeti çıkar.\n"
+        "Aşağıdaki lead verisinden satış çalışanı için kısa ama derin bir araştırma özeti çıkar.\n"
         "Format:\n"
-        "1. Gözlem\n"
-        "2. Satış açısı\n"
-        "3. İlk temas bahanesi\n"
-        "4. Risk / bilinmeyen\n"
-        "5. Bir sonraki veri kontrolü\n\n"
-        "Sadece veride bulunan sinyallere dayan. Maksimum 170 kelime.\n\n"
+        "1. DOĞRULANAN DURUM\n"
+        "2. MÜŞTERİYE ETKİSİ\n"
+        "3. ZEPLİN'İN SUNABİLECEĞİ ÇÖZÜM\n"
+        "4. GÖRÜŞMEDE SOR\n"
+        "5. DOĞRULANMAYANLAR\n\n"
+        "Yalnızca verified_findings alanındaki bulguları tespit olarak kullan. "
+        "Kaynak ve güven değerini dikkate al; unverified_checks içeriğini açık gibi anlatma. "
+        "Teknik tespiti sade iş etkisine çevir. Maksimum 190 kelime.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
     )
     return _generate_cached(task="research_brief", lead=lead, prompt=prompt, force=force)
@@ -226,18 +275,20 @@ def generate_research_brief(lead: dict[str, Any], *, force: bool = False) -> str
 def generate_report(lead: dict[str, Any], *, force: bool = False) -> str:
     prompt = (
         "Bu işletme için satış çalışanının kullanacağı kanıta dayalı bir ihtiyaç özeti yaz.\n"
-        "Yalnızca LEAD VERİSİ içindeki evidence alanlarını tespit olarak kullan.\n"
+        "Yalnızca verified_findings içindeki evidence alanlarını tespit olarak kullan.\n"
         "Formatı aynen koru:\n"
-        "DOĞRULANAN AÇIKLAR\n"
-        "- En fazla 3 madde: kanıt — muhtemel iş etkisi\n"
-        "SUNABİLECEĞİMİZ HİZMET\n"
-        "- Katalogdaki birincil hizmet ve en fazla 3 teslimat\n"
+        "NE TESPİT ETTİK?\n"
+        "- En fazla 3 madde: açık, kanıt ve güven yüzdesi\n"
+        "İŞLETMEYE ETKİSİ\n"
+        "- Her tespitin müşteriye olası etkisini sade dille açıkla\n"
+        "BİZ NE SUNABİLİRİZ?\n"
+        "- Eşleşen katalog hizmeti ve en fazla 3 somut teslimat\n"
         "GÖRÜŞMEDE SOR\n"
         "- En fazla 3 kısa soru\n"
-        "KONTROL EDİLMELİ\n"
-        "- Bilinmeyen veya kesinleştirilmemiş veriler\n"
-        "Bilinmeyen veriyi eksik gibi yazma; sonuç, sıra veya ciro garantisi verme.\n"
-        "Maksimum 190 kelime.\n\n"
+        "DOĞRULANMAYANLAR\n"
+        "- En önemli bilinmeyen kontroller; bunları açık gibi yazma\n"
+        "Kaynak URL'si olmayan veya güveni düşük bir iddiayı doğrulanmış gibi sunma. "
+        "Sonuç, sıra veya ciro garantisi verme. Maksimum 220 kelime.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
     )
     return _generate_cached(task="report", lead=lead, prompt=prompt, force=force)
@@ -250,14 +301,15 @@ def generate_email(lead: dict[str, Any], *, force: bool = False) -> str:
         "Kurallar:\n"
         "- İlk satır mutlaka `Konu:` ile başlasın.\n"
         "- Konudan sonra boş satır bırak; gövde maksimum 105 kelime olsun.\n"
-        "- Sadece evidence alanındaki 1 doğrulanmış bulguyu kullan.\n"
+        "- Sadece verified_findings içindeki, güveni en az %80 olan 1 bulguyu kullan.\n"
         "- Paket adı uydurma. Yalnızca service_recommendation içindeki gerçek hizmeti kullan.\n"
-        "- Teknik terimi işletme sahibinin anlayacağı iş etkisine çevir.\n"
+        "- Teknik terimi işletme sahibinin anlayacağı iş etkisine çevir; kanıtı abartma.\n"
         "- Sadece ilgili 1-2 teslimatı doğal biçimde anlat.\n"
         "- requires_discovery true ise ihtiyacı kesinleştirme; kısa bir soru sor.\n"
         "- CTA: 15 dakikalık kısa görüşme veya uygun kişiye yönlendirme.\n"
         f"- İmza: {sender_name} | Zeplin Media.\n"
         "- `Paket`, `fırsat`, `garanti`, `kesin`, `ciro artışı` kelimelerini kullanma.\n"
+        "- Uygun güvene sahip bulgu yoksa mail yazma; `TASLAK İÇİN YETERLİ KANIT YOK` döndür.\n"
         "- Abartı, emoji, sahte övgü ve kesin olmayan iddia kullanma.\n\n"
         f"LEAD VERİSİ:\n{_lead_context(lead)}"
     )
@@ -268,7 +320,15 @@ def enrich_ai_fields(lead: dict[str, Any], *, force: bool = False) -> dict[str, 
     enriched = dict(lead)
     enriched["research_brief"] = generate_research_brief(enriched, force=force)
     enriched["ai_report"] = generate_report(enriched, force=force)
-    enriched["ai_email"] = generate_email(enriched, force=force)
+    if has_email_evidence(enriched):
+        email = generate_email(enriched, force=force)
+        enriched["ai_email"] = (
+            None
+            if email.strip().upper().startswith("TASLAK İÇİN YETERLİ KANIT YOK")
+            else email
+        )
+    else:
+        enriched["ai_email"] = None
     enriched["ai_tier"] = lead_ai_tier(enriched)
     enriched["ai_prompt_version"] = AI_PROMPT_VERSION
     return enriched

@@ -13,12 +13,11 @@ from src.ai.generator import AI_PROMPT_VERSION, generate_email, generate_report,
 from src.audit.finder import (
     find_from_google_maps, check_website, detect_sector,
     find_instagram, get_instagram_stats,
-    find_tiktok, check_delivery, compute_score
+    find_tiktok, check_delivery
 )
 from src.dashboard.build import build_dashboard
 from src.pipeline_state import get_stage, put_stage
 from src.research import enrich_research
-from src.services import match_services, estimate_value
 from src.storage.supabase import insert_run_log, is_enabled as supabase_enabled, upsert_leads
 from scripts.migrate_leads import normalize_lead
 
@@ -114,7 +113,10 @@ async def run(
             print(f"  🏷️  {maps_data.get('category') or '—'}")
 
             sector  = detect_sector(maps_data.get("category"))
-            website = await check_website(maps_data.get("website_url"))
+            website = await check_website(
+                maps_data.get("website_url"),
+                lookup_status=maps_data.get("website_lookup_status") or "unknown",
+            )
             print(f"  📊 Schema:{website['has_schema']} | OG:{website['has_og']} | WA:{website['has_whatsapp']}")
 
             instagram = await find_instagram(page, name, maps_data.get("website_url"))
@@ -132,9 +134,8 @@ async def run(
                 delivery = await check_delivery(page, name, sector)
 
             maps_data["delivery"] = delivery
-            scoring = compute_score(website, instagram, ig_stats, tiktok, maps_data, sector)
 
-            lead_obj = {
+            lead_obj = normalize_lead({
                 **lead,
                 "sector":       sector,
                 "phone":        maps_data.get("phone"),
@@ -145,10 +146,9 @@ async def run(
                 "website":      website,
                 "social":       {**instagram, "stats": ig_stats, "tiktok": tiktok},
                 "delivery":     delivery,
-                "scoring":      scoring,
-            }
-            lead_obj["matched_services"]   = match_services(lead_obj)
-            lead_obj["estimated_value_tl"] = estimate_value(lead_obj)
+                "maps":         maps_data,
+                "scoring":      {},
+            })
             print(f"  💰 Tahmini değer: {lead_obj['estimated_value_tl']:,} TL/ay · {len(lead_obj['matched_services'])} hizmet eşleşti")
             audited.append(lead_obj)
             put_stage(name, "audited", lead_obj, city=city, query=query)

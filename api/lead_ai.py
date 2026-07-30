@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields
+from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields, has_email_evidence
 from src.auth import require_auth, require_lead_access
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
@@ -64,14 +64,14 @@ class handler(BaseHTTPRequestHandler):
             if (
                 lead.get("ai_prompt_version") == AI_PROMPT_VERSION
                 and lead.get("ai_report")
-                and lead.get("ai_email")
+                and (lead.get("ai_email") or not has_email_evidence(lead))
             ):
                 enriched = lead
                 cached = True
             else:
                 enriched = enrich_ai_fields(lead)
-                if not enriched.get("ai_report") or not enriched.get("ai_email"):
-                    raise RuntimeError("AI provider returned an empty report or email")
+                if not enriched.get("ai_report"):
+                    raise RuntimeError("AI provider returned an empty report")
                 upsert_leads([enriched])
                 cached = False
 
