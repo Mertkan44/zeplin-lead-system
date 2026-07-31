@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.research_brief import build_research_brief
+
 
 def _verified_findings(lead: dict[str, Any]) -> list[dict[str, Any]]:
     return [
@@ -36,12 +38,14 @@ def build_sales_playbook(
 ) -> dict[str, Any]:
     name = str(lead.get("name") or "İşletme").strip()
     city = str(lead.get("city") or "").strip()
+    research_brief = build_research_brief(lead)
     findings = _verified_findings(lead)
     gap_findings = [
         finding for finding in findings if finding.get("finding_type", "gap") != "opportunity"
     ]
     services, discovery_only = _services(lead)
     primary_service = services[0] if services else {}
+    primary_finding_codes = set(primary_service.get("matched_finding_codes") or [])
     sender = _first_name(sender_name)
 
     evidence_points = [
@@ -72,22 +76,34 @@ def build_sales_playbook(
     ]
 
     if gap_findings:
-        first = gap_findings[0]
+        first = next(
+            (
+                finding
+                for finding in gap_findings
+                if finding.get("code") in primary_finding_codes
+            ),
+            gap_findings[0],
+        )
         observation = str(first.get("title") or "").strip()
         impact = str(first.get("impact") or "müşteri deneyimini etkileyebilir").strip()
+        evidence = str(first.get("evidence") or "").strip()
+        verification = str(first.get("verification") or "").strip()
         summary = (
             f"{name} için {len(gap_findings)} doğrulanmış dijital açık bulundu. "
             f"İlk görüşmede “{observation}” başlığı ve bunun {impact.lower()} etkisi üzerinden ilerle."
         )
         opener = (
-            f"Merhaba, ben {sender}, Zeplin Media'dan arıyorum. {name} için kısa bir dijital "
-            f"ön inceleme yaptık ve {observation.lower()} başlığını fark ettik. "
-            "Bunun mevcut müşteri akışınıza etkisini iki dakikada teyit edebilir miyim?"
+            f"Merhaba, ben {sender}, Zeplin Media'dan arıyorum. {name} için herkese açık "
+            f"kanallarda kısa bir ön inceleme yaptık. “{observation}” başlığı öne çıktı. "
+            "Mevcut durumu iki dakikada sizden teyit edip tespiti paylaşabilir miyim?"
         )
         message_core = (
-            f"{name} için yaptığımız kısa ön incelemede “{observation}” başlığını not ettik. "
-            "Uygunsa tespiti ve çözüm yönünü 10 dakikalık kısa bir görüşmede paylaşmak isteriz."
+            f"{name} için yaptığımız kısa ön incelemede {observation.lower()} başlığını not ettik. "
+            f"Kontrolümüzde gördüğümüz sinyal: {evidence} "
+            "Uygunsa mevcut durumu teyit edip çözüm yönünü 10 dakikada paylaşmak isteriz."
         )
+        email_observation = f"{observation}. Kontrolümüzde gördüğümüz sinyal: {evidence}"
+        review_note = verification or "Tespiti göndermeden önce kaynağı son kez açıp kontrol et."
     else:
         service_name = primary_service.get("name") or "dijital görünürlük"
         summary = (
@@ -104,6 +120,11 @@ def build_sales_playbook(
             "Kesin bir öneri sunmadan önce hedeflerinizi öğrenip size uygun alanları birlikte "
             "netleştirmek isteriz."
         )
+        email_observation = (
+            "Kesin bir dijital açık henüz doğrulanmadı. Bu nedenle önce hedeflerinizi ve "
+            "mevcut çalışma düzeninizi öğrenmek istiyoruz."
+        )
+        review_note = "Kesin açık iddiası kullanma; işletmenin hedefini görüşmede öğren."
 
     discovery_questions = []
     for service in services:
@@ -118,27 +139,71 @@ def build_sales_playbook(
 
     primary_name = primary_service.get("name") or "ihtiyaç görüşmesi"
     location_text = f" · {city}" if city else ""
+    deliverable = (primary_service.get("deliverables") or ["ihtiyaca uygun bir çalışma planı"])[0]
     whatsapp = (
-        f"Merhaba, ben {sender} / Zeplin Media. {message_core} "
-        "Bu hafta size uygun kısa bir zaman var mı?"
+        f"Merhaba, ben {sender}, Zeplin Media. {message_core} "
+        f"Uygun olursa ilk adım olarak {deliverable.lower()} tarafını konuşabiliriz. "
+        "Bu hafta 10 dakikalık uygun bir zamanınız var mı?"
     )
-    instagram_dm = (
-        f"Merhaba, {message_core} Detayı burada paylaşabilir veya kısa bir görüşme planlayabiliriz."
-    )
+    instagram_dm = f"Merhaba, ben {sender} / Zeplin Media. {message_core} Uygunsanız detayı burada paylaşabilirim."
     email_subject = f"{name} için kısa dijital ön inceleme"
     email_body = (
-        f"Merhaba,\n\n{message_core}\n\n"
-        f"İlk değerlendirmemizde görüşülebilecek hizmet yönü: {primary_name}. "
-        "Bunu ihtiyaçlarınızı dinlemeden kesin bir teklif olarak sunmuyoruz.\n\n"
-        "Bu hafta 10-15 dakikalık kısa bir görüşme için uygun olduğunuz bir zaman var mı?\n\n"
+        f"Merhaba,\n\n{name} için herkese açık dijital kanallarda kısa bir ön inceleme yaptık.\n\n"
+        f"Gördüğümüz başlık:\n{email_observation}\n\n"
+        f"Bu başlık doğrulanırsa {primary_name} kapsamında şu somut çıktıyla başlayabiliriz: "
+        f"{deliverable}. İhtiyacınızı dinlemeden bunu kesin bir teklif "
+        "olarak sunmuyoruz.\n\n"
+        "Uygunsanız bu hafta 10-15 dakikalık kısa bir görüşme planlayabiliriz.\n\n"
         f"{sender}\nZeplin Media"
     )
 
+    research_emails = ((lead.get("research") or {}).get("website") or {}).get("emails") or []
+    email_address = lead.get("email") or (
+        research_emails[0] if isinstance(research_emails, list) and research_emails else None
+    )
+    channel_drafts = [
+        {
+            "channel": "phone",
+            "label": "Arama",
+            "status": "ready" if lead.get("phone") else "blocked",
+            "recipient_available": bool(lead.get("phone")),
+            "body": opener,
+            "review_note": review_note,
+        },
+        {
+            "channel": "whatsapp",
+            "label": "WhatsApp",
+            "status": "review" if lead.get("phone") else "blocked",
+            "recipient_available": bool(lead.get("phone")),
+            "body": whatsapp,
+            "review_note": review_note,
+        },
+        {
+            "channel": "instagram",
+            "label": "Instagram DM",
+            "status": "review" if (lead.get("social") or {}).get("instagram_url") else "blocked",
+            "recipient_available": bool((lead.get("social") or {}).get("instagram_url")),
+            "body": instagram_dm,
+            "review_note": review_note,
+        },
+        {
+            "channel": "email",
+            "label": "E-posta",
+            "status": "review" if email_address else "blocked",
+            "recipient_available": bool(email_address),
+            "recipient": email_address,
+            "subject": email_subject,
+            "body": email_body,
+            "review_note": review_note,
+        },
+    ]
+
     return {
-        "version": 1,
+        "version": 2,
         "lead_name": name,
         "context": f"{_business_type(lead)}{location_text}",
         "discovery_only": discovery_only or not bool(gap_findings),
+        "research_status": research_brief["status"],
         "summary": summary,
         "evidence_points": evidence_points,
         "services": service_rows,
@@ -147,6 +212,7 @@ def build_sales_playbook(
         "instagram_dm": instagram_dm,
         "email_subject": email_subject,
         "email_body": email_body,
+        "channel_drafts": channel_drafts,
         "discovery_questions": discovery_questions,
         "objection_responses": [
             {

@@ -6,6 +6,7 @@ from typing import Any
 
 
 ACTIVITY_PREFIX = "ZEPLIN_ACTIVITY_V1:"
+DRAFT_PREFIX = "ZEPLIN_DRAFT_V1:"
 
 CONTACT_CHANNELS = {"phone", "whatsapp", "instagram", "email", "other"}
 CONTACT_OUTCOMES = {
@@ -37,6 +38,9 @@ CHANNEL_LABELS = {
     "email": "E-posta",
     "other": "Diğer",
 }
+
+DRAFT_CHANNELS = {"phone", "whatsapp", "instagram", "email"}
+DRAFT_STATUSES = {"approved", "needs_edit"}
 
 
 def _parse_iso(value: str | None, *, field: str) -> str | None:
@@ -87,6 +91,31 @@ def encode_activity_note(activity: dict[str, Any]) -> str:
     return ACTIVITY_PREFIX + json.dumps(activity, ensure_ascii=False, separators=(",", ":"))
 
 
+def build_draft_review(payload: dict[str, Any]) -> dict[str, Any]:
+    channel = str(payload.get("channel") or "").strip().lower()
+    status = str(payload.get("draft_status") or "approved").strip().lower()
+    body = str(payload.get("body") or "").strip()
+    if channel not in DRAFT_CHANNELS:
+        raise ValueError("channel is invalid")
+    if status not in DRAFT_STATUSES:
+        raise ValueError("draft_status is invalid")
+    if not body:
+        raise ValueError("body is required")
+    return {
+        "version": 1,
+        "kind": "draft_review",
+        "channel": channel,
+        "channel_label": CHANNEL_LABELS[channel],
+        "status": status,
+        "subject": str(payload.get("subject") or "").strip()[:300] or None,
+        "body": body[:8000],
+    }
+
+
+def encode_draft_note(review: dict[str, Any]) -> str:
+    return DRAFT_PREFIX + json.dumps(review, ensure_ascii=False, separators=(",", ":"))
+
+
 def decode_activity_note(note: Any) -> dict[str, Any] | None:
     if not isinstance(note, str) or not note.startswith(ACTIVITY_PREFIX):
         return None
@@ -99,8 +128,34 @@ def decode_activity_note(note: Any) -> dict[str, Any] | None:
     return data
 
 
+def decode_draft_note(note: Any) -> dict[str, Any] | None:
+    if not isinstance(note, str) or not note.startswith(DRAFT_PREFIX):
+        return None
+    try:
+        data = json.loads(note[len(DRAFT_PREFIX) :])
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("kind") != "draft_review":
+        return None
+    return data
+
+
 def enrich_outreach_event(event: dict[str, Any]) -> dict[str, Any]:
     row = dict(event)
+    draft = decode_draft_note(row.get("note"))
+    if draft:
+        row.update(
+            {
+                "channel": draft.get("channel"),
+                "channel_label": draft.get("channel_label"),
+                "draft_status": draft.get("status"),
+                "draft_subject": draft.get("subject"),
+                "draft_body": draft.get("body"),
+                "note": f"{draft.get('channel_label')} taslağı onaylandı",
+                "activity_version": draft.get("version"),
+            }
+        )
+        return row
     activity = decode_activity_note(row.get("note"))
     if not activity:
         return row

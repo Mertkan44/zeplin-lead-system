@@ -12,6 +12,7 @@ from src.auth import normalize_email, require_auth
 from src.activity import enrich_outreach_event
 from src.http_api import send_internal_error, send_json, send_options
 from src.sales_assistant import build_sales_playbook
+from src.research_brief import build_research_brief
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_lead_assignments,
@@ -110,6 +111,7 @@ class handler(BaseHTTPRequestHandler):
             leads = [
                 {
                     **lead,
+                    "research_brief_v2": build_research_brief(lead),
                     "sales_playbook": build_sales_playbook(
                         lead,
                         sender_name=user.get("name"),

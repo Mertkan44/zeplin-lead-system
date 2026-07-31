@@ -3,14 +3,18 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 from pathlib import Path
 
 from src import auth
 from src.activity import (
     build_contact_result,
+    build_draft_review,
     decode_activity_note,
+    decode_draft_note,
     encode_activity_note,
+    encode_draft_note,
     status_for_outcome,
 )
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
@@ -21,12 +25,75 @@ from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
 from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
 from src.sales_assistant import build_sales_playbook
+from src.research_brief import build_research_brief
 from src.storage.supabase import _lead_row
 from scripts.migrate_leads import normalize_lead
 from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_draft_review_is_validated_and_round_trips(self):
+        review = build_draft_review(
+            {
+                "channel": "email",
+                "draft_status": "approved",
+                "subject": "Kısa ön inceleme",
+                "body": "Merhaba, taslağı kontrol ettim.",
+            }
+        )
+        decoded = decode_draft_note(encode_draft_note(review))
+        self.assertEqual(decoded["channel"], "email")
+        self.assertEqual(decoded["status"], "approved")
+        self.assertEqual(decoded["subject"], "Kısa ön inceleme")
+
+    def test_draft_review_requires_content(self):
+        with self.assertRaises(ValueError):
+            build_draft_review({"channel": "whatsapp", "draft_status": "approved"})
+
+    def test_research_brief_separates_fact_from_unknown(self):
+        brief = build_research_brief(
+            {
+                "last_analyzed": datetime.now(timezone.utc).isoformat(),
+                "scoring": {"coverage": 72, "confidence": 88},
+                "audit_findings": [
+                    {
+                        "code": "website.absent",
+                        "status": "confirmed",
+                        "confidence": 94,
+                        "title": "Website bağlantısı yok",
+                        "evidence": "Maps panelinde bağlantı bulunamadı.",
+                        "source_url": "https://maps.google.com/example",
+                        "checked_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                ],
+                "audit_checks": [
+                    {
+                        "code": "social.instagram_presence",
+                        "status": "unknown",
+                        "label": "Instagram varlığı",
+                        "note": "Profil güvenilir biçimde doğrulanamadı.",
+                        "source_url": "https://instagram.com/example",
+                    }
+                ],
+            }
+        )
+        self.assertEqual(brief["status"], "ready")
+        self.assertEqual(brief["confirmed_gaps"][0]["source_label"], "Google Maps")
+        self.assertEqual(brief["unknowns"][0]["title"], "Instagram varlığı")
+        self.assertNotIn("Instagram varlığı", [item["title"] for item in brief["confirmed_gaps"]])
+
+    def test_research_brief_marks_old_scans_stale(self):
+        brief = build_research_brief(
+            {
+                "last_analyzed": "2020-01-01T00:00:00+00:00",
+                "scoring": {"coverage": 90, "confidence": 90},
+                "audit_findings": [],
+                "audit_checks": [],
+            }
+        )
+        self.assertTrue(brief["stale"])
+        self.assertNotEqual(brief["status"], "ready")
+
     def test_contact_result_is_validated_and_round_trips(self):
         activity = build_contact_result(
             {
@@ -86,6 +153,11 @@ class HardeningTests(unittest.TestCase):
         self.assertIn("Website bulunamadı", playbook["summary"])
         self.assertIn("Aslıhan", playbook["call_opener"])
         self.assertNotIn("Reklam ölçümü yok", playbook["email_body"])
+        self.assertEqual(playbook["version"], 2)
+        self.assertEqual(
+            {item["channel"] for item in playbook["channel_drafts"]},
+            {"phone", "whatsapp", "instagram", "email"},
+        )
 
     def test_sales_playbook_marks_unproven_services_as_discovery(self):
         playbook = build_sales_playbook(

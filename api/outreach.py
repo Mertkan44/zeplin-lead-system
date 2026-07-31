@@ -11,7 +11,9 @@ from src.auth import normalize_email, require_auth, require_lead_access
 from src.activity import (
     assignment_status_for_outcome,
     build_contact_result,
+    build_draft_review,
     encode_activity_note,
+    encode_draft_note,
     enrich_outreach_event,
     status_for_outcome,
 )
@@ -81,11 +83,15 @@ class handler(BaseHTTPRequestHandler):
         try:
             require_lead_access(user, lead_name)
             activity = None
+            draft_review = None
             note = payload.get("note")
             if action == "contact_result_recorded" or payload.get("outcome"):
                 action = "contact_result_recorded"
                 activity = build_contact_result(payload)
                 note = encode_activity_note(activity)
+            elif action == "draft_reviewed":
+                draft_review = build_draft_review(payload)
+                note = encode_draft_note(draft_review)
             insert_outreach_event(
                 lead_name=lead_name,
                 action=action,
