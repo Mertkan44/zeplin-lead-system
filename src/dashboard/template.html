@@ -58,6 +58,19 @@
       .responsive-pipeline { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
       .responsive-pipeline > * { min-width: 270px; }
       .responsive-report > [style*="grid-column"] { grid-column: auto !important; }
+      .tb-brand-text, .tb-search-mobile, .tb-automation-mobile { display: none !important; }
+      .tb-nav { flex: 1 1 auto !important; min-width: 0 !important; }
+      .today-main { padding: 24px 16px 48px !important; }
+      .today-hero { display: block !important; }
+      .today-title { font-size: 40px !important; }
+      .today-hero-stats { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; margin-top: 20px !important; }
+      .today-hero-stat { min-width: 0 !important; padding: 12px 10px !important; }
+      .today-section-head { align-items: flex-start !important; }
+      .today-task-card { grid-template-columns: 36px minmax(0, 1fr) !important; }
+      .today-task-body { padding: 16px 14px !important; }
+      .today-task-top { display: block !important; }
+      .today-task-actions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; margin-top: 14px !important; }
+      .today-task-actions > * { min-width: 0 !important; padding-left: 7px !important; padding-right: 7px !important; }
     }
   </style>
   <script>
@@ -816,7 +829,7 @@
           <div style={tb.logo}>
             <img src="/logo-mark.png" alt="Zeplin Media" style={tb.logoImg}/>
           </div>
-          <div>
+          <div className="tb-brand-text">
             <div style={tb.brandName}>Zeplin Media</div>
             <div style={tb.brandSub}>Lead Workspace</div>
           </div>
@@ -838,7 +851,7 @@
 
         <div style={{ flex: 1 }}/>
 
-        <button style={tb.search} onClick={onOpenSearch}>
+        <button className="tb-search-mobile" style={tb.search} onClick={onOpenSearch}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <span className="tb-search-label">Lead, firma veya hizmet ara</span>
         </button>
@@ -847,7 +860,7 @@
             ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="var(--sub)" strokeWidth="1.8"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
         </button>
-        <button title="Otomasyonu etkinleştir" style={tb.iconBtn} onClick={onAutomationClick}>
+        <button className="tb-automation-mobile" title="Otomasyonu etkinleştir" style={tb.iconBtn} onClick={onAutomationClick}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L5 13h6l-1 9 8-11h-6l1-9z" fill="var(--accent)" stroke="var(--accent)" strokeWidth="1.2" strokeLinejoin="round"/></svg>
         </button>
         <button style={tb.avatar} onClick={() => onNav('profile')} title={user ? `${user.name || user.email} profilini aç` : 'Profili aç'}>
@@ -1231,22 +1244,22 @@
     }
 
     return (
-      <main style={tw.main}>
-        <div style={tw.hero}>
+      <main className="today-main" style={tw.main}>
+        <div className="today-hero" style={tw.hero}>
           <div>
             <div style={wp.eyebrow}>SATIŞ MASASI · {new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long' })}</div>
-            <h1 style={tw.h1}>Bugünkü İşlerim</h1>
+            <h1 className="today-title" style={tw.h1}>Bugünkü İşlerim</h1>
             <p style={tw.subtitle}>Merhaba {senderName}. Önce takipleri kapat, sonra en yüksek öncelikli yeni lead’lere geç.</p>
           </div>
-          <div style={tw.heroStats}>
-            <div style={tw.heroStat}><strong>{tasks.length}</strong><span>Açık iş</span></div>
-            <div style={tw.heroStat}><strong>{due}</strong><span>Takip zamanı geldi</span></div>
-            <div style={tw.heroStat}><strong>{completed}</strong><span>Bugün tamamlandı</span></div>
+          <div className="today-hero-stats" style={tw.heroStats}>
+            <div className="today-hero-stat" style={tw.heroStat}><strong>{tasks.length}</strong><span>Açık iş</span></div>
+            <div className="today-hero-stat" style={tw.heroStat}><strong>{due}</strong><span>Takip zamanı geldi</span></div>
+            <div className="today-hero-stat" style={tw.heroStat}><strong>{completed}</strong><span>Bugün tamamlandı</span></div>
           </div>
         </div>
 
         <section style={tw.queueSection}>
-          <div style={tw.sectionHead}>
+          <div className="today-section-head" style={tw.sectionHead}>
             <div>
               <div style={ld.eyebrow}>ÖNCELİK SIRASI</div>
               <h2 style={tw.h2}>Sıradaki temaslar</h2>
@@ -1260,10 +1273,10 @@
               const service = (playbook.services || [])[0];
               const evidence = (playbook.evidence_points || [])[0];
               return (
-                <article key={lead.name} style={tw.taskCard}>
+                <article className="today-task-card" key={lead.name} style={tw.taskCard}>
                   <div style={tw.order}>{String(index + 1).padStart(2, '0')}</div>
-                  <div style={tw.taskBody}>
-                    <div style={tw.taskTop}>
+                  <div className="today-task-body" style={tw.taskBody}>
+                    <div className="today-task-top" style={tw.taskTop}>
                       <div style={{ minWidth: 0 }}>
                         <div style={tw.taskFlags}>
                           <span style={meta.rank >= 100 ? tw.flagHot : tw.flag}>{meta.label}</span>
@@ -1272,7 +1285,7 @@
                         <h3 style={tw.taskName}>{lead.name}</h3>
                         <div style={tw.taskMeta}>{lead.category || lead.sector || 'İşletme'} · {lead.city || 'Konum yok'}{service?.name ? ` · ${service.name}` : ''}</div>
                       </div>
-                      <div style={tw.taskActions}>
+                      <div className="today-task-actions" style={tw.taskActions}>
                         {lead.phone && <button type="button" style={tw.callAction} onClick={() => startCall(lead)}><IconCall/> Ara</button>}
                         <button type="button" style={tw.resultAction} onClick={() => onOpenResult(lead)}>Sonuç kaydet</button>
                         <button type="button" style={tw.detailAction} onClick={() => onSelect(leads.indexOf(lead))}>Detay</button>
