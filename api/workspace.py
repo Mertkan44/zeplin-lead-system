@@ -108,6 +108,31 @@ class handler(BaseHTTPRequestHandler):
                 assigned_names = {item.get("lead_name") for item in assignments}
                 leads = [lead for lead in leads if lead.get("name") in assigned_names]
             leads = attach_assignments_to_leads(leads, assignments)
+            events = [
+                enrich_outreach_event(event)
+                for event in fetch_outreach_events(limit=1000)
+            ]
+            if user.get("role") != "admin":
+                assigned_names = {lead.get("name") for lead in leads}
+                events = [event for event in events if event.get("lead_name") in assigned_names]
+            latest_manual: dict[str, dict] = {}
+            for event in events:
+                lead_name = event.get("lead_name")
+                if (
+                    lead_name
+                    and lead_name not in latest_manual
+                    and event.get("action") == "manual_verification_saved"
+                    and event.get("manual_verification")
+                ):
+                    latest_manual[lead_name] = {
+                        **event["manual_verification"],
+                        "checked_at": event.get("happened_at") or event.get("created_at"),
+                        "checked_by": event.get("actor_email"),
+                    }
+            leads = [
+                {**lead, "manual_verification": latest_manual.get(lead.get("name"))}
+                for lead in leads
+            ]
             leads = [
                 {
                     **lead,
@@ -119,13 +144,6 @@ class handler(BaseHTTPRequestHandler):
                 }
                 for lead in leads
             ]
-            events = [
-                enrich_outreach_event(event)
-                for event in fetch_outreach_events(limit=1000)
-            ]
-            if user.get("role") != "admin":
-                assigned_names = {lead.get("name") for lead in leads}
-                events = [event for event in events if event.get("lead_name") in assigned_names]
             send_json(
                 self,
                 200,

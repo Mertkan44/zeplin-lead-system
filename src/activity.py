@@ -7,6 +7,7 @@ from typing import Any
 
 ACTIVITY_PREFIX = "ZEPLIN_ACTIVITY_V1:"
 DRAFT_PREFIX = "ZEPLIN_DRAFT_V1:"
+MANUAL_PREFIX = "ZEPLIN_MANUAL_V1:"
 
 CONTACT_CHANNELS = {"phone", "whatsapp", "instagram", "email", "other"}
 CONTACT_OUTCOMES = {
@@ -41,6 +42,12 @@ CHANNEL_LABELS = {
 
 DRAFT_CHANNELS = {"phone", "whatsapp", "instagram", "email"}
 DRAFT_STATUSES = {"approved", "needs_edit"}
+MANUAL_STATUSES = {
+    "google": {"found", "not_found", "unknown"},
+    "instagram": {"active", "inactive", "not_found", "unknown"},
+    "menu": {"current", "outdated", "not_found", "unknown"},
+    "website": {"working", "outdated", "not_found", "unknown"},
+}
 
 
 def _parse_iso(value: str | None, *, field: str) -> str | None:
@@ -116,6 +123,76 @@ def encode_draft_note(review: dict[str, Any]) -> str:
     return DRAFT_PREFIX + json.dumps(review, ensure_ascii=False, separators=(",", ":"))
 
 
+def _optional_int(value: Any, *, field: str) -> int | None:
+    if value in {None, ""}:
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be an integer") from exc
+    if parsed < 0:
+        raise ValueError(f"{field} must be positive")
+    return parsed
+
+
+def _manual_section(payload: dict[str, Any], name: str) -> dict[str, Any]:
+    raw = payload.get(name) or {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"{name} must be an object")
+    checked = bool(raw.get("checked"))
+    status = str(raw.get("status") or "unknown").strip().lower()
+    if status not in MANUAL_STATUSES[name]:
+        raise ValueError(f"{name}.status is invalid")
+    row: dict[str, Any] = {"checked": checked, "status": status}
+    if name == "google":
+        rating = raw.get("rating")
+        if rating not in {None, ""}:
+            try:
+                rating = round(float(rating), 1)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("google.rating must be a number") from exc
+            if not 0 <= rating <= 5:
+                raise ValueError("google.rating must be between 0 and 5")
+        else:
+            rating = None
+        row.update(
+            {
+                "rating": rating,
+                "review_count": _optional_int(raw.get("review_count"), field="google.review_count"),
+            }
+        )
+    elif name == "instagram":
+        row.update(
+            {
+                "followers": _optional_int(raw.get("followers"), field="instagram.followers"),
+                "post_count": _optional_int(raw.get("post_count"), field="instagram.post_count"),
+                "url": str(raw.get("url") or "").strip()[:1000] or None,
+            }
+        )
+    else:
+        row["url"] = str(raw.get("url") or "").strip()[:1000] or None
+    return row
+
+
+def build_manual_verification(payload: dict[str, Any]) -> dict[str, Any]:
+    source = payload.get("manual_verification") or payload
+    if not isinstance(source, dict):
+        raise ValueError("manual_verification must be an object")
+    sections = {name: _manual_section(source, name) for name in MANUAL_STATUSES}
+    if not any(row["checked"] for row in sections.values()):
+        raise ValueError("at least one manual check is required")
+    return {
+        "version": 1,
+        "kind": "manual_verification",
+        **sections,
+        "notes": str(source.get("notes") or "").strip()[:2000] or None,
+    }
+
+
+def encode_manual_note(verification: dict[str, Any]) -> str:
+    return MANUAL_PREFIX + json.dumps(verification, ensure_ascii=False, separators=(",", ":"))
+
+
 def decode_activity_note(note: Any) -> dict[str, Any] | None:
     if not isinstance(note, str) or not note.startswith(ACTIVITY_PREFIX):
         return None
@@ -140,8 +217,31 @@ def decode_draft_note(note: Any) -> dict[str, Any] | None:
     return data
 
 
+def decode_manual_note(note: Any) -> dict[str, Any] | None:
+    if not isinstance(note, str) or not note.startswith(MANUAL_PREFIX):
+        return None
+    try:
+        data = json.loads(note[len(MANUAL_PREFIX) :])
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("kind") != "manual_verification":
+        return None
+    return data
+
+
 def enrich_outreach_event(event: dict[str, Any]) -> dict[str, Any]:
     row = dict(event)
+    manual = decode_manual_note(row.get("note"))
+    if manual:
+        checked = [name for name in MANUAL_STATUSES if (manual.get(name) or {}).get("checked")]
+        row.update(
+            {
+                "manual_verification": manual,
+                "note": f"{len(checked)} alan manuel doğrulandı",
+                "activity_version": manual.get("version"),
+            }
+        )
+        return row
     draft = decode_draft_note(row.get("note"))
     if draft:
         row.update(

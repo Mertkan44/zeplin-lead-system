@@ -12,8 +12,10 @@ from src.activity import (
     assignment_status_for_outcome,
     build_contact_result,
     build_draft_review,
+    build_manual_verification,
     encode_activity_note,
     encode_draft_note,
+    encode_manual_note,
     enrich_outreach_event,
     status_for_outcome,
 )
@@ -92,6 +94,8 @@ class handler(BaseHTTPRequestHandler):
             elif action == "draft_reviewed":
                 draft_review = build_draft_review(payload)
                 note = encode_draft_note(draft_review)
+            elif action == "manual_verification_saved":
+                note = encode_manual_note(build_manual_verification(payload))
             insert_outreach_event(
                 lead_name=lead_name,
                 action=action,
@@ -147,5 +151,7 @@ class handler(BaseHTTPRequestHandler):
             )
         except PermissionError as exc:
             send_json(self, 403, {"ok": False, "error": str(exc)})
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)})
         except Exception as exc:
             send_internal_error(self, exc, error="outreach save failed")

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.research_brief import build_research_brief
+from src.services import ZEPLIN_SERVICES
 
 
 def _verified_findings(lead: dict[str, Any]) -> list[dict[str, Any]]:
@@ -15,10 +16,30 @@ def _verified_findings(lead: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def _services(lead: dict[str, Any]) -> tuple[list[dict[str, Any]], bool]:
+def _services(
+    lead: dict[str, Any], manual_gaps: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], bool]:
+    catalog = {service["slug"]: service for service in ZEPLIN_SERVICES}
+    manual_services = []
+    for finding in manual_gaps:
+        for slug in finding.get("service_slugs") or []:
+            if slug not in catalog or any(item.get("slug") == slug for item in manual_services):
+                continue
+            manual_services.append(
+                {
+                    **catalog[slug],
+                    "evidence": [finding.get("evidence")],
+                    "matched_finding_codes": [finding.get("code")],
+                    "confidence": 100,
+                    "requires_discovery": False,
+                }
+            )
     matched = lead.get("matched_services") or []
-    if matched:
-        return matched[:3], False
+    combined = manual_services + [
+        item for item in matched if not any(row.get("slug") == item.get("slug") for row in manual_services)
+    ]
+    if combined:
+        return combined[:3], False
     return (lead.get("discovery_services") or [])[:3], True
 
 
@@ -39,11 +60,11 @@ def build_sales_playbook(
     name = str(lead.get("name") or "İşletme").strip()
     city = str(lead.get("city") or "").strip()
     research_brief = build_research_brief(lead)
-    findings = _verified_findings(lead)
+    findings = [*_verified_findings(lead), *(research_brief.get("manual_gaps") or [])]
     gap_findings = [
         finding for finding in findings if finding.get("finding_type", "gap") != "opportunity"
     ]
-    services, discovery_only = _services(lead)
+    services, discovery_only = _services(lead, research_brief.get("manual_gaps") or [])
     primary_service = services[0] if services else {}
     primary_finding_codes = set(primary_service.get("matched_finding_codes") or [])
     sender = _first_name(sender_name)
@@ -55,6 +76,7 @@ def build_sales_playbook(
             "impact": finding.get("impact"),
             "confidence": int(finding.get("confidence") or 0),
             "source_url": finding.get("source_url"),
+            "source_label": finding.get("source_label"),
             "finding_type": finding.get("finding_type") or "gap",
         }
         for finding in findings[:3]

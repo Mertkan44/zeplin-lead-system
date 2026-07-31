@@ -11,10 +11,14 @@ from src import auth
 from src.activity import (
     build_contact_result,
     build_draft_review,
+    build_manual_verification,
     decode_activity_note,
     decode_draft_note,
+    decode_manual_note,
     encode_activity_note,
     encode_draft_note,
+    encode_manual_note,
+    enrich_outreach_event,
     status_for_outcome,
 )
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
@@ -32,6 +36,78 @@ from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_manual_verification_is_validated_and_round_trips(self):
+        verification = build_manual_verification(
+            {
+                "manual_verification": {
+                    "google": {"checked": True, "status": "found", "rating": "4.4", "review_count": "87"},
+                    "instagram": {"checked": True, "status": "inactive", "followers": "1250"},
+                    "menu": {"checked": False},
+                    "website": {"checked": False},
+                    "notes": "Aslıhan manuel kontrol etti.",
+                }
+            }
+        )
+        decoded = decode_manual_note(encode_manual_note(verification))
+        self.assertEqual(decoded["google"]["rating"], 4.4)
+        self.assertEqual(decoded["google"]["review_count"], 87)
+        self.assertEqual(decoded["instagram"]["status"], "inactive")
+        enriched = enrich_outreach_event({"action": "manual_verification_saved", "note": encode_manual_note(verification)})
+        self.assertEqual(enriched["manual_verification"]["kind"], "manual_verification")
+
+    def test_manual_verification_rejects_empty_and_invalid_rating(self):
+        with self.assertRaises(ValueError):
+            build_manual_verification({})
+        with self.assertRaises(ValueError):
+            build_manual_verification(
+                {
+                    "google": {"checked": True, "status": "found", "rating": 6},
+                    "instagram": {}, "menu": {}, "website": {},
+                }
+            )
+
+    def test_manual_menu_gap_creates_service_and_sales_language(self):
+        lead = {
+            "name": "Örnek Restoran",
+            "sector": "restaurant",
+            "manual_verification": {
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "checked_by": "aslihan@example.com",
+                "google": {"checked": False},
+                "instagram": {"checked": False},
+                "menu": {"checked": True, "status": "outdated", "url": "https://example.com/menu"},
+                "website": {"checked": False},
+            },
+            "audit_checks": [
+                {"code": "social.instagram_presence", "status": "unknown", "label": "Instagram"}
+            ],
+        }
+        brief = build_research_brief(lead)
+        self.assertEqual(brief["manual_gaps"][0]["service_slugs"], ["menu_shoot"])
+        self.assertEqual(brief["counts"]["manual"], 1)
+        playbook = build_sales_playbook(lead, sender_name="Ahu Okay")
+        self.assertFalse(playbook["discovery_only"])
+        self.assertEqual(playbook["services"][0]["slug"], "menu_shoot")
+        self.assertIn("Dijital menü güncel değil", playbook["summary"])
+
+    def test_manual_instagram_check_suppresses_unknown_audit_check(self):
+        brief = build_research_brief(
+            {
+                "manual_verification": {
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
+                    "google": {"checked": False},
+                    "instagram": {"checked": True, "status": "active", "followers": 4200},
+                    "menu": {"checked": False},
+                    "website": {"checked": False},
+                },
+                "audit_checks": [
+                    {"code": "social.instagram_presence", "status": "unknown", "label": "Instagram"}
+                ],
+            }
+        )
+        self.assertEqual(brief["unknowns"], [])
+        self.assertIn("4200 takipçi", brief["manual_facts"][0]["evidence"])
+
     def test_draft_review_is_validated_and_round_trips(self):
         review = build_draft_review(
             {

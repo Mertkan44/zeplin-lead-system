@@ -85,6 +85,9 @@
       .lead-research-columns, .lead-script-grid { padding-left: 16px !important; padding-right: 16px !important; }
       .lead-comms { padding-left: 16px !important; padding-right: 16px !important; }
       .lead-channel-tabs { flex-wrap: wrap !important; overflow-x: visible !important; }
+      .manual-verification-grid { grid-template-columns: 1fr !important; }
+      .manual-field-grid { grid-template-columns: 1fr !important; }
+      .manual-verification-grid + div { align-items: stretch !important; flex-direction: column !important; }
     }
   </style>
   <script>
@@ -195,6 +198,7 @@
       draftStatus: item.draft_status || null,
       draftSubject: item.draft_subject || null,
       draftBody: item.draft_body || null,
+      manualVerification: item.manual_verification || item.manualVerification || null,
       ts: item.ts || item.id || Date.now(),
     };
   }
@@ -227,6 +231,7 @@
         draft_status: evt.draftStatus,
         subject: evt.draftSubject,
         body: evt.draftBody,
+        manual_verification: evt.manualVerification,
         source: 'dashboard',
         idempotency_key: `dashboard-${evt.ts}`,
       }),
@@ -279,6 +284,24 @@
       draftStatus: 'approved',
       draftSubject: draft.subject || '',
       draftBody: draft.body || '',
+      ts: Date.now(),
+    };
+    return persistOutreachEvent(evt).then(data => {
+      const saved = normalizeOutreachEvent((data && data.event) || evt);
+      const arr = getOutreach();
+      arr.push(saved);
+      saveOutreach(arr);
+      return data;
+    });
+  }
+
+  function saveManualVerification(lead, values) {
+    const evt = {
+      lead: lead.name,
+      action: 'manual_verification_saved',
+      date: new Date().toISOString(),
+      note: '',
+      manualVerification: values,
       ts: Date.now(),
     };
     return persistOutreachEvent(evt).then(data => {
@@ -482,6 +505,7 @@
     email_drafted:      { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
     outreach_review_started: { label: 'Aksiyon İnceleniyor', icon: '🗂️', status: null },
     draft_reviewed:          { label: 'Taslak Onaylandı',     icon: '✓',  status: null },
+    manual_verification_saved:{ label: 'Manuel Kontrol Tamamlandı', icon: '✓', status: null },
     email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
     reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
     call_started:      { label: 'Arama Başlatıldı',   icon: '📞', status: null },
@@ -1596,9 +1620,143 @@
     return ({ Kritik: { background: 'rgba(255,107,107,0.14)', color: '#ff8f8f' }, Yüksek: { background: 'rgba(255,159,67,0.14)', color: '#ffb36b' }, Orta: { background: 'rgba(255,207,74,0.14)', color: '#ffcf4a' }, Düşük: { background: 'rgba(124,197,255,0.14)', color: '#7cc5ff' }, Bilgi: { background: 'var(--raised)', color: 'var(--sub)' } })[s] || { background: 'var(--raised)', color: 'var(--sub)' };
   }
 
+  function manualVerificationDefaults(lead) {
+    const current = lead.manual_verification || {};
+    return {
+      google: {
+        checked: !!current.google?.checked,
+        status: current.google?.status || (lead.maps_url ? 'found' : 'unknown'),
+        rating: current.google?.rating ?? '',
+        review_count: current.google?.review_count ?? '',
+      },
+      instagram: {
+        checked: !!current.instagram?.checked,
+        status: current.instagram?.status || 'unknown',
+        followers: current.instagram?.followers ?? '',
+        post_count: current.instagram?.post_count ?? '',
+        url: current.instagram?.url || lead.social?.instagram_url || '',
+      },
+      menu: {
+        checked: !!current.menu?.checked,
+        status: current.menu?.status || 'unknown',
+        url: current.menu?.url || '',
+      },
+      website: {
+        checked: !!current.website?.checked,
+        status: current.website?.status || 'unknown',
+        url: current.website?.url || lead.website?.website_url || '',
+      },
+      notes: current.notes || '',
+    };
+  }
+
+  function ManualVerificationCard({ lead, onDataChange, onFeedback }) {
+    const [values, setValues] = React.useState(() => manualVerificationDefaults(lead));
+    const [busy, setBusy] = React.useState(false);
+    const current = lead.manual_verification || null;
+
+    React.useEffect(() => setValues(manualVerificationDefaults(lead)), [lead.name, current?.checked_at]);
+
+    function update(group, field, value) {
+      setValues(previous => ({
+        ...previous,
+        [group]: { ...previous[group], [field]: value },
+      }));
+    }
+
+    function submit(event) {
+      event.preventDefault();
+      if (!['google', 'instagram', 'menu', 'website'].some(group => values[group].checked)) {
+        onFeedback('Kaydetmek için en az bir alanı kontrol edildi olarak işaretle.');
+        return;
+      }
+      setBusy(true);
+      saveManualVerification(lead, values).then(() => {
+        onFeedback('Manuel kontrol kaydedildi; öneriler güncellendi.');
+        if (onDataChange) return onDataChange();
+      }).catch(() => onFeedback('Manuel kontrol kaydedilemedi.')).finally(() => setBusy(false));
+    }
+
+    const sourceButton = (url, label) => url ? (
+      <button type="button" style={ld.manualSource} onClick={() => openExternal(url)}>{label} ↗</button>
+    ) : null;
+    const sectionStyle = checked => ({ ...ld.manualSection, opacity: checked ? 1 : 0.72 });
+
+    return (
+      <form style={ld.manualCard} onSubmit={submit}>
+        <div style={ld.findHeader}>
+          <div>
+            <div style={ld.eyebrow}>EKİP DOĞRULAMASI</div>
+            <div style={ld.cardTitle}>Kaynakları aç, gördüğünü kaydet</div>
+          </div>
+          {current?.checked_at ? (
+            <span style={ld.verifiedBadge}>{fmtDate(current.checked_at)} · {current.checked_by || 'Ekip'}</span>
+          ) : <span style={ld.countBadge}>Henüz yapılmadı</span>}
+        </div>
+        <div className="manual-verification-grid" style={ld.manualGrid}>
+          <section style={sectionStyle(values.google.checked)}>
+            <div style={ld.manualSectionHead}>
+              <label style={ld.manualCheck}><input type="checkbox" checked={values.google.checked} onChange={event => update('google', 'checked', event.target.checked)}/><strong>Google Maps</strong></label>
+              {sourceButton(lead.maps_url, 'Maps aç')}
+            </div>
+            <select aria-label="Google profil durumu" disabled={!values.google.checked} value={values.google.status} onChange={event => update('google', 'status', event.target.value)} style={ld.manualInput}>
+              <option value="found">Profil bulundu</option><option value="not_found">Profil bulunamadı</option><option value="unknown">Sonuç belirsiz</option>
+            </select>
+            <div className="manual-field-grid" style={ld.manualFields}>
+              <input aria-label="Google puanı" disabled={!values.google.checked} type="number" min="0" max="5" step="0.1" placeholder="Puan (4.3)" value={values.google.rating} onChange={event => update('google', 'rating', event.target.value)} style={ld.manualInput}/>
+              <input aria-label="Google yorum sayısı" disabled={!values.google.checked} type="number" min="0" placeholder="Yorum sayısı" value={values.google.review_count} onChange={event => update('google', 'review_count', event.target.value)} style={ld.manualInput}/>
+            </div>
+          </section>
+
+          <section style={sectionStyle(values.instagram.checked)}>
+            <div style={ld.manualSectionHead}>
+              <label style={ld.manualCheck}><input type="checkbox" checked={values.instagram.checked} onChange={event => update('instagram', 'checked', event.target.checked)}/><strong>Instagram</strong></label>
+              {sourceButton(values.instagram.url || lead.social?.instagram_url, 'Instagram aç')}
+            </div>
+            <select aria-label="Instagram durumu" disabled={!values.instagram.checked} value={values.instagram.status} onChange={event => update('instagram', 'status', event.target.value)} style={ld.manualInput}>
+              <option value="active">Aktif kullanılıyor</option><option value="inactive">Uzun süredir pasif</option><option value="not_found">Hesap bulunamadı</option><option value="unknown">Sonuç belirsiz</option>
+            </select>
+            <div className="manual-field-grid" style={ld.manualFields}>
+              <input aria-label="Instagram takipçi sayısı" disabled={!values.instagram.checked} type="number" min="0" placeholder="Takipçi" value={values.instagram.followers} onChange={event => update('instagram', 'followers', event.target.value)} style={ld.manualInput}/>
+              <input aria-label="Instagram gönderi sayısı" disabled={!values.instagram.checked} type="number" min="0" placeholder="Gönderi" value={values.instagram.post_count} onChange={event => update('instagram', 'post_count', event.target.value)} style={ld.manualInput}/>
+            </div>
+            <input aria-label="Instagram URL" disabled={!values.instagram.checked} placeholder="Instagram profil URL" value={values.instagram.url} onChange={event => update('instagram', 'url', event.target.value)} style={ld.manualInput}/>
+          </section>
+
+          <section style={sectionStyle(values.menu.checked)}>
+            <div style={ld.manualSectionHead}>
+              <label style={ld.manualCheck}><input type="checkbox" checked={values.menu.checked} onChange={event => update('menu', 'checked', event.target.checked)}/><strong>Menü</strong></label>
+              {sourceButton(values.menu.url, 'Menüyü aç')}
+            </div>
+            <select aria-label="Menü durumu" disabled={!values.menu.checked} value={values.menu.status} onChange={event => update('menu', 'status', event.target.value)} style={ld.manualInput}>
+              <option value="current">Güncel ve yeterli</option><option value="outdated">Eski / görseller yetersiz</option><option value="not_found">Dijital menü yok</option><option value="unknown">Sonuç belirsiz</option>
+            </select>
+            <input aria-label="Menü URL" disabled={!values.menu.checked} placeholder="Menü URL (varsa)" value={values.menu.url} onChange={event => update('menu', 'url', event.target.value)} style={ld.manualInput}/>
+          </section>
+
+          <section style={sectionStyle(values.website.checked)}>
+            <div style={ld.manualSectionHead}>
+              <label style={ld.manualCheck}><input type="checkbox" checked={values.website.checked} onChange={event => update('website', 'checked', event.target.checked)}/><strong>Website</strong></label>
+              {sourceButton(values.website.url || lead.website?.website_url, 'Siteyi aç')}
+            </div>
+            <select aria-label="Website durumu" disabled={!values.website.checked} value={values.website.status} onChange={event => update('website', 'status', event.target.value)} style={ld.manualInput}>
+              <option value="working">Çalışıyor ve güncel</option><option value="outdated">Eski / yetersiz</option><option value="not_found">Website yok</option><option value="unknown">Sonuç belirsiz</option>
+            </select>
+            <input aria-label="Website URL" disabled={!values.website.checked} placeholder="Website URL (varsa)" value={values.website.url} onChange={event => update('website', 'url', event.target.value)} style={ld.manualInput}/>
+          </section>
+        </div>
+        <div style={ld.manualFooter}>
+          <textarea aria-label="Manuel kontrol notu" placeholder="Kısa ekip notu (isteğe bağlı)" value={values.notes} onChange={event => setValues(previous => ({ ...previous, notes: event.target.value }))} style={ld.manualNote}/>
+          <button type="submit" disabled={busy} style={{ ...ld.btnDark, opacity: busy ? .6 : 1 }}>{busy ? 'Kaydediliyor…' : 'Doğrulamayı kaydet'}</button>
+        </div>
+      </form>
+    );
+  }
+
   function ResearchBriefCard({ brief }) {
     if (!brief) return null;
     const gaps = [...(brief.confirmed_gaps || []), ...(brief.likely_gaps || [])];
+    const manualFacts = brief.manual_facts || [];
     const unknowns = brief.manual_checks || brief.unknowns || [];
     const tone = brief.status === 'ready' ? ld.verifiedBadge : brief.status === 'partial' ? ld.discoveryBadge : ld.countBadge;
     return (
@@ -1617,6 +1775,7 @@
           <div style={ld.researchStat}><strong>{brief.source_count || 0}</strong><span>Kaynak</span></div>
         </div>
         {brief.stale && <div style={ld.researchWarning}>Araştırma 30 günden eski veya tarihsiz. Temastan önce kaynakları yeniden kontrol et.</div>}
+        {manualFacts.length > 0 && <div style={ld.manualFactStrip}>{manualFacts.map(item => <span key={item.code}><strong>{item.title}:</strong> {item.evidence}</span>)}</div>}
         <div className="responsive-opportunity-columns lead-research-columns" style={ld.researchColumns}>
           <div>
             <div style={ld.miniLabel}>MÜŞTERİYE SÖYLENEBİLİR</div>
@@ -1748,6 +1907,9 @@
     const readiness  = getLeadReadiness(lead);
     const lastEvent  = events[0] || null;
     const socialVerified = verifiedInstagram(lead);
+    const manualInstagram = lead.manual_verification?.instagram?.checked
+      ? lead.manual_verification.instagram
+      : null;
     const socialStatsVerified = socialVerified
       && lead.social?.stats?.lookup_status === 'found';
     const scoreAvailable = scoreIsAvailable(lead);
@@ -1877,9 +2039,9 @@
               <div style={ld.statsHeader}><div style={ld.eyebrow}>SOSYAL SİNYALLER</div><div style={ld.cardTitle}>Etkileşim ve büyüme</div></div>
               <div className="responsive-stats" style={ld.statsGrid}>
                 {[
-                  ['Instagram', socialVerified ? 'Doğrulandı' : 'Doğrulanmadı'],
-                  ['Takipçi',   socialStatsVerified && lead.social?.stats?.followers !== null ? String(lead.social.stats.followers) : '—'],
-                  ['Gönderi',   socialStatsVerified && lead.social?.stats?.post_count !== null ? String(lead.social.stats.post_count) : '—'],
+                  ['Instagram', manualInstagram ? 'Ekip kontrol etti' : socialVerified ? 'Doğrulandı' : 'Doğrulanmadı'],
+                  ['Takipçi',   manualInstagram?.followers !== null && manualInstagram?.followers !== undefined ? String(manualInstagram.followers) : socialStatsVerified && lead.social?.stats?.followers !== null ? String(lead.social.stats.followers) : '—'],
+                  ['Gönderi',   manualInstagram?.post_count !== null && manualInstagram?.post_count !== undefined ? String(manualInstagram.post_count) : socialStatsVerified && lead.social?.stats?.post_count !== null ? String(lead.social.stats.post_count) : '—'],
                   ['Ort. beğeni',socialStatsVerified && lead.social?.stats?.avg_likes !== null ? String(lead.social.stats.avg_likes) : '—'],
                   ['Etkileşim', socialStatsVerified && lead.social?.stats?.engagement_rate !== null ? `%${lead.social.stats.engagement_rate}` : '—'],
                 ].map(([l, v], i) => (
@@ -1890,6 +2052,8 @@
                 ))}
               </div>
             </div>
+
+            <ManualVerificationCard lead={lead} onDataChange={onDataChange} onFeedback={setFeedback}/>
 
             <ResearchBriefCard brief={researchBrief}/>
 
@@ -2215,6 +2379,17 @@
     scriptText:  { color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.6, marginBottom: 10 },
     objectionRow:{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 8, color: 'var(--sub)', fontSize: 11.5, lineHeight: 1.45 },
     researchCard:{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden', marginBottom: 16 },
+    manualCard:{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden', marginBottom: 16 },
+    manualGrid:{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, padding: '18px 24px' },
+    manualSection:{ display: 'flex', flexDirection: 'column', gap: 9, padding: 14, borderRadius: 10, background: 'var(--raised)', border: '1px solid var(--line)' },
+    manualSectionHead:{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, minHeight: 24 },
+    manualCheck:{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--tx)', fontSize: 12.5, cursor: 'pointer' },
+    manualSource:{ padding: 0, border: 'none', background: 'transparent', color: 'var(--accent)', fontSize: 10.5, cursor: 'pointer' },
+    manualFields:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
+    manualInput:{ width: '100%', minWidth: 0, padding: '9px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, color: 'var(--tx)', outline: 'none', fontSize: 11.5 },
+    manualFooter:{ display: 'flex', alignItems: 'flex-end', gap: 10, padding: '0 24px 20px' },
+    manualNote:{ flex: 1, minHeight: 62, resize: 'vertical', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--tx)', outline: 'none', fontSize: 11.5 },
+    manualFactStrip:{ display: 'flex', flexDirection: 'column', gap: 5, margin: '16px 24px 0', padding: '11px 12px', borderRadius: 8, background: 'rgba(197,242,74,0.07)', border: '1px solid rgba(197,242,74,0.15)', color: 'var(--sub)', fontSize: 11.5, lineHeight: 1.45 },
     researchStats:{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', borderBottom: '1px solid var(--line)' },
     researchStat:{ padding: '14px 18px', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--muted)', fontSize: 10.5 },
     researchColumns:{ display: 'grid', gridTemplateColumns: '1.15fr .85fr', gap: 24, padding: '20px 24px' },

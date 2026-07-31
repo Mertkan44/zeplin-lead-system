@@ -157,6 +157,7 @@ def insert_outreach_event(
         "call_completed",
         "contact_result_recorded",
         "draft_reviewed",
+        "manual_verification_saved",
         "email_drafted",
         "email_sent",
         "follow_up_scheduled",
