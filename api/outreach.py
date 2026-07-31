@@ -8,12 +8,21 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import normalize_email, require_auth, require_lead_access
+from src.activity import (
+    assignment_status_for_outcome,
+    build_contact_result,
+    encode_activity_note,
+    enrich_outreach_event,
+    status_for_outcome,
+)
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     fetch_lead_assignments,
     fetch_outreach_events,
     insert_outreach_event,
     is_enabled as supabase_enabled,
+    set_lead_status,
+    update_lead_assignment,
 )
 
 
@@ -37,7 +46,7 @@ class handler(BaseHTTPRequestHandler):
         except ValueError:
             limit = 500
         try:
-            events = fetch_outreach_events(limit=limit)
+            events = [enrich_outreach_event(event) for event in fetch_outreach_events(limit=limit)]
             if user.get("role") != "admin":
                 assignments = fetch_lead_assignments(
                     user_email=normalize_email(user.get("sub")), status="active", limit=1000
@@ -71,16 +80,65 @@ class handler(BaseHTTPRequestHandler):
             return
         try:
             require_lead_access(user, lead_name)
+            activity = None
+            note = payload.get("note")
+            if action == "contact_result_recorded" or payload.get("outcome"):
+                action = "contact_result_recorded"
+                activity = build_contact_result(payload)
+                note = encode_activity_note(activity)
             insert_outreach_event(
                 lead_name=lead_name,
                 action=action,
-                note=payload.get("note"),
+                note=note,
                 happened_at=payload.get("happened_at"),
                 actor_email=normalize_email(user.get("sub")),
                 source=(payload.get("source") or "dashboard")[:40],
                 idempotency_key=(payload.get("idempotency_key") or None),
             )
-            send_json(self, 200, {"ok": True})
+            if activity:
+                outcome = activity["outcome"]
+                set_lead_status(lead_name, status_for_outcome(outcome))
+                active_assignments = fetch_lead_assignments(
+                    lead_name=lead_name,
+                    status="active",
+                    limit=10,
+                )
+                if active_assignments:
+                    assignment = active_assignments[0]
+                    previous_meta = assignment.get("meta") or {}
+                    update_lead_assignment(
+                        int(assignment["id"]),
+                        status=assignment_status_for_outcome(outcome),
+                        due_at=activity.get("follow_up_at"),
+                        meta={
+                            **previous_meta,
+                            "last_outcome": outcome,
+                            "last_channel": activity.get("channel"),
+                            "last_contact_at": payload.get("happened_at"),
+                            "follow_up_at": activity.get("follow_up_at"),
+                            "service_slugs": activity.get("service_slugs") or [],
+                        },
+                    )
+            response_event = enrich_outreach_event(
+                {
+                    "lead_name": lead_name,
+                    "action": action,
+                    "note": note,
+                    "happened_at": payload.get("happened_at"),
+                    "actor_email": normalize_email(user.get("sub")),
+                    "source": (payload.get("source") or "dashboard")[:40],
+                    "idempotency_key": payload.get("idempotency_key"),
+                }
+            )
+            send_json(
+                self,
+                200,
+                {
+                    "ok": True,
+                    "event": response_event,
+                    "status": status_for_outcome(activity["outcome"]) if activity else None,
+                },
+            )
         except PermissionError as exc:
             send_json(self, 403, {"ok": False, "error": str(exc)})
         except Exception as exc:

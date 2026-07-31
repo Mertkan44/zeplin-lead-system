@@ -9,3 +9,5 @@ src/dashboard/static/index.html
 .claude/
 *.log
 outreach_log.local.json
+.vercel
+.env*

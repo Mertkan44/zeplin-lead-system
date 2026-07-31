@@ -158,6 +158,13 @@
       action: item.action || 'note_added',
       date: item.date || item.happened_at || item.created_at || new Date().toISOString(),
       note: item.note || '',
+      channel: item.channel || null,
+      channelLabel: item.channel_label || null,
+      outcome: item.outcome || null,
+      outcomeLabel: item.outcome_label || null,
+      followUpAt: item.follow_up_at || null,
+      serviceSlugs: item.service_slugs || [],
+      contactName: item.contact_name || null,
       ts: item.ts || item.id || Date.now(),
     };
   }
@@ -182,6 +189,11 @@
         action: evt.action,
         happened_at: evt.date,
         note: evt.note,
+        channel: evt.channel,
+        outcome: evt.outcome,
+        follow_up_at: evt.followUpAt,
+        service_slugs: evt.serviceSlugs,
+        contact_name: evt.contactName,
         source: 'dashboard',
         idempotency_key: `dashboard-${evt.ts}`,
       }),
@@ -198,6 +210,29 @@
       saveOutreach(arr);
       const act = ACTIONS[action];
       if (act && act.status) return setStatusLS(name, act.status);
+    });
+  }
+
+  function saveContactResult(lead, values) {
+    const evt = {
+      lead: lead.name,
+      action: 'contact_result_recorded',
+      date: new Date().toISOString(),
+      note: values.note || '',
+      channel: values.channel,
+      outcome: values.outcome,
+      followUpAt: values.followUpAt || null,
+      serviceSlugs: values.serviceSlugs || [],
+      contactName: values.contactName || null,
+      ts: Date.now(),
+    };
+    return persistOutreachEvent(evt).then(data => {
+      const saved = normalizeOutreachEvent((data && data.event) || evt);
+      const arr = getOutreach();
+      arr.push(saved);
+      saveOutreach(arr);
+      if (data && data.status) remoteStatuses[lead.name] = data.status;
+      return data;
     });
   }
 
@@ -396,6 +431,7 @@
     reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
     call_started:      { label: 'Arama Başlatıldı',   icon: '📞', status: null },
     call_completed:    { label: 'Arama Tamamlandı',   icon: '📞', status: 'contacted' },
+    contact_result_recorded: { label: 'Temas Sonucu Kaydedildi', icon: '✓', status: null },
     follow_up_scheduled:{ label: 'Takip Planlandı',    icon: '📅', status: 'follow_up' },
     note_added:        { label: 'Not Eklendi',         icon: '📝', status: null },
     proposal_created:  { label: 'Teklif Taslağı Hazır',icon: '📄', status: null },
@@ -757,6 +793,7 @@
 
   function Topbar({ view, onNav, leadCount, onAutomationClick, onOpenSearch, theme, onToggleTheme, user, onLogout }) {
     const navItems = [
+      { key: 'today',     label: 'Bugün', employeeOnly: true },
       { key: 'cockpit',   label: 'Workspace' },
       { key: 'raporlar',  label: 'Leadler',   badge: leadCount },
       { key: 'pipeline',  label: 'Pipeline' },
@@ -764,7 +801,12 @@
       { key: 'hizmetler', label: 'Hizmetler' },
       { key: 'profile',   label: 'Profil' },
       { key: 'admin',     label: 'Admin' },
-    ].filter(n => n.key !== 'admin' || !user || user.role === 'admin');
+    ].filter(n => {
+      if (n.employeeOnly) return user?.role === 'sales';
+      if (n.key === 'admin') return !user || user.role === 'admin';
+      if (n.key === 'cockpit') return user?.role !== 'sales';
+      return true;
+    });
     const currentView = view === 'detail' ? 'raporlar' : view;
     const initials = initialsFor(user?.name || user?.email || 'ZM');
 
@@ -986,6 +1028,323 @@
     );
   }
 
+  const CONTACT_CHANNEL_OPTIONS = [
+    ['phone', 'Telefon'],
+    ['whatsapp', 'WhatsApp'],
+    ['instagram', 'Instagram'],
+    ['email', 'E-posta'],
+    ['other', 'Diğer'],
+  ];
+
+  const CONTACT_OUTCOME_OPTIONS = [
+    ['reached_interested', 'İlgilendi'],
+    ['proposal_requested', 'Teklif istedi'],
+    ['reached_later', 'Sonra görüşelim'],
+    ['no_answer', 'Ulaşılamadı'],
+    ['wrong_number', 'Numara yanlış'],
+    ['not_interested', 'İlgilenmedi'],
+    ['won', 'Anlaşma yapıldı'],
+    ['lost', 'Kaybedildi'],
+  ];
+
+  function tomorrowAtTen() {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    date.setHours(10, 0, 0, 0);
+    const pad = value => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  function ContactResultDialog({ lead, onClose, onSaved }) {
+    const [channel, setChannel] = React.useState(lead?.phone ? 'phone' : lead?.social?.instagram_url ? 'instagram' : 'other');
+    const [outcome, setOutcome] = React.useState('reached_interested');
+    const [followUpAt, setFollowUpAt] = React.useState(tomorrowAtTen());
+    const [contactName, setContactName] = React.useState('');
+    const [note, setNote] = React.useState('');
+    const [serviceSlugs, setServiceSlugs] = React.useState([]);
+    const [busy, setBusy] = React.useState(false);
+    const [error, setError] = React.useState('');
+    const needsFollowUp = ['reached_later', 'no_answer'].includes(outcome);
+    const services = (lead?.matched_services || lead?.discovery_services || []).slice(0, 5);
+
+    function toggleService(slug) {
+      setServiceSlugs(current => current.includes(slug)
+        ? current.filter(item => item !== slug)
+        : [...current, slug]);
+    }
+
+    function submit(event) {
+      event.preventDefault();
+      if (needsFollowUp && !followUpAt) {
+        setError('Takip tarihi seçmelisin.');
+        return;
+      }
+      setBusy(true);
+      setError('');
+      saveContactResult(lead, {
+        channel,
+        outcome,
+        followUpAt: needsFollowUp ? new Date(followUpAt).toISOString() : null,
+        contactName,
+        note,
+        serviceSlugs,
+      }).then(() => {
+        onSaved();
+      }).catch(err => {
+        setError(err.message || 'Sonuç kaydedilemedi.');
+      }).finally(() => setBusy(false));
+    }
+
+    return (
+      <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+        <form onSubmit={submit} style={{ ...dialog.panel, maxWidth: 680, maxHeight: '82vh', overflowY: 'auto' }}>
+          <div style={dialog.head}>
+            <div>
+              <div style={ld.eyebrow}>TEMAS SONUCU</div>
+              <div style={ld.cardTitle}>{lead.name}</div>
+            </div>
+            <button type="button" onClick={onClose} disabled={busy} style={ld.btnGhost} aria-label="Kapat">Kapat</button>
+          </div>
+
+          <label style={tw.fieldLabel}>Kanal</label>
+          <div style={tw.segmentRow}>
+            {CONTACT_CHANNEL_OPTIONS.map(([key, label]) => (
+              <button type="button" key={key} style={channel === key ? tw.segmentActive : tw.segment} onClick={() => setChannel(key)}>{label}</button>
+            ))}
+          </div>
+
+          <label style={tw.fieldLabel}>Görüşmenin sonucu</label>
+          <div style={tw.outcomeGrid}>
+            {CONTACT_OUTCOME_OPTIONS.map(([key, label]) => (
+              <button type="button" key={key} style={outcome === key ? tw.outcomeActive : tw.outcome} onClick={() => setOutcome(key)}>{label}</button>
+            ))}
+          </div>
+
+          {needsFollowUp && (
+            <div>
+              <label htmlFor="follow-up-at" style={tw.fieldLabel}>Tekrar ne zaman iletişime geçilecek?</label>
+              <input id="follow-up-at" type="datetime-local" value={followUpAt} onChange={event => setFollowUpAt(event.target.value)} style={dialog.input} required/>
+            </div>
+          )}
+
+          {services.length > 0 && (
+            <div>
+              <label style={tw.fieldLabel}>Konuşulan / ilgi duyulan hizmetler</label>
+              <div style={tw.serviceGrid}>
+                {services.map(service => {
+                  const selected = serviceSlugs.includes(service.slug);
+                  return (
+                    <label key={service.slug} style={selected ? tw.serviceSelected : tw.serviceOption}>
+                      <input type="checkbox" checked={selected} onChange={() => toggleService(service.slug)}/>
+                      <span>{service.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="responsive-opportunity-columns" style={tw.twoCols}>
+            <div>
+              <label htmlFor="contact-name" style={tw.fieldLabel}>Görüşülen kişi</label>
+              <input id="contact-name" value={contactName} onChange={event => setContactName(event.target.value)} placeholder="Örn. Ayşe Hanım" style={dialog.input}/>
+            </div>
+            <div>
+              <label htmlFor="contact-note" style={tw.fieldLabel}>Kısa not</label>
+              <input id="contact-note" value={note} onChange={event => setNote(event.target.value)} placeholder="Ne konuşuldu, ne istendi?" style={dialog.input}/>
+            </div>
+          </div>
+
+          {error && <div style={tw.error}>{error}</div>}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+            <button type="button" style={ld.btnGhost} onClick={onClose} disabled={busy}>Vazgeç</button>
+            <button type="submit" style={av.primaryBtn} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Sonucu kaydet'}</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  function isToday(value) {
+    if (!value) return false;
+    const date = new Date(value);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+  }
+
+  function latestContactResult(leadName) {
+    return getLeadEvents(leadName).find(event => event.action === 'contact_result_recorded') || null;
+  }
+
+  function taskMetaForLead(lead) {
+    const last = latestContactResult(lead.name);
+    const followUp = last?.followUpAt ? new Date(last.followUpAt) : null;
+    const now = new Date();
+    const due = followUp && followUp <= now;
+    const dueToday = followUp && isToday(followUp);
+    const assignmentDue = lead.assignment_due_at ? new Date(lead.assignment_due_at) : null;
+    let rank = 40;
+    let label = 'İlk temas bekliyor';
+    let detail = lead.priority_reason || 'Lead’i incele ve ilk teması gerçekleştir.';
+    if (due) {
+      rank = 100;
+      label = dueToday ? 'Bugün takip' : 'Takip gecikti';
+      detail = `${last.outcomeLabel || 'Önceki temas'} sonrası yeniden iletişime geç.`;
+    } else if (assignmentDue && assignmentDue <= now) {
+      rank = 80;
+      label = 'Atama tarihi geldi';
+      detail = lead.priority_reason || 'Atanan lead için aksiyon bekleniyor.';
+    } else if (last) {
+      rank = 25;
+      label = last.outcomeLabel || 'Sonuç kaydedildi';
+      detail = followUp
+        ? `Takip: ${followUp.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+        : 'Yeni aksiyon için lead detayını kontrol et.';
+    }
+    return {
+      rank: rank + Number(lead.sales_priority_score || 0) / 100,
+      label,
+      detail,
+      followUp,
+      completedToday: Boolean(last && isToday(last.date)),
+    };
+  }
+
+  function TodayView({ leads, onSelect, onOpenResult, user, summary }) {
+    const tasks = React.useMemo(
+      () => leads
+        .filter(lead => !['converted', 'lost'].includes(getStatuses()[lead.name] || lead.status))
+        .map(lead => ({ lead, meta: taskMetaForLead(lead) }))
+        .sort((a, b) => b.meta.rank - a.meta.rank),
+      [leads, summary]
+    );
+    const completed = leads.filter(lead => taskMetaForLead(lead).completedToday).length;
+    const due = tasks.filter(item => item.meta.followUp && item.meta.followUp <= new Date()).length;
+    const senderName = (user?.name || '').split(' ')[0] || 'ekip';
+
+    function startCall(lead) {
+      if (!lead.phone) return;
+      addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {});
+      window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
+    }
+
+    return (
+      <main style={tw.main}>
+        <div style={tw.hero}>
+          <div>
+            <div style={wp.eyebrow}>SATIŞ MASASI · {new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long' })}</div>
+            <h1 style={tw.h1}>Bugünkü İşlerim</h1>
+            <p style={tw.subtitle}>Merhaba {senderName}. Önce takipleri kapat, sonra en yüksek öncelikli yeni lead’lere geç.</p>
+          </div>
+          <div style={tw.heroStats}>
+            <div style={tw.heroStat}><strong>{tasks.length}</strong><span>Açık iş</span></div>
+            <div style={tw.heroStat}><strong>{due}</strong><span>Takip zamanı geldi</span></div>
+            <div style={tw.heroStat}><strong>{completed}</strong><span>Bugün tamamlandı</span></div>
+          </div>
+        </div>
+
+        <section style={tw.queueSection}>
+          <div style={tw.sectionHead}>
+            <div>
+              <div style={ld.eyebrow}>ÖNCELİK SIRASI</div>
+              <h2 style={tw.h2}>Sıradaki temaslar</h2>
+            </div>
+            <span style={tw.quiet}>{summary?.today_result_count || completed} sonuç bugün kaydedildi</span>
+          </div>
+
+          <div style={tw.queue}>
+            {tasks.map(({ lead, meta }, index) => {
+              const playbook = lead.sales_playbook || {};
+              const service = (playbook.services || [])[0];
+              const evidence = (playbook.evidence_points || [])[0];
+              return (
+                <article key={lead.name} style={tw.taskCard}>
+                  <div style={tw.order}>{String(index + 1).padStart(2, '0')}</div>
+                  <div style={tw.taskBody}>
+                    <div style={tw.taskTop}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={tw.taskFlags}>
+                          <span style={meta.rank >= 100 ? tw.flagHot : tw.flag}>{meta.label}</span>
+                          <span style={tw.priority}>Öncelik {lead.sales_priority_score || 0}</span>
+                        </div>
+                        <h3 style={tw.taskName}>{lead.name}</h3>
+                        <div style={tw.taskMeta}>{lead.category || lead.sector || 'İşletme'} · {lead.city || 'Konum yok'}{service?.name ? ` · ${service.name}` : ''}</div>
+                      </div>
+                      <div style={tw.taskActions}>
+                        {lead.phone && <button type="button" style={tw.callAction} onClick={() => startCall(lead)}><IconCall/> Ara</button>}
+                        <button type="button" style={tw.resultAction} onClick={() => onOpenResult(lead)}>Sonuç kaydet</button>
+                        <button type="button" style={tw.detailAction} onClick={() => onSelect(leads.indexOf(lead))}>Detay</button>
+                      </div>
+                    </div>
+                    <div className="responsive-opportunity-columns" style={tw.taskContext}>
+                      <div>
+                        <div style={tw.contextLabel}>NEDEN ŞİMDİ?</div>
+                        <div style={tw.contextText}>{meta.detail}</div>
+                        {evidence && <div style={tw.evidenceText}><strong>Kanıt:</strong> {evidence.title} · {evidence.evidence}</div>}
+                      </div>
+                      <div style={tw.openerBox}>
+                        <div style={tw.contextLabel}>ARAMAYA BÖYLE BAŞLA</div>
+                        <div style={tw.openerText}>“{playbook.call_opener || 'İşletmenin dijital hedeflerini öğrenerek görüşmeye başla.'}”</div>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const tw = {
+    main: { flex: 1, minWidth: 0, padding: '34px 40px 64px', background: 'var(--bg)', maxWidth: 1500, width: '100%', margin: '0 auto' },
+    hero: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 28, paddingBottom: 30, borderBottom: '1px solid var(--line)' },
+    h1: { fontFamily: "'Space Grotesk'", fontSize: 48, lineHeight: 1, letterSpacing: 0, margin: '10px 0 12px', color: 'var(--tx)' },
+    subtitle: { margin: 0, maxWidth: 650, color: 'var(--sub)', fontSize: 14, lineHeight: 1.6 },
+    heroStats: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(110px, 1fr))', gap: 8 },
+    heroStat: { minWidth: 116, padding: '16px 18px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--panel)', display: 'flex', flexDirection: 'column', gap: 4 },
+    queueSection: { marginTop: 30 },
+    sectionHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginBottom: 16 },
+    h2: { fontFamily: "'Space Grotesk'", fontSize: 24, margin: '6px 0 0', color: 'var(--tx)' },
+    quiet: { color: 'var(--muted)', fontSize: 12 },
+    queue: { display: 'flex', flexDirection: 'column', gap: 10 },
+    taskCard: { display: 'grid', gridTemplateColumns: '54px minmax(0,1fr)', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--panel)', overflow: 'hidden' },
+    order: { display: 'grid', placeItems: 'start center', paddingTop: 24, borderRight: '1px solid var(--line)', color: 'var(--muted)', font: "600 12px 'Space Grotesk'" },
+    taskBody: { padding: '20px 22px' },
+    taskTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18 },
+    taskFlags: { display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 8 },
+    flag: { padding: '4px 9px', borderRadius: 999, background: 'var(--raised)', color: 'var(--sub)', fontSize: 10.5, fontWeight: 600 },
+    flagHot: { padding: '4px 9px', borderRadius: 999, background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 10.5, fontWeight: 700 },
+    priority: { color: 'var(--muted)', fontSize: 10.5 },
+    taskName: { fontFamily: "'Space Grotesk'", fontSize: 19, margin: 0, color: 'var(--tx)', letterSpacing: 0 },
+    taskMeta: { color: 'var(--muted)', fontSize: 12, marginTop: 5 },
+    taskActions: { display: 'flex', gap: 7, flexShrink: 0 },
+    callAction: { ...wp.callBtn, flex: 'none', padding: '10px 14px', borderRadius: 7 },
+    resultAction: { padding: '10px 14px', borderRadius: 7, border: 'none', background: '#000', color: '#fff', fontWeight: 600, cursor: 'pointer' },
+    detailAction: { padding: '10px 14px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--tx)', cursor: 'pointer' },
+    taskContext: { display: 'grid', gridTemplateColumns: 'minmax(0,0.9fr) minmax(0,1.1fr)', gap: 14, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' },
+    contextLabel: { color: 'var(--muted)', font: "600 9.5px 'Space Grotesk'", letterSpacing: '0.08em', marginBottom: 6 },
+    contextText: { color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.5 },
+    evidenceText: { color: 'var(--muted)', fontSize: 11.5, lineHeight: 1.5, marginTop: 7 },
+    openerBox: { background: 'var(--raised)', borderRadius: 7, padding: '12px 14px' },
+    openerText: { color: 'var(--tx)', fontSize: 12.5, lineHeight: 1.55 },
+    fieldLabel: { display: 'block', color: 'var(--sub)', fontSize: 11.5, fontWeight: 600, margin: '16px 0 8px' },
+    segmentRow: { display: 'flex', gap: 7, flexWrap: 'wrap' },
+    segment: { padding: '9px 13px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--sub)', cursor: 'pointer' },
+    segmentActive: { padding: '9px 13px', borderRadius: 7, border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 600, cursor: 'pointer' },
+    outcomeGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 7 },
+    outcome: { minHeight: 44, padding: '8px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--sub)', cursor: 'pointer' },
+    outcomeActive: { minHeight: 44, padding: '8px 10px', borderRadius: 7, border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 600, cursor: 'pointer' },
+    serviceGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 7 },
+    serviceOption: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 7, color: 'var(--sub)', fontSize: 12.5 },
+    serviceSelected: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', border: '1px solid var(--accent)', borderRadius: 7, color: 'var(--tx)', background: 'var(--raised)', fontSize: 12.5 },
+    twoCols: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
+    error: { marginTop: 12, padding: '10px 12px', borderRadius: 7, background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', fontSize: 12 },
+  };
+
   function CockpitMain({ leads, statuses, onSelect, onOpenAdmin, user, summary }) {
     const [filter, setFilter] = React.useState('hepsi');
     const [selectedName, setSelectedName] = React.useState(leads[0]?.name);
@@ -1182,7 +1541,7 @@
     return ({ Kritik: { background: 'rgba(255,107,107,0.14)', color: '#ff8f8f' }, Yüksek: { background: 'rgba(255,159,67,0.14)', color: '#ffb36b' }, Orta: { background: 'rgba(255,207,74,0.14)', color: '#ffcf4a' }, Düşük: { background: 'rgba(124,197,255,0.14)', color: '#7cc5ff' }, Bilgi: { background: 'var(--raised)', color: 'var(--sub)' } })[s] || { background: 'var(--raised)', color: 'var(--sub)' };
   }
 
-  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange }) {
+  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange, onOpenResult }) {
     const [showReport, setShowReport] = React.useState(false);
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
@@ -1207,6 +1566,7 @@
     const socialStatsVerified = socialVerified
       && lead.social?.stats?.lookup_status === 'found';
     const scoreAvailable = scoreIsAvailable(lead);
+    const playbook = lead.sales_playbook || {};
 
     React.useEffect(() => {
       if (!feedback) return;
@@ -1218,6 +1578,11 @@
       navigator.clipboard.writeText(lead.ai_email || '').then(() => {
         return addOutreach(lead.name, 'email_drafted', new Date().toISOString(), 'Taslak panoya kopyalandı');
       }).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    }
+
+    function copySalesText(text, label) {
+      if (!text || !navigator.clipboard?.writeText) return;
+      navigator.clipboard.writeText(text).then(() => setFeedback(`${label} kopyalandı.`));
     }
 
     function saveNote() {
@@ -1288,6 +1653,7 @@
               {socialVerified && lead.social?.instagram_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.social.instagram_url)}>Instagram aç</button>}
               {lead.maps_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.maps_url)}>Maps aç</button>}
               {lead.ai_email && <button style={ld.quickBtn} onClick={copyEmail}>{copied ? 'Taslak kopyalandi' : 'Taslagi kopyala'}</button>}
+              <button style={{ ...ld.quickBtn, background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'var(--accent)' }} onClick={onOpenResult}>Sonuç kaydet</button>
             </div>
           </div>
           <div style={ld.heroRight}>
@@ -1338,6 +1704,68 @@
                 ))}
               </div>
             </div>
+
+            {playbook.summary && (
+              <div style={ld.salesCard}>
+                <div style={ld.findHeader}>
+                  <div>
+                    <div style={ld.eyebrow}>SATIŞ REHBERİ</div>
+                    <div style={ld.cardTitle}>Bu işletmeyle nasıl konuşacağız?</div>
+                  </div>
+                  <span style={playbook.discovery_only ? ld.discoveryBadge : ld.verifiedBadge}>
+                    {playbook.discovery_only ? 'Keşif görüşmesi' : 'Kanıta dayalı'}
+                  </span>
+                </div>
+                <div style={ld.salesSummary}>{playbook.summary}</div>
+                {(playbook.evidence_points || []).length > 0 && (
+                  <div style={ld.salesEvidenceGrid}>
+                    {playbook.evidence_points.slice(0, 3).map((item, itemIndex) => (
+                      <div key={`${item.title}-${itemIndex}`} style={ld.salesEvidence}>
+                        <div style={ld.miniLabel}>KANIT {itemIndex + 1}</div>
+                        <strong>{item.title}</strong>
+                        <span>{item.evidence}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={ld.callScript}>
+                  <div style={ld.miniLabel}>ARAMAYA BÖYLE BAŞLA</div>
+                  <div style={ld.callScriptText}>“{playbook.call_opener}”</div>
+                  <button style={ld.findBtn} onClick={() => copySalesText(playbook.call_opener, 'Arama metni')}>Kopyala</button>
+                </div>
+                <div className="responsive-opportunity-columns" style={ld.scriptGrid}>
+                  <div style={{ ...ld.scriptPanel, margin: 0 }}>
+                    <div style={ld.miniLabel}>WHATSAPP</div>
+                    <div style={ld.scriptText}>{playbook.whatsapp_message}</div>
+                    <button style={ld.findBtn} onClick={() => copySalesText(playbook.whatsapp_message, 'WhatsApp metni')}>Kopyala</button>
+                  </div>
+                  <div style={{ ...ld.scriptPanel, margin: 0 }}>
+                    <div style={ld.miniLabel}>INSTAGRAM DM</div>
+                    <div style={ld.scriptText}>{playbook.instagram_dm}</div>
+                    <button style={ld.findBtn} onClick={() => copySalesText(playbook.instagram_dm, 'Instagram mesajı')}>Kopyala</button>
+                  </div>
+                </div>
+                <div style={ld.scriptPanel}>
+                  <div style={ld.miniLabel}>E-POSTA</div>
+                  <div style={{ ...ld.scriptText, whiteSpace: 'pre-wrap' }}><strong>{playbook.email_subject}</strong>{'\n\n'}{playbook.email_body}</div>
+                  <button style={ld.findBtn} onClick={() => copySalesText(`Konu: ${playbook.email_subject}\n\n${playbook.email_body}`, 'E-posta taslağı')}>Kopyala</button>
+                </div>
+                <div className="responsive-opportunity-columns" style={ld.scriptGrid}>
+                  <div>
+                    <div style={ld.miniLabel}>GÖRÜŞMEDE SOR</div>
+                    <ul style={ld.cleanList}>
+                      {(playbook.discovery_questions || []).slice(0, 4).map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <div style={ld.miniLabel}>İTİRAZA HAZIRLIK</div>
+                    {(playbook.objection_responses || []).slice(0, 3).map((item, itemIndex) => (
+                      <div key={itemIndex} style={ld.objectionRow}><strong>{item.objection}</strong><span>{item.response}</span></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {hasRecommendation ? (
               <div style={ld.packCard}>
@@ -1541,7 +1969,10 @@
                       <div style={ld.actKind}>{meta.label}</div>
                       <div style={ld.actMeta}>
                         {fmtDate(event.date)}
+                        {event.channelLabel ? ` · ${event.channelLabel}` : ''}
+                        {event.outcomeLabel ? ` · ${event.outcomeLabel}` : ''}
                         {event.note ? ` · ${event.note}` : ''}
+                        {event.followUpAt ? ` · Takip ${new Date(event.followUpAt).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
                       </div>
                     </div>
                   </div>
@@ -1606,6 +2037,16 @@
     stat:        { padding: '0 14px', borderRight: '1px solid var(--line)' },
     statLabel:   { fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: "'Space Grotesk'" },
     statVal:     { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, letterSpacing: -0.6, marginTop: 8, color: 'var(--tx)' },
+    salesCard:   { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', overflow: 'hidden', marginBottom: 16 },
+    salesSummary:{ padding: '18px 24px', color: 'var(--sub)', fontSize: 13.5, lineHeight: 1.65 },
+    salesEvidenceGrid:{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8, padding: '0 24px 18px' },
+    salesEvidence:{ display: 'flex', flexDirection: 'column', gap: 6, padding: 12, borderRadius: 8, background: 'var(--raised)', color: 'var(--tx)', fontSize: 12, lineHeight: 1.45 },
+    callScript:  { margin: '0 24px 16px', padding: '15px 16px', borderRadius: 8, background: 'rgba(197,242,74,0.08)', border: '1px solid rgba(197,242,74,0.18)' },
+    callScriptText:{ color: 'var(--tx)', fontSize: 13.5, lineHeight: 1.65, marginBottom: 10 },
+    scriptGrid:  { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 24px 8px' },
+    scriptPanel: { margin: '0 24px 16px', padding: 14, borderRadius: 8, background: 'var(--raised)', border: '1px solid var(--line)' },
+    scriptText:  { color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.6, marginBottom: 10 },
+    objectionRow:{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 8, color: 'var(--sub)', fontSize: 11.5, lineHeight: 1.45 },
     packCard:    { background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--rs)', padding: 22, marginBottom: 16 },
     packTitle:   { fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 600, letterSpacing: -0.4, margin: '8px 0 6px', color: 'var(--tx)' },
     packDesc:    { fontSize: 13, color: 'var(--sub)', maxWidth: 480 },
@@ -2607,7 +3048,7 @@
   // ── App ────────────────────────────────────────────────────────────────────
 
   function Dashboard({ user, theme, onToggleTheme, onLogout }) {
-    const [view,        setView]        = React.useState('cockpit');
+    const [view,        setView]        = React.useState(user?.role === 'sales' ? 'today' : 'cockpit');
     const [selectedIdx, setSelectedIdx] = React.useState(0);
     const [leadRows,    setLeadRows]    = React.useState(() => leads.slice());
     const [statuses,    setStatuses]    = React.useState(() => getStatuses());
@@ -2617,6 +3058,7 @@
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
     const [searchOpen,  setSearchOpen]  = React.useState(false);
+    const [resultLead,  setResultLead]  = React.useState(null);
 
     const sorted = React.useMemo(
       () => [...leadRows].sort((a, b) => b.scoring.score - a.scoring.score),
@@ -2722,6 +3164,16 @@
         return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>{user?.role === 'sales' ? 'Sana atanmış aktif lead yok.' : 'Lead verisi bulunamadı.'}</div>;
       }
       switch (view) {
+        case 'today':
+          return (
+            <TodayView
+              leads={sorted}
+              summary={summary}
+              user={user}
+              onSelect={selectLead}
+              onOpenResult={setResultLead}
+            />
+          );
         case 'detail':
           return (
             <LeadDetail
@@ -2731,7 +3183,8 @@
               status={statuses[sorted[selectedIdx].name] || 'yeni'}
               onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
               onDataChange={refreshWorkspace}
-              onBack={() => setView('cockpit')}
+              onOpenResult={() => setResultLead(sorted[selectedIdx])}
+              onBack={() => setView(user?.role === 'sales' ? 'today' : 'cockpit')}
               onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
               onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}
             />
@@ -2756,6 +3209,16 @@
           {renderContent()}
         </div>
         {searchOpen && <SearchDialog rows={sorted} onClose={() => setSearchOpen(false)} onSelect={index => { setSearchOpen(false); selectLead(index); }}/>}
+        {resultLead && (
+          <ContactResultDialog
+            lead={resultLead}
+            onClose={() => setResultLead(null)}
+            onSaved={() => {
+              setResultLead(null);
+              refreshWorkspace();
+            }}
+          />
+        )}
       </div>
     );
   }

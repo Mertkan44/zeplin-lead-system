@@ -9,7 +9,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import normalize_email, require_auth
+from src.activity import enrich_outreach_event
 from src.http_api import send_internal_error, send_json, send_options
+from src.sales_assistant import build_sales_playbook
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_lead_assignments,
@@ -45,13 +47,38 @@ def _is_today_event(event: dict, action: str) -> bool:
 
 def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> dict:
     active_assignments = [item for item in assignments if item.get("status") == "active"]
+    now = datetime.now(ZoneInfo("Europe/Istanbul"))
+    due_follow_ups = []
+    latest_results: dict[str, dict] = {}
+    for event in events:
+        if event.get("action") != "contact_result_recorded":
+            continue
+        lead_name = event.get("lead_name") or ""
+        if lead_name and lead_name not in latest_results:
+            latest_results[lead_name] = event
+    for event in latest_results.values():
+        follow_up_at = event.get("follow_up_at")
+        if not follow_up_at:
+            continue
+        try:
+            due = datetime.fromisoformat(str(follow_up_at).replace("Z", "+00:00")).astimezone(
+                ZoneInfo("Europe/Istanbul")
+            )
+        except ValueError:
+            continue
+        if due <= now:
+            due_follow_ups.append(event)
     return {
         "lead_count": len(leads),
         "assigned_count": len(active_assignments),
         "today_call_count": sum(1 for event in events if _is_today_event(event, "call_completed")),
+        "today_result_count": sum(
+            1 for event in events if _is_today_event(event, "contact_result_recorded")
+        ),
         "mail_ready_count": sum(1 for lead in leads if _lead_ready_for_email(lead)),
         "missing_info_count": sum(1 for lead in leads if _lead_missing_contact(lead)),
         "follow_up_count": sum(1 for lead in leads if lead.get("status") == "follow_up"),
+        "follow_up_due_count": len(due_follow_ups),
         "won_count": sum(1 for lead in leads if lead.get("status") == "converted"),
     }
 
@@ -80,7 +107,20 @@ class handler(BaseHTTPRequestHandler):
                 assigned_names = {item.get("lead_name") for item in assignments}
                 leads = [lead for lead in leads if lead.get("name") in assigned_names]
             leads = attach_assignments_to_leads(leads, assignments)
-            events = fetch_outreach_events(limit=500)
+            leads = [
+                {
+                    **lead,
+                    "sales_playbook": build_sales_playbook(
+                        lead,
+                        sender_name=user.get("name"),
+                    ),
+                }
+                for lead in leads
+            ]
+            events = [
+                enrich_outreach_event(event)
+                for event in fetch_outreach_events(limit=1000)
+            ]
             if user.get("role") != "admin":
                 assigned_names = {lead.get("name") for lead in leads}
                 events = [event for event in events if event.get("lead_name") in assigned_names]

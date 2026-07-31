@@ -112,6 +112,7 @@ def upsert_leads(leads: list[dict[str, Any]], *, chunk_size: int = 100) -> int:
 
 
 LEAD_STATUSES = {"yeni", "ready", "missing_info", "contacted", "follow_up", "converted", "lost"}
+_UNSET = object()
 
 
 def set_lead_status(name: str, status: str) -> None:
@@ -154,6 +155,7 @@ def insert_outreach_event(
         "note_added",
         "call_started",
         "call_completed",
+        "contact_result_recorded",
         "email_drafted",
         "email_sent",
         "follow_up_scheduled",
@@ -457,7 +459,13 @@ def upsert_lead_assignment(
         return rows[0] if isinstance(rows, list) and rows else rows
 
 
-def update_lead_assignment(assignment_id: int, *, status: str, meta: dict[str, Any] | None = None) -> None:
+def update_lead_assignment(
+    assignment_id: int,
+    *,
+    status: str,
+    meta: dict[str, Any] | None = None,
+    due_at: str | None | object = _UNSET,
+) -> None:
     if status not in {"active", "done", "snoozed", "archived"}:
         raise ValueError("assignment status is invalid")
     config = supabase_config()
@@ -466,6 +474,8 @@ def update_lead_assignment(assignment_id: int, *, status: str, meta: dict[str, A
     row: dict[str, Any] = {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}
     if meta is not None:
         row["meta"] = meta
+    if due_at is not _UNSET:
+        row["due_at"] = due_at
     with httpx.Client(timeout=20) as client:
         response = client.patch(
             _postgrest_url(config, "lead_assignments", f"id=eq.{assignment_id}"),
@@ -490,8 +500,11 @@ def attach_assignments_to_leads(
         active_items = [item for item in items if item.get("status") == "active"]
         active = max(active_items, key=lambda item: item.get("updated_at") or "") if active_items else None
         if active:
+            row["assignment_id"] = active.get("id")
+            row["assignment_status"] = active.get("status")
             row["assigned_to"] = active.get("user_email")
             row["assignment_due_at"] = active.get("due_at")
+            row["assignment_meta"] = active.get("meta") or {}
         enriched.append(row)
     return enriched
 

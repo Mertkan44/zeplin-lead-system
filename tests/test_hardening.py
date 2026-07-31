@@ -7,6 +7,12 @@ from unittest.mock import patch
 from pathlib import Path
 
 from src import auth
+from src.activity import (
+    build_contact_result,
+    decode_activity_note,
+    encode_activity_note,
+    status_for_outcome,
+)
 from src.audit.finder import _parse_ig_num, _parse_maps_search_card
 from src.audit.findings import analyze_lead
 from src.audit.website import _robots_blocks_all
@@ -14,12 +20,92 @@ from src.ai.generator import has_email_evidence
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
 from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
+from src.sales_assistant import build_sales_playbook
 from src.storage.supabase import _lead_row
 from scripts.migrate_leads import normalize_lead
 from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_contact_result_is_validated_and_round_trips(self):
+        activity = build_contact_result(
+            {
+                "channel": "phone",
+                "outcome": "reached_later",
+                "follow_up_at": "2026-08-01T10:00:00+03:00",
+                "service_slugs": ["seo_organic", "seo_organic"],
+                "contact_name": "Ayşe Hanım",
+                "note": "Cuma yeniden ara.",
+            }
+        )
+        decoded = decode_activity_note(encode_activity_note(activity))
+        self.assertEqual(decoded["outcome"], "reached_later")
+        self.assertEqual(decoded["service_slugs"], ["seo_organic"])
+        self.assertEqual(status_for_outcome(decoded["outcome"]), "follow_up")
+
+    def test_follow_up_outcome_requires_a_date(self):
+        with self.assertRaises(ValueError):
+            build_contact_result({"channel": "phone", "outcome": "no_answer"})
+
+    def test_sales_playbook_uses_verified_evidence(self):
+        playbook = build_sales_playbook(
+            {
+                "name": "Örnek Klinik",
+                "category": "Diş Kliniği",
+                "city": "İstanbul Kadıköy",
+                "audit_findings": [
+                    {
+                        "status": "confirmed",
+                        "title": "Website bulunamadı",
+                        "evidence": "Maps kaydında website bağlantısı yok.",
+                        "impact": "Randevu öncesi güven ve bilgi erişimi azalabilir.",
+                        "confidence": 96,
+                        "finding_type": "gap",
+                    },
+                    {
+                        "status": "unknown",
+                        "title": "Reklam ölçümü yok",
+                        "evidence": "Kontrol edilemedi.",
+                        "confidence": 0,
+                    },
+                ],
+                "matched_services": [
+                    {
+                        "slug": "website_creation",
+                        "name": "Website Oluşturma",
+                        "evidence": ["Website bulunamadı"],
+                        "deliverables": ["Mobil uyumlu website"],
+                        "discovery_questions": ["Website hedefiniz nedir?"],
+                    }
+                ],
+            },
+            sender_name="Aslıhan Hızal",
+        )
+        self.assertFalse(playbook["discovery_only"])
+        self.assertEqual(len(playbook["evidence_points"]), 1)
+        self.assertIn("Website bulunamadı", playbook["summary"])
+        self.assertIn("Aslıhan", playbook["call_opener"])
+        self.assertNotIn("Reklam ölçümü yok", playbook["email_body"])
+
+    def test_sales_playbook_marks_unproven_services_as_discovery(self):
+        playbook = build_sales_playbook(
+            {
+                "name": "Örnek Restoran",
+                "sector": "restaurant",
+                "discovery_services": [
+                    {
+                        "slug": "menu_shoot",
+                        "name": "Menü Çekimi",
+                        "deliverables": ["Menü fotoğrafları"],
+                        "discovery_questions": ["Güncel menü görselleriniz var mı?"],
+                        "requires_discovery": True,
+                    }
+                ],
+            }
+        )
+        self.assertTrue(playbook["discovery_only"])
+        self.assertIn("kesin satış iddiası", playbook["summary"])
+
     def test_environment_values_are_trimmed(self):
         from src.config import env
 
