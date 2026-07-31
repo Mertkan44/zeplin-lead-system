@@ -1322,7 +1322,7 @@
     taskName: { fontFamily: "'Space Grotesk'", fontSize: 19, margin: 0, color: 'var(--tx)', letterSpacing: 0 },
     taskMeta: { color: 'var(--muted)', fontSize: 12, marginTop: 5 },
     taskActions: { display: 'flex', gap: 7, flexShrink: 0 },
-    callAction: { ...wp.callBtn, flex: 'none', padding: '10px 14px', borderRadius: 7 },
+    callAction: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 14px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 600, cursor: 'pointer' },
     resultAction: { padding: '10px 14px', borderRadius: 7, border: 'none', background: '#000', color: '#fff', fontWeight: 600, cursor: 'pointer' },
     detailAction: { padding: '10px 14px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--tx)', cursor: 'pointer' },
     taskContext: { display: 'grid', gridTemplateColumns: 'minmax(0,0.9fr) minmax(0,1.1fr)', gap: 14, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' },
