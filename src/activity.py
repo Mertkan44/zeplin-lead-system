@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 ACTIVITY_PREFIX = "ZEPLIN_ACTIVITY_V1:"
@@ -49,6 +50,13 @@ MANUAL_STATUSES = {
     "website": {"working", "outdated", "not_found", "unknown"},
 }
 
+FOLLOW_UP_DELAYS = {
+    "reached_interested": 2,
+    "proposal_requested": 1,
+    "reached_later": 1,
+    "no_answer": 1,
+}
+
 
 def _parse_iso(value: str | None, *, field: str) -> str | None:
     if not value:
@@ -62,7 +70,20 @@ def _parse_iso(value: str | None, *, field: str) -> str | None:
     return parsed.astimezone(timezone.utc).isoformat()
 
 
-def build_contact_result(payload: dict[str, Any]) -> dict[str, Any]:
+def _default_follow_up_at(outcome: str, *, now: datetime | None = None) -> str | None:
+    days = FOLLOW_UP_DELAYS.get(outcome)
+    if days is None:
+        return None
+    local_now = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo("Europe/Istanbul"))
+    follow_up = (local_now + timedelta(days=days)).replace(hour=10, minute=0, second=0, microsecond=0)
+    return follow_up.astimezone(timezone.utc).isoformat()
+
+
+def build_contact_result(
+    payload: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
     channel = str(payload.get("channel") or "").strip().lower()
     outcome = str(payload.get("outcome") or "").strip().lower()
     if channel not in CONTACT_CHANNELS:
@@ -70,9 +91,8 @@ def build_contact_result(payload: dict[str, Any]) -> dict[str, Any]:
     if outcome not in CONTACT_OUTCOMES:
         raise ValueError("outcome is invalid")
 
-    follow_up_at = _parse_iso(payload.get("follow_up_at"), field="follow_up_at")
-    if outcome in {"reached_later", "no_answer"} and not follow_up_at:
-        raise ValueError("follow_up_at is required for this outcome")
+    requested_follow_up_at = _parse_iso(payload.get("follow_up_at"), field="follow_up_at")
+    follow_up_at = requested_follow_up_at or _default_follow_up_at(outcome, now=now)
 
     service_slugs = []
     for value in payload.get("service_slugs") or []:
@@ -81,13 +101,14 @@ def build_contact_result(payload: dict[str, Any]) -> dict[str, Any]:
             service_slugs.append(slug[:80])
 
     return {
-        "version": 1,
+        "version": 2,
         "kind": "contact_result",
         "channel": channel,
         "outcome": outcome,
         "outcome_label": OUTCOME_LABELS[outcome],
         "channel_label": CHANNEL_LABELS[channel],
         "follow_up_at": follow_up_at,
+        "follow_up_automatic": bool(follow_up_at and not requested_follow_up_at),
         "service_slugs": service_slugs[:10],
         "contact_name": str(payload.get("contact_name") or "").strip()[:120] or None,
         "note": str(payload.get("note") or "").strip()[:4000] or None,
@@ -266,6 +287,7 @@ def enrich_outreach_event(event: dict[str, Any]) -> dict[str, Any]:
             "outcome_label": activity.get("outcome_label"),
             "channel_label": activity.get("channel_label"),
             "follow_up_at": activity.get("follow_up_at"),
+            "follow_up_automatic": bool(activity.get("follow_up_automatic")),
             "service_slugs": activity.get("service_slugs") or [],
             "contact_name": activity.get("contact_name"),
             "note": activity.get("note"),

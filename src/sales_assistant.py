@@ -220,13 +220,53 @@ def build_sales_playbook(
         },
     ]
 
+    conversation_goal = (
+        f"{primary_name} ihtiyacını doğrula ve uygun kişiden kısa bir keşif görüşmesi için zaman al."
+        if services
+        else "İşletmenin öncelikli dijital hedefini öğren ve doğru hizmet alanını keşfet."
+    )
+    call_steps = [
+        {
+            "key": "permission",
+            "label": "İzin al",
+            "instruction": "Kendini tanıt, ön incelemeyi söyle ve iki dakika konuşmak için izin iste.",
+        },
+        {
+            "key": "verify",
+            "label": "Tespiti doğrula",
+            "instruction": (
+                f"{evidence_points[0]['title']} başlığının güncel olup olmadığını sor."
+                if evidence_points
+                else "Mevcut dijital hedeflerini ve bugün nasıl çalıştıklarını sor."
+            ),
+        },
+        {
+            "key": "discover",
+            "label": "İhtiyacı aç",
+            "instruction": discovery_questions[0],
+        },
+        {
+            "key": "next_step",
+            "label": "Sonraki adımı al",
+            "instruction": "İlgi varsa karar verici ve uygun takip zamanını netleştir.",
+        },
+    ]
+
     return {
-        "version": 2,
+        "version": 3,
         "lead_name": name,
         "context": f"{_business_type(lead)}{location_text}",
         "discovery_only": discovery_only or not bool(gap_findings),
         "research_status": research_brief["status"],
         "summary": summary,
+        "call_brief": {
+            "duration_label": "30 saniyede hazırlan",
+            "business_summary": summary,
+            "conversation_goal": conversation_goal,
+            "evidence_count": len(evidence_points),
+            "service_count": len(service_rows),
+        },
+        "call_steps": call_steps,
         "evidence_points": evidence_points,
         "services": service_rows,
         "call_opener": opener,

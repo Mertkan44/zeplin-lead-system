@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import sys
 from datetime import datetime
+from collections import Counter
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
@@ -71,6 +72,30 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
             continue
         if due <= now:
             due_follow_ups.append(event)
+    today_results = [
+        event for event in events if _is_today_event(event, "contact_result_recorded")
+    ]
+    overdue_assignments = []
+    for assignment in active_assignments:
+        due_at = assignment.get("due_at")
+        if not due_at:
+            continue
+        try:
+            due = datetime.fromisoformat(str(due_at).replace("Z", "+00:00")).astimezone(
+                ZoneInfo("Europe/Istanbul")
+            )
+        except ValueError:
+            continue
+        if due <= now:
+            overdue_assignments.append(assignment)
+
+    service_counts = Counter(
+        slug
+        for event in events
+        if event.get("action") == "contact_result_recorded"
+        and event.get("outcome") in {"reached_interested", "proposal_requested"}
+        for slug in (event.get("service_slugs") or [])
+    )
     return {
         "lead_count": len(leads),
         "assigned_count": len(active_assignments),
@@ -87,13 +112,21 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
             1 for event in events
             if _is_today_event(event, "contact_result_recorded") and event.get("channel") == "phone"
         ),
-        "today_result_count": sum(
-            1 for event in events if _is_today_event(event, "contact_result_recorded")
+        "today_result_count": len(today_results),
+        "today_no_answer_count": sum(1 for event in today_results if event.get("outcome") == "no_answer"),
+        "today_interested_count": sum(
+            1 for event in today_results
+            if event.get("outcome") in {"reached_interested", "proposal_requested"}
         ),
+        "today_follow_up_created_count": sum(1 for event in today_results if event.get("follow_up_at")),
         "mail_ready_count": sum(1 for lead in leads if _lead_ready_for_email(lead)),
         "missing_info_count": sum(1 for lead in leads if _lead_missing_contact(lead)),
         "follow_up_count": sum(1 for lead in leads if lead.get("status") == "follow_up"),
         "follow_up_due_count": len(due_follow_ups),
+        "overdue_follow_up_count": len(overdue_assignments),
+        "service_interest": [
+            {"slug": slug, "count": count} for slug, count in service_counts.most_common(8)
+        ],
         "won_count": sum(1 for lead in leads if lead.get("status") == "converted"),
     }
 

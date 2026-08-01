@@ -163,6 +163,41 @@ class HardeningTests(unittest.TestCase):
         self.assertEqual(rows[0]["contacts_today"], 1)
         self.assertEqual(rows[0]["calls_today"], 1)
         self.assertEqual(rows[0]["won_total"], 1)
+        self.assertEqual(rows[0]["interested_today"], 0)
+        self.assertEqual(rows[0]["no_answer_today"], 0)
+
+    def test_team_performance_tracks_follow_up_outcomes(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
+        rows = build_team_performance(
+            [
+                {
+                    "user_email": "asli@example.com",
+                    "status": "active",
+                    "due_at": "2026-08-01T08:00:00+00:00",
+                }
+            ],
+            [
+                {
+                    "actor_email": "asli@example.com",
+                    "action": "contact_result_recorded",
+                    "outcome": "reached_interested",
+                    "follow_up_at": "2026-08-03T07:00:00+00:00",
+                    "happened_at": now.isoformat(),
+                },
+                {
+                    "actor_email": "asli@example.com",
+                    "action": "contact_result_recorded",
+                    "outcome": "no_answer",
+                    "follow_up_at": "2026-08-02T07:00:00+00:00",
+                    "happened_at": now.isoformat(),
+                },
+            ],
+            now=now,
+        )
+        self.assertEqual(rows[0]["interested_today"], 1)
+        self.assertEqual(rows[0]["no_answer_today"], 1)
+        self.assertEqual(rows[0]["follow_ups_created_today"], 2)
+        self.assertEqual(rows[0]["overdue_follow_ups"], 1)
 
     def test_manual_verification_is_validated_and_round_trips(self):
         verification = build_manual_verification(
@@ -314,9 +349,22 @@ class HardeningTests(unittest.TestCase):
         self.assertEqual(decoded["service_slugs"], ["seo_organic"])
         self.assertEqual(status_for_outcome(decoded["outcome"]), "follow_up")
 
-    def test_follow_up_outcome_requires_a_date(self):
-        with self.assertRaises(ValueError):
-            build_contact_result({"channel": "phone", "outcome": "no_answer"})
+    def test_follow_up_outcome_gets_an_automatic_date(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
+        activity = build_contact_result(
+            {"channel": "phone", "outcome": "no_answer"},
+            now=now,
+        )
+        self.assertEqual(activity["follow_up_at"], "2026-08-02T07:00:00+00:00")
+        self.assertTrue(activity["follow_up_automatic"])
+
+    def test_interested_outcome_gets_a_two_day_follow_up(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
+        activity = build_contact_result(
+            {"channel": "phone", "outcome": "reached_interested"},
+            now=now,
+        )
+        self.assertEqual(activity["follow_up_at"], "2026-08-03T07:00:00+00:00")
 
     def test_sales_playbook_uses_verified_evidence(self):
         playbook = build_sales_playbook(
@@ -357,7 +405,9 @@ class HardeningTests(unittest.TestCase):
         self.assertIn("Website bulunamadı", playbook["summary"])
         self.assertIn("Aslıhan", playbook["call_opener"])
         self.assertNotIn("Reklam ölçümü yok", playbook["email_body"])
-        self.assertEqual(playbook["version"], 2)
+        self.assertEqual(playbook["version"], 3)
+        self.assertEqual(playbook["call_brief"]["evidence_count"], 1)
+        self.assertEqual(len(playbook["call_steps"]), 4)
         self.assertEqual(
             {item["channel"] for item in playbook["channel_drafts"]},
             {"phone", "whatsapp", "instagram", "email"},

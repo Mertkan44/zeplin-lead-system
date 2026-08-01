@@ -185,12 +185,19 @@ def build_team_performance(
             if str(item.get("user_email") or "").strip().lower() == email
             and item.get("status") == "active"
         ]
+        contact_events = [
+            event for event in today_events if event.get("action") == "contact_result_recorded"
+        ]
+        overdue_assignments = [
+            item for item in active_assignments
+            if (_parse_datetime(item.get("due_at")) or datetime.max.replace(tzinfo=timezone.utc)) <= now
+        ]
         rows.append(
             {
                 "email": email,
                 "active_assignments": len(active_assignments),
                 "checks_today": sum(1 for event in today_events if event.get("action") == "manual_verification_saved"),
-                "contacts_today": sum(1 for event in today_events if event.get("action") == "contact_result_recorded"),
+                "contacts_today": len(contact_events),
                 "calls_today": sum(
                     1 for event in today_events
                     if event.get("action") == "contact_result_recorded" and event.get("channel") == "phone"
@@ -199,6 +206,17 @@ def build_team_performance(
                     1 for event in actor_events
                     if event.get("action") == "contact_result_recorded" and event.get("outcome") == "won"
                 ),
+                "interested_today": sum(
+                    1 for event in contact_events
+                    if event.get("outcome") in {"reached_interested", "proposal_requested"}
+                ),
+                "no_answer_today": sum(
+                    1 for event in contact_events if event.get("outcome") == "no_answer"
+                ),
+                "follow_ups_created_today": sum(
+                    1 for event in contact_events if event.get("follow_up_at")
+                ),
+                "overdue_follow_ups": len(overdue_assignments),
             }
         )
     return rows
