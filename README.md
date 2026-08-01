@@ -103,7 +103,15 @@ GET/POST/DELETE /api/auth
 GET/POST/PATCH /api/users          # admin only
 GET/POST/PATCH /api/assignments    # admin assigns, users update assignment status
 GET /api/workspace                 # role-shaped dashboard payload
+POST /api/place_refresh            # refresh one assigned lead from Places API (New)
+GET /api/place_refresh             # CRON_SECRET-protected daily refresh batch
 ```
+
+Google Maps ratings, review counts, phone numbers, addresses and website URLs can
+be refreshed through Places API (New). Configure `GOOGLE_PLACES_API_KEY`,
+`CRON_SECRET`, and optionally `PLACES_REFRESH_BATCH_SIZE` in Vercel. The daily
+Hobby-plan cron refreshes only stale records in a small batch; Instagram and menu
+checks remain manual because there is no equivalent reliable public data source.
 
 In production, `.github/workflows/process-search-jobs.yml` checks Supabase every
 15 minutes and atomically claims up to three queued admin search jobs. Add these GitHub Actions

@@ -1862,9 +1862,10 @@
     };
   }
 
-  function ManualVerificationCard({ lead, onDataChange, onFeedback }) {
+  function ManualVerificationCard({ lead, onDataChange, onFeedback, placesEnabled }) {
     const [values, setValues] = React.useState(() => manualVerificationDefaults(lead));
     const [busy, setBusy] = React.useState(false);
+    const [placesBusy, setPlacesBusy] = React.useState(false);
     const current = lead.manual_verification || null;
 
     React.useEffect(() => setValues(manualVerificationDefaults(lead)), [lead.name, current?.checked_at]);
@@ -1889,6 +1890,21 @@
       }).catch(() => onFeedback('Manuel kontrol kaydedilemedi.')).finally(() => setBusy(false));
     }
 
+    function refreshGooglePlace() {
+      setPlacesBusy(true);
+      fetch('/api/place_refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_name: lead.name }),
+      }).then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Google verisi yenilenemedi.');
+        if (data.place?.status !== 'verified') throw new Error('Google’da güvenilir işletme eşleşmesi bulunamadı; manuel kontrol et.');
+        onFeedback(`Google verisi yenilendi · %${data.place.match_confidence || 0} eşleşme güveni.`);
+        if (onDataChange) return onDataChange();
+      }).catch(error => onFeedback(error.message || 'Google verisi yenilenemedi.')).finally(() => setPlacesBusy(false));
+    }
+
     const sourceButton = (url, label) => url ? (
       <button type="button" style={ld.manualSource} onClick={() => openExternal(url)}>{label} ↗</button>
     ) : null;
@@ -1901,9 +1917,12 @@
             <div style={ld.eyebrow}>EKİP DOĞRULAMASI</div>
             <div style={ld.cardTitle}>Kaynakları aç, gördüğünü kaydet</div>
           </div>
-          {current?.checked_at ? (
-            <span style={ld.verifiedBadge}>{fmtDate(current.checked_at)} · {current.checked_by || 'Ekip'}</span>
-          ) : <span style={ld.countBadge}>Henüz yapılmadı</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            {placesEnabled && <button type="button" disabled={placesBusy} style={ld.btnGhost} onClick={refreshGooglePlace}>{placesBusy ? 'Google yenileniyor…' : 'Google verisini yenile'}</button>}
+            {current?.checked_at ? (
+              <span style={ld.verifiedBadge}>{fmtDate(current.checked_at)} · {current.checked_by || 'Ekip'}</span>
+            ) : <span style={ld.countBadge}>Henüz yapılmadı</span>}
+          </div>
         </div>
         <div className="manual-verification-grid" style={ld.manualGrid}>
           <section style={sectionStyle(values.google.checked)}>
@@ -2097,7 +2116,7 @@
     );
   }
 
-  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange, onOpenResult }) {
+  function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, onNext, onDataChange, onOpenResult, integrations }) {
     const [showReport, setShowReport] = React.useState(false);
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
@@ -2267,7 +2286,7 @@
               </div>
             </div>
 
-            <ManualVerificationCard lead={lead} onDataChange={onDataChange} onFeedback={setFeedback}/>
+            <ManualVerificationCard lead={lead} onDataChange={onDataChange} onFeedback={setFeedback} placesEnabled={integrations?.google_places}/>
 
             <ResearchBriefCard brief={researchBrief}/>
 
@@ -3637,6 +3656,7 @@
     const [assignments, setAssignments] = React.useState([]);
     const [teamUsers,   setTeamUsers]   = React.useState([]);
     const [teamPerformance, setTeamPerformance] = React.useState([]);
+    const [integrations, setIntegrations] = React.useState({});
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
     const [searchOpen,  setSearchOpen]  = React.useState(false);
@@ -3667,6 +3687,7 @@
         assignments: Array.isArray(data.assignments) ? data.assignments : [],
       });
       setTeamPerformance(Array.isArray(data.team_performance) ? data.team_performance : []);
+      setIntegrations(data.integrations || {});
     }
 
     function refreshWorkspace() {
@@ -3767,6 +3788,7 @@
               onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
               onDataChange={refreshWorkspace}
               onOpenResult={() => setResultLead(sorted[selectedIdx])}
+              integrations={integrations}
               onBack={() => setView(user?.role === 'sales' ? 'today' : 'cockpit')}
               onPrev={() => setSelectedIdx(i => Math.max(0, i - 1))}
               onNext={() => setSelectedIdx(i => Math.min(sorted.length - 1, i + 1))}

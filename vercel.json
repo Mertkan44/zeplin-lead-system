@@ -5,6 +5,12 @@
       "excludeFiles": "{.git/**,.cache/**,venv/**,__pycache__/**,docs/**,mockup.html,public/**}"
     }
   },
+  "crons": [
+    {
+      "path": "/api/place_refresh",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

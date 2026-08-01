@@ -32,11 +32,69 @@ from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.storage.supabase import _lead_row
 from src.workflow import build_lead_workflow, build_team_performance, required_manual_checks
+from src.integrations.google_places import merge_place_result, select_best_candidate
 from scripts.migrate_leads import normalize_lead
 from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_google_places_candidate_requires_name_and_location_confidence(self):
+        lead = {"name": "Kalamış Diş Kliniği", "city": "İstanbul Kadıköy"}
+        selected = select_best_candidate(
+            lead,
+            [
+                {"id": "wrong", "displayName": {"text": "Başka Bir Market"}, "formattedAddress": "Kadıköy İstanbul"},
+                {"id": "right", "displayName": {"text": "Kalamış Diş Kliniği"}, "formattedAddress": "Kadıköy, İstanbul"},
+            ],
+        )
+        self.assertEqual(selected["id"], "right")
+        self.assertGreaterEqual(selected["matchConfidence"], 90)
+        self.assertIsNone(
+            select_best_candidate(
+                lead,
+                [{"id": "wrong", "displayName": {"text": "Başka Bir Market"}, "formattedAddress": "Kadıköy İstanbul"}],
+            )
+        )
+
+    def test_google_places_merge_preserves_existing_contact_and_updates_public_data(self):
+        merged = merge_place_result(
+            {"name": "Örnek", "phone": "0212 000 00 00", "website": {}, "research": {}},
+            {
+                "status": "verified",
+                "phone": "0216 999 99 99",
+                "rating": 4.6,
+                "review_count": 123,
+                "maps_url": "https://maps.google.com/example",
+                "website_url": "https://example.com",
+                "refreshed_at": "2026-08-01T09:00:00+00:00",
+            },
+        )
+        self.assertEqual(merged["phone"], "0212 000 00 00")
+        self.assertEqual(merged["rating"], 4.6)
+        self.assertEqual(merged["review_count"], 123)
+        self.assertEqual(merged["website"]["website_url"], "https://example.com")
+
+    def test_fresh_places_data_completes_google_workflow_check(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
+        workflow = build_lead_workflow(
+            {
+                "name": "Örnek Klinik",
+                "category": "Diş Kliniği",
+                "phone": "0216 000 00 00",
+                "research": {"google_places": {"status": "verified", "refreshed_at": now.isoformat()}},
+                "manual_verification": {
+                    "google": {"checked": False},
+                    "instagram": {"checked": True, "status": "active"},
+                    "website": {"checked": True, "status": "working"},
+                },
+            },
+            now=now,
+        )
+        google = next(item for item in workflow["checks"] if item["key"] == "google")
+        self.assertTrue(google["complete"])
+        self.assertEqual(google["source"], "google_places")
+        self.assertTrue(workflow["ready_to_contact"])
+
     def test_workflow_requires_food_menu_and_blocks_contact_until_checks_complete(self):
         lead = {
             "name": "Örnek Restoran",

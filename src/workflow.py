@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import re
 from typing import Any
 
@@ -76,12 +76,21 @@ def build_lead_workflow(
     events = events or []
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     manual = lead.get("manual_verification") or {}
+    places = ((lead.get("research") or {}).get("google_places") or {})
+    places_refreshed_at = _parse_datetime(places.get("refreshed_at"))
+    places_verified = bool(
+        places.get("status") == "verified"
+        and places_refreshed_at
+        and places_refreshed_at >= now - timedelta(days=30)
+    )
     required = required_manual_checks(lead)
     checks = []
     for key in required:
         value = manual.get(key) or {}
-        checked = bool(value.get("checked"))
+        checked = bool(value.get("checked")) or (key == "google" and places_verified)
         status = str(value.get("status") or "unknown")
+        if key == "google" and places_verified:
+            status = "found"
         complete = checked and status != "unknown"
         checks.append(
             {
@@ -90,6 +99,7 @@ def build_lead_workflow(
                 "complete": complete,
                 "checked": checked,
                 "status": status,
+                "source": "google_places" if key == "google" and places_verified else "manual",
             }
         )
 

@@ -14,6 +14,7 @@ from src.http_api import send_internal_error, send_json, send_options
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.workflow import build_lead_workflow, build_team_performance
+from src.integrations.google_places import is_configured as places_configured
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_lead_assignments,
@@ -175,6 +176,7 @@ class handler(BaseHTTPRequestHandler):
                     },
                     "summary": _summary(leads, assignments, events),
                     "team_performance": build_team_performance(assignments, events),
+                    "integrations": {"google_places": places_configured()},
                     "leads": leads,
                     "assignments": assignments,
                     "outreach": events,
