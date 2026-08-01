@@ -3255,10 +3255,33 @@
 
   function bar(pct, color) { return { width: `${pct}%`, height: '100%', borderRadius: 99, background: color }; }
 
+  const SECTOR_LABELS = {
+    restaurant: 'Restoran ve Kafe',
+    retail: 'Perakende ve Mağaza',
+    health: 'Sağlık ve Klinik',
+    salon: 'Güzellik ve Bakım',
+    auto: 'Otomotiv',
+    default: 'Diğer',
+  };
+
+  function canonicalSector(lead) {
+    const stored = String(lead.sector || '').trim().toLowerCase();
+    if (SECTOR_LABELS[stored]) return SECTOR_LABELS[stored];
+
+    const category = String(lead.category || '').toLocaleLowerCase('tr-TR');
+    if (/restoran|restaurant|cafe|kafe|coffee|bistro|lokanta|pastane|fırın|bakery/.test(category)) return SECTOR_LABELS.restaurant;
+    if (/diş|dental|dentist|klinik|clinic|doktor|sağlık|eczane|optik/.test(category)) return SECTOR_LABELS.health;
+    if (/kuaför|güzellik|beauty|spa|nail|berber|brow|lash|pilates|yoga|masaj/.test(category)) return SECTOR_LABELS.salon;
+    if (/oto|otomotiv|araba|araç|kaporta|lastik|galeri|garaj/.test(category)) return SECTOR_LABELS.auto;
+    if (/mağaza|market|butik|shop|store|giyim|perakende|çiçek|kitap|mobilya|depo/.test(category)) return SECTOR_LABELS.retail;
+    return SECTOR_LABELS.default;
+  }
+
   function AnalyticsView({ leads, statuses }) {
-    const [periodDays, setPeriodDays] = React.useState(30);
-    const cutoff = Date.now() - periodDays * 86400000;
+    const [periodDays, setPeriodDays] = React.useState('all');
+    const cutoff = periodDays === 'all' ? null : Date.now() - periodDays * 86400000;
     const periodLeads = leads.filter(lead => {
+      if (cutoff === null) return true;
       if (!lead.last_analyzed) return false;
       const stamp = new Date(lead.last_analyzed.replace(' ', 'T')).getTime();
       return !Number.isNaN(stamp) && stamp >= cutoff;
@@ -3300,7 +3323,7 @@
 
     const sectorMap = {};
     periodLeads.forEach(l => {
-      const s = l.category || l.sector || 'Diğer';
+      const s = canonicalSector(l);
       sectorMap[s] = (sectorMap[s] || 0) + 1;
     });
     const sectors = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
@@ -3312,13 +3335,13 @@
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
         <div style={{ ...pv.header, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={pv.pageEyebrow}>PERFORMANS · SON {periodDays} GÜN</div>
+            <div style={pv.pageEyebrow}>{periodDays === 'all' ? 'PERFORMANS · TÜM ZAMANLAR' : `PERFORMANS · SON ${periodDays} GÜN`}</div>
             <h1 style={pv.pageTitle}>Raporlar</h1>
           </div>
           <div style={{ display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5 }}>
-            {[7, 30, 90].map(days => (
+            {[7, 30, 90, 'all'].map(days => (
               <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? '#000' : 'transparent', color: periodDays === days ? 'var(--tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
-                {days === 90 ? 'Çeyrek' : `${days}g`}
+                {days === 'all' ? 'Tümü' : days === 90 ? 'Çeyrek' : `${days}g`}
               </button>
             ))}
           </div>
@@ -3387,7 +3410,7 @@
 
           <div style={rp.card}>
             <div style={rp.cardTitle}>Sektör Dağılımı</div>
-            <div style={rp.cardSub}>en aktif kategoriler</div>
+            <div style={rp.cardSub}>seçili dönemdeki {actualTotal} lead · benzer kategoriler birleştirildi</div>
             <div style={rp.stack}>
               {sectors.map(s => (
                 <div key={s.s}>
