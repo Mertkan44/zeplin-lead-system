@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from src.ai import cache
-from src.ai.llm import complete_chat
+from src.ai.llm import active_provider, complete_chat
 from src.config import env
 from src.services import lead_triggers, recommended_package
 
@@ -179,7 +179,7 @@ def lead_ai_tier(lead: dict[str, Any]) -> str:
 
 
 def model_for_task(task: str, lead: dict[str, Any]) -> tuple[str | None, str | None, int]:
-    provider = (env("AI_PROVIDER", "groq") or "groq").lower()
+    provider = active_provider()
     tier = lead_ai_tier(lead)
     if provider != "deepseek":
         return None, None, 1800
@@ -231,7 +231,7 @@ def _generate_cached(
 ) -> str:
     model, reasoning_effort, tier_tokens = model_for_task(task, lead)
     max_tokens = max_tokens or tier_tokens
-    provider = (env("AI_PROVIDER", "groq") or "groq").lower()
+    provider = active_provider()
     model_name = model or env("GROQ_MODEL", "llama-3.3-70b-versatile") or "llama-3.3-70b-versatile"
     payload = _cache_payload(lead)
     key = cache.cache_key(task=task, provider=provider, model=model_name, payload=payload)

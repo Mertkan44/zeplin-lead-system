@@ -17,7 +17,14 @@ class LLMResult:
 
 
 def active_provider() -> str:
-    return (env("AI_PROVIDER", "groq") or "groq").strip().lower()
+    configured = (env("AI_PROVIDER") or "").strip().lower()
+    if configured:
+        return configured
+    if env("DEEPSEEK_API_KEY"):
+        return "deepseek"
+    if env("GROQ_API_KEY"):
+        return "groq"
+    return "deepseek"
 
 
 def complete_chat(
@@ -79,8 +86,13 @@ def _deepseek_chat(
     if json_output:
         payload["response_format"] = {"type": "json_object"}
     if model.startswith("deepseek-v4"):
-        payload["reasoning_effort"] = "high"
-        payload["thinking"] = {"type": "enabled"}
+        thinking_mode = (env("DEEPSEEK_THINKING_MODE", "disabled") or "disabled").lower()
+        thinking_enabled = thinking_mode == "enabled" or reasoning_effort == "max"
+        payload["thinking"] = {"type": "enabled" if thinking_enabled else "disabled"}
+        if thinking_enabled:
+            payload["reasoning_effort"] = reasoning_effort or "high"
+        else:
+            payload["temperature"] = temperature
     else:
         payload["temperature"] = temperature
 
@@ -122,6 +134,8 @@ def _deepseek_chat(
         "temperature": temperature,
         "stream": False,
     }
+    if fallback_model.startswith("deepseek-v4"):
+        fallback_payload["thinking"] = {"type": "disabled"}
     if json_output:
         fallback_payload["response_format"] = {"type": "json_object"}
     fallback_data = _call(fallback_payload)

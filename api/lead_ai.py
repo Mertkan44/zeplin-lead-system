@@ -99,5 +99,17 @@ class handler(BaseHTTPRequestHandler):
             )
         except PermissionError as exc:
             send_json(self, 403, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
+        except RuntimeError as exc:
+            detail = str(exc)
+            self.log_error("AI report generation failed: %s", detail)
+            if "no available balance" in detail.lower() or "billing is not enabled" in detail.lower():
+                message = "DeepSeek bakiyesi yetersiz. Yönetici bakiyeyi kontrol etmeli."
+            elif "is missing" in detail.lower():
+                message = "AI servisi yapılandırılmamış. Yönetici API ayarlarını kontrol etmeli."
+            elif "empty" in detail.lower():
+                message = "AI bu işletme için boş yanıt döndürdü. Birkaç saniye sonra tekrar dene."
+            else:
+                message = "İhtiyaç raporu şu anda üretilemedi. Birkaç saniye sonra tekrar dene."
+            send_json(self, 503, {"ok": False, "error": message}, allow_methods="POST, OPTIONS")
         except Exception as exc:
             send_internal_error(self, exc, error="AI report generation failed", allow_methods="POST, OPTIONS")

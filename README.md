@@ -11,9 +11,10 @@ cp .env.example .env
 venv/bin/playwright install chromium
 ```
 
-Add `GROQ_API_KEY` to `.env` for AI report generation.
-To use DeepSeek instead, set `AI_PROVIDER=deepseek` and add `DEEPSEEK_API_KEY`.
-DeepSeek defaults to `deepseek-v4-pro`.
+Add `DEEPSEEK_API_KEY` to `.env` for AI report generation. The production
+provider is `AI_PROVIDER=deepseek`; Groq remains an optional alternative.
+DeepSeek defaults to `deepseek-v4-pro`, with thinking disabled for short sales
+reports so the response budget is reserved for the final text.
 The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODEL`
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 `.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.

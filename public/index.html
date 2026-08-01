@@ -397,12 +397,11 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: lead.name }),
-      }).then(() => addOutreach(
-        lead.name,
-        'email_drafted',
-        new Date().toISOString(),
-        'AI ihtiyaç özeti ve e-posta taslağı üretildi'
-      )).then(() => ({ feedback: 'AI raporu ve e-posta taslağı hazırlandı.' }));
+      }).then(data => ({
+        feedback: data.lead?.ai_email
+          ? 'İhtiyaç raporu ve incelenebilir e-posta taslağı hazırlandı.'
+          : 'İhtiyaç raporu hazırlandı. E-posta için yeterli doğrulanmış kanıt bulunmadı.',
+      }));
     }
 
     if (meta.intent === 'draft' && lead.ai_email) {
@@ -2149,12 +2148,6 @@
     const workflow = lead.workflow || {};
     const contactReady = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
 
-    React.useEffect(() => {
-      if (!feedback) return;
-      const timer = setTimeout(() => setFeedback(''), 2400);
-      return () => clearTimeout(timer);
-    }, [feedback]);
-
     function copyEmail() {
       navigator.clipboard.writeText(lead.ai_email || '').then(() => {
         return addOutreach(lead.name, 'email_drafted', new Date().toISOString(), 'Taslak panoya kopyalandı');
@@ -2186,14 +2179,15 @@
     }
 
     function handlePrimaryAction() {
+      setFeedback('');
       setBusy(true);
       startLeadAction(lead).then(result => {
         setFeedback((result && result.feedback) || 'Aksiyon kaydedildi.');
-      }).catch(() => {
-        setFeedback('Aksiyon kaydedilemedi. Bağlantıyı kontrol et.');
+        if (onDataChange) onDataChange();
+      }).catch(error => {
+        setFeedback(error?.message || 'Aksiyon tamamlanamadı. Lütfen tekrar dene.');
       }).finally(() => {
         setBusy(false);
-        if (onDataChange) onDataChange();
       });
     }
 
@@ -2261,7 +2255,7 @@
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={{ ...ld.btnGhost, opacity: busy ? 0.7 : 1 }} onClick={skipLead} disabled={busy}>Atla</button>
-              <button style={{ ...ld.btnDark, opacity: busy ? 0.7 : 1 }} onClick={handlePrimaryAction} disabled={busy}>{busy ? 'Kaydediliyor…' : `${actionMeta.label} →`}</button>
+              <button style={{ ...ld.btnDark, opacity: busy ? 0.7 : 1 }} onClick={handlePrimaryAction} disabled={busy}>{busy ? (actionMeta.intent === 'generate_ai' ? 'Rapor hazırlanıyor…' : 'Kaydediliyor…') : `${actionMeta.label} →`}</button>
             </div>
           </div>
         )}

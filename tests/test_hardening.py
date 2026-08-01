@@ -25,6 +25,7 @@ from src.audit.finder import _parse_ig_num, _parse_maps_search_card
 from src.audit.findings import analyze_lead
 from src.audit.website import _robots_blocks_all
 from src.ai.generator import has_email_evidence
+from src.ai.llm import active_provider
 from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
 from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
@@ -38,6 +39,24 @@ from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_ai_provider_prefers_explicit_configuration(self):
+        values = {
+            "AI_PROVIDER": "groq",
+            "DEEPSEEK_API_KEY": "deepseek-key",
+            "GROQ_API_KEY": "groq-key",
+        }
+        with patch("src.ai.llm.env", side_effect=lambda name, default=None: values.get(name, default)):
+            self.assertEqual(active_provider(), "groq")
+
+    def test_ai_provider_detects_deepseek_key_without_explicit_provider(self):
+        values = {"DEEPSEEK_API_KEY": "deepseek-key"}
+        with patch("src.ai.llm.env", side_effect=lambda name, default=None: values.get(name, default)):
+            self.assertEqual(active_provider(), "deepseek")
+
+    def test_ai_provider_defaults_to_deepseek_for_actionable_missing_key_error(self):
+        with patch("src.ai.llm.env", return_value=None):
+            self.assertEqual(active_provider(), "deepseek")
+
     def test_google_places_candidate_requires_name_and_location_confidence(self):
         lead = {"name": "Kalamış Diş Kliniği", "city": "İstanbul Kadıköy"}
         selected = select_best_candidate(
