@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 from src.auth import normalize_email, require_admin, require_auth
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
+    fetch_app_user_by_email,
     fetch_lead_assignment_by_id,
     fetch_lead_assignments,
     is_enabled as supabase_enabled,
@@ -67,6 +68,10 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 400, {"ok": False, "error": "lead_name and user_email are required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
         try:
+            assignee = fetch_app_user_by_email(user_email)
+            if not assignee or not assignee.get("active", True):
+                send_json(self, 400, {"ok": False, "error": "active assignee not found"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                return
             assignment = upsert_lead_assignment(
                 lead_name=lead_name,
                 user_email=user_email,

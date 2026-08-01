@@ -274,6 +274,23 @@
     });
   }
 
+  function saveLeadAssignment(leadName, userEmail, dueAt) {
+    return fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lead_name: leadName,
+        user_email: userEmail,
+        due_at: dueAt ? new Date(dueAt).toISOString() : null,
+        status: 'active',
+      }),
+    }).then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Atama kaydedilemedi.');
+      return data;
+    });
+  }
+
   function saveDraftReview(lead, draft) {
     const evt = {
       lead: lead.name,
@@ -600,6 +617,12 @@
   }
 
   function getLeadReadiness(lead) {
+    if (lead.workflow?.checks) {
+      return [
+        ...lead.workflow.checks.map(item => ({ label: item.label, ready: item.complete })),
+        { label: 'İletişim kanalı', ready: lead.workflow.contact_available },
+      ];
+    }
     const scoreStatus = lead.scoring?.score_status || 'insufficient';
     return [
       { label: 'İletişim kanalı', ready: hasContactInfo(lead) },
@@ -1134,7 +1157,7 @@
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function ContactResultDialog({ lead, onClose, onSaved }) {
+  function ContactResultDialog({ lead, onClose, onSaved, onOpenLead }) {
     const [channel, setChannel] = React.useState(lead?.phone ? 'phone' : lead?.social?.instagram_url ? 'instagram' : 'other');
     const [outcome, setOutcome] = React.useState('reached_interested');
     const [followUpAt, setFollowUpAt] = React.useState(tomorrowAtTen());
@@ -1145,6 +1168,21 @@
     const [error, setError] = React.useState('');
     const needsFollowUp = ['reached_later', 'no_answer'].includes(outcome);
     const services = (lead?.matched_services || lead?.discovery_services || []).slice(0, 5);
+    const workflow = lead?.workflow || {};
+    const ready = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
+    const playbook = lead?.sales_playbook || {};
+    const activeDraft = (playbook.channel_drafts || []).find(item => item.channel === channel);
+
+    function openChannel() {
+      if (!ready) return;
+      const phone = String(lead?.phone || '').replace(/\D/g, '');
+      const instagram = lead?.manual_verification?.instagram?.url || lead?.social?.instagram_url;
+      const email = lead?.email || (((lead?.research || {}).website || {}).emails || [])[0];
+      if (channel === 'phone' && phone) window.location.href = `tel:${phone}`;
+      else if (channel === 'whatsapp' && phone) openExternal(`https://wa.me/${phone}`);
+      else if (channel === 'instagram' && instagram) openExternal(instagram);
+      else if (channel === 'email' && email) window.location.href = `mailto:${email}`;
+    }
 
     function toggleService(slug) {
       setServiceSlugs(current => current.includes(slug)
@@ -1176,7 +1214,7 @@
 
     return (
       <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-        <form onSubmit={submit} style={{ ...dialog.panel, maxWidth: 680, maxHeight: '82vh', overflowY: 'auto' }}>
+        <form onSubmit={submit} style={{ ...dialog.panel, maxWidth: 920, maxHeight: '88vh', overflowY: 'auto' }}>
           <div style={dialog.head}>
             <div>
               <div style={ld.eyebrow}>TEMAS SONUCU</div>
@@ -1185,19 +1223,59 @@
             <button type="button" onClick={onClose} disabled={busy} style={ld.btnGhost} aria-label="Kapat">Kapat</button>
           </div>
 
-          <label style={tw.fieldLabel}>Kanal</label>
-          <div style={tw.segmentRow}>
-            {CONTACT_CHANNEL_OPTIONS.map(([key, label]) => (
-              <button type="button" key={key} style={channel === key ? tw.segmentActive : tw.segment} onClick={() => setChannel(key)}>{label}</button>
+          <div style={tw.flowSteps}>
+            {(workflow.checks || []).map(item => (
+              <div key={item.key} style={item.complete ? tw.flowStepDone : tw.flowStepPending}>
+                <strong>{item.complete ? '✓' : '○'} {item.label}</strong>
+                <span>{item.complete ? 'Kontrol edildi' : 'Kontrol bekliyor'}</span>
+              </div>
             ))}
+            <div style={workflow.contact_available ? tw.flowStepDone : tw.flowStepPending}>
+              <strong>{workflow.contact_available ? '✓' : '○'} İletişim</strong>
+              <span>{workflow.contact_available ? 'Kanal hazır' : 'Kanal eksik'}</span>
+            </div>
           </div>
 
-          <label style={tw.fieldLabel}>Görüşmenin sonucu</label>
-          <div style={tw.outcomeGrid}>
-            {CONTACT_OUTCOME_OPTIONS.map(([key, label]) => (
-              <button type="button" key={key} style={outcome === key ? tw.outcomeActive : tw.outcome} onClick={() => setOutcome(key)}>{label}</button>
-            ))}
+          {!ready && (
+            <div style={tw.flowGate}>
+              <div><strong>Bu lead henüz temasa hazır değil.</strong><span>{(workflow.missing || []).join(', ') || 'Kaynak kontrolleri'} tamamlanmalı.</span></div>
+              <button type="button" style={av.primaryBtn} onClick={() => { onClose(); onOpenLead(); }}>Kontrol ekranına git</button>
+            </div>
+          )}
+
+          <div style={tw.flowSources}>
+            <div>
+              <label style={tw.fieldLabel}>Kaynaklar</label>
+              <div style={tw.segmentRow}>
+                {lead.maps_url && <button type="button" style={tw.segment} onClick={() => openExternal(lead.maps_url)}>Maps ↗</button>}
+                {(lead.manual_verification?.instagram?.url || lead.social?.instagram_url) && <button type="button" style={tw.segment} onClick={() => openExternal(lead.manual_verification?.instagram?.url || lead.social?.instagram_url)}>Instagram ↗</button>}
+                {lead.website?.website_url && <button type="button" style={tw.segment} onClick={() => openExternal(lead.website.website_url)}>Website ↗</button>}
+              </div>
+            </div>
+            <div>
+              <label style={tw.fieldLabel}>Konuşma dayanağı</label>
+              <div style={tw.flowScript}>{playbook.call_opener || 'Önce işletmenin hedefini sor; doğrulanmayan bir açığı kesinmiş gibi söyleme.'}</div>
+            </div>
           </div>
+
+          <fieldset disabled={!ready || busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0, opacity: ready ? 1 : 0.48 }}>
+            <label style={tw.fieldLabel}>Kanal</label>
+            <div style={tw.channelActionRow}>
+              <div style={tw.segmentRow}>
+                {CONTACT_CHANNEL_OPTIONS.map(([key, label]) => (
+                  <button type="button" key={key} style={channel === key ? tw.segmentActive : tw.segment} onClick={() => setChannel(key)}>{label}</button>
+                ))}
+              </div>
+              <button type="button" style={tw.callAction} onClick={openChannel}>Kanalı aç ↗</button>
+            </div>
+            {activeDraft?.body && <div style={tw.flowDraft}><strong>{activeDraft.label} metni</strong><span>{activeDraft.body}</span></div>}
+
+            <label style={tw.fieldLabel}>Görüşmenin sonucu</label>
+            <div style={tw.outcomeGrid}>
+              {CONTACT_OUTCOME_OPTIONS.map(([key, label]) => (
+                <button type="button" key={key} style={outcome === key ? tw.outcomeActive : tw.outcome} onClick={() => setOutcome(key)}>{label}</button>
+              ))}
+            </div>
 
           {needsFollowUp && (
             <div>
@@ -1234,10 +1312,11 @@
             </div>
           </div>
 
+          </fieldset>
           {error && <div style={tw.error}>{error}</div>}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
             <button type="button" style={ld.btnGhost} onClick={onClose} disabled={busy}>Vazgeç</button>
-            <button type="submit" style={av.primaryBtn} disabled={busy}>{busy ? 'Kaydediliyor…' : 'Sonucu kaydet'}</button>
+            <button type="submit" style={av.primaryBtn} disabled={busy || !ready}>{busy ? 'Kaydediliyor…' : 'Sonucu ve takibi kaydet'}</button>
           </div>
         </form>
       </div>
@@ -1258,6 +1337,7 @@
   }
 
   function taskMetaForLead(lead) {
+    const workflow = lead.workflow || {};
     const last = latestContactResult(lead.name);
     const followUp = last?.followUpAt ? new Date(last.followUpAt) : null;
     const now = new Date();
@@ -1265,12 +1345,20 @@
     const dueToday = followUp && isToday(followUp);
     const assignmentDue = lead.assignment_due_at ? new Date(lead.assignment_due_at) : null;
     let rank = 40;
-    let label = 'İlk temas bekliyor';
+    let label = workflow.stage_label || 'İlk temas bekliyor';
     let detail = lead.priority_reason || 'Lead’i incele ve ilk teması gerçekleştir.';
     if (due) {
       rank = 100;
       label = dueToday ? 'Bugün takip' : 'Takip gecikti';
       detail = `${last.outcomeLabel || 'Önceki temas'} sonrası yeniden iletişime geç.`;
+    } else if (workflow.stage === 'verification_required') {
+      rank = 90;
+      label = 'Kontrol bekliyor';
+      detail = `${workflow.completed_count || 0}/${workflow.required_count || 0} kaynak tamamlandı. Eksik: ${(workflow.missing || []).join(', ') || 'doğrulama'}.`;
+    } else if (workflow.stage === 'ready_to_contact') {
+      rank = 85;
+      label = 'Aramaya hazır';
+      detail = 'Zorunlu kaynak kontrolleri tamamlandı; konuşma rehberiyle temasa geç.';
     } else if (assignmentDue && assignmentDue <= now) {
       rank = 80;
       label = 'Atama tarihi geldi';
@@ -1287,11 +1375,14 @@
       label,
       detail,
       followUp,
-      completedToday: Boolean(last && isToday(last.date)),
+      stage: workflow.stage || (last ? 'contacted' : 'verification_required'),
+      ready: Boolean(workflow.ready_to_contact || last),
+      completedToday: Boolean(last && isToday(last.happened_at || last.created_at || last.date)),
     };
   }
 
   function TodayView({ leads, onSelect, onOpenResult, user, summary }) {
+    const [taskFilter, setTaskFilter] = React.useState('open');
     const tasks = React.useMemo(
       () => leads
         .filter(lead => !['converted', 'lost'].includes(getStatuses()[lead.name] || lead.status))
@@ -1301,6 +1392,13 @@
     );
     const completed = leads.filter(lead => taskMetaForLead(lead).completedToday).length;
     const due = tasks.filter(item => item.meta.followUp && item.meta.followUp <= new Date()).length;
+    const filteredTasks = tasks.filter(({ meta }) => {
+      if (taskFilter === 'verification') return meta.stage === 'verification_required';
+      if (taskFilter === 'ready') return meta.stage === 'ready_to_contact';
+      if (taskFilter === 'followup') return meta.stage === 'follow_up_due';
+      if (taskFilter === 'completed') return meta.completedToday || ['contacted', 'closed'].includes(meta.stage);
+      return !meta.completedToday && meta.stage !== 'closed';
+    });
     const senderName = (user?.name || '').split(' ')[0] || 'ekip';
 
     function startCall(lead) {
@@ -1333,8 +1431,20 @@
             <span style={tw.quiet}>{summary?.today_result_count || completed} sonuç bugün kaydedildi</span>
           </div>
 
+          <div style={tw.filterTabs}>
+            {[
+              ['open', 'Açık işler', tasks.filter(item => !item.meta.completedToday && item.meta.stage !== 'closed').length],
+              ['verification', 'Kontrol', tasks.filter(item => item.meta.stage === 'verification_required').length],
+              ['ready', 'Aramaya hazır', tasks.filter(item => item.meta.stage === 'ready_to_contact').length],
+              ['followup', 'Takip', tasks.filter(item => item.meta.stage === 'follow_up_due').length],
+              ['completed', 'Tamamlanan', tasks.filter(item => item.meta.completedToday || ['contacted', 'closed'].includes(item.meta.stage)).length],
+            ].map(([key, label, count]) => (
+              <button type="button" key={key} onClick={() => setTaskFilter(key)} style={taskFilter === key ? tw.filterTabActive : tw.filterTab}>{label} <span>{count}</span></button>
+            ))}
+          </div>
+
           <div style={tw.queue}>
-            {tasks.map(({ lead, meta }, index) => {
+            {filteredTasks.map(({ lead, meta }, index) => {
               const playbook = lead.sales_playbook || {};
               const service = (playbook.services || [])[0];
               const evidence = (playbook.evidence_points || [])[0];
@@ -1352,8 +1462,10 @@
                         <div style={tw.taskMeta}>{lead.category || lead.sector || 'İşletme'} · {lead.city || 'Konum yok'}{service?.name ? ` · ${service.name}` : ''}</div>
                       </div>
                       <div className="today-task-actions" style={tw.taskActions}>
-                        {lead.phone && <button type="button" style={tw.callAction} onClick={() => startCall(lead)}><IconCall/> Ara</button>}
-                        <button type="button" style={tw.resultAction} onClick={() => onOpenResult(lead)}>Sonuç kaydet</button>
+                        {meta.ready && lead.phone && <button type="button" style={tw.callAction} onClick={() => startCall(lead)}><IconCall/> Ara</button>}
+                        {meta.ready
+                          ? <button type="button" style={tw.resultAction} onClick={() => onOpenResult(lead)}>Temas ekranı</button>
+                          : <button type="button" style={tw.resultAction} onClick={() => onSelect(leads.indexOf(lead))}>Kontrolü tamamla</button>}
                         <button type="button" style={tw.detailAction} onClick={() => onSelect(leads.indexOf(lead))}>Detay</button>
                       </div>
                     </div>
@@ -1364,14 +1476,15 @@
                         {evidence && <div style={tw.evidenceText}><strong>Kanıt:</strong> {evidence.title} · {evidence.evidence}</div>}
                       </div>
                       <div style={tw.openerBox}>
-                        <div style={tw.contextLabel}>ARAMAYA BÖYLE BAŞLA</div>
-                        <div style={tw.openerText}>“{playbook.call_opener || 'İşletmenin dijital hedeflerini öğrenerek görüşmeye başla.'}”</div>
+                        <div style={tw.contextLabel}>{meta.ready ? 'ARAMAYA BÖYLE BAŞLA' : 'HAZIRLIK DURUMU'}</div>
+                        <div style={tw.openerText}>{meta.ready ? `“${playbook.call_opener || 'İşletmenin dijital hedeflerini öğrenerek görüşmeye başla.'}”` : `${lead.workflow?.completed_count || 0}/${lead.workflow?.required_count || 0} kontrol tamamlandı. Temastan önce eksikleri kapat.`}</div>
                       </div>
                     </div>
                   </div>
                 </article>
               );
             })}
+            {!filteredTasks.length && <div style={tw.emptyQueue}>Bu bölümde bekleyen iş yok.</div>}
           </div>
         </section>
       </main>
@@ -1389,6 +1502,10 @@
     sectionHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginBottom: 16 },
     h2: { fontFamily: "'Space Grotesk'", fontSize: 24, margin: '6px 0 0', color: 'var(--tx)' },
     quiet: { color: 'var(--muted)', fontSize: 12 },
+    filterTabs: { display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 },
+    filterTab: { padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--panel)', color: 'var(--sub)', cursor: 'pointer' },
+    filterTabActive: { padding: '9px 12px', border: '1px solid var(--accent)', borderRadius: 7, background: 'var(--accent)', color: 'var(--accent-ink)', fontWeight: 700, cursor: 'pointer' },
+    emptyQueue: { padding: 36, border: '1px dashed var(--line)', borderRadius: 8, textAlign: 'center', color: 'var(--muted)', background: 'var(--panel)' },
     queue: { display: 'flex', flexDirection: 'column', gap: 10 },
     taskCard: { display: 'grid', gridTemplateColumns: '54px minmax(0,1fr)', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--panel)', overflow: 'hidden' },
     order: { display: 'grid', placeItems: 'start center', paddingTop: 24, borderRight: '1px solid var(--line)', color: 'var(--muted)', font: "600 12px 'Space Grotesk'" },
@@ -1422,9 +1539,102 @@
     serviceSelected: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', border: '1px solid var(--accent)', borderRadius: 7, color: 'var(--tx)', background: 'var(--raised)', fontSize: 12.5 },
     twoCols: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
     error: { marginTop: 12, padding: '10px 12px', borderRadius: 7, background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', fontSize: 12 },
+    flowSteps: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 7, marginBottom: 12 },
+    flowStepDone: { display: 'flex', flexDirection: 'column', gap: 3, padding: '10px 12px', borderRadius: 7, border: '1px solid rgba(182,242,74,.35)', background: 'rgba(182,242,74,.08)', color: 'var(--tx)', fontSize: 11 },
+    flowStepPending: { display: 'flex', flexDirection: 'column', gap: 3, padding: '10px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--raised)', color: 'var(--muted)', fontSize: 11 },
+    flowGate: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 18, padding: 14, borderRadius: 8, border: '1px solid rgba(255,167,85,.28)', background: 'rgba(255,167,85,.09)', color: 'var(--tx)' },
+    flowSources: { display: 'grid', gridTemplateColumns: 'minmax(0,.75fr) minmax(0,1.25fr)', gap: 14 },
+    flowScript: { minHeight: 58, padding: '11px 13px', borderRadius: 7, background: 'var(--raised)', color: 'var(--tx)', fontSize: 12.5, lineHeight: 1.55 },
+    channelActionRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+    flowDraft: { display: 'flex', flexDirection: 'column', gap: 7, marginTop: 10, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg)', color: 'var(--sub)', fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' },
   };
 
-  function CockpitMain({ leads, statuses, onSelect, onOpenAdmin, user, summary }) {
+  function ManagerOperations({ leads, teamUsers, teamPerformance, onDataChange }) {
+    const salesUsers = (teamUsers || []).filter(item => item.active !== false && ['sales', 'admin'].includes(item.role));
+    const unassigned = leads.filter(lead => !lead.assigned_to && !['converted', 'lost'].includes(lead.status));
+    const [leadName, setLeadName] = React.useState(unassigned[0]?.name || '');
+    const [userEmail, setUserEmail] = React.useState(salesUsers.find(item => item.role === 'sales')?.email || salesUsers[0]?.email || '');
+    const [dueAt, setDueAt] = React.useState(tomorrowAtTen());
+    const [busy, setBusy] = React.useState(false);
+    const [feedback, setFeedback] = React.useState('');
+
+    React.useEffect(() => {
+      if (leadName && !unassigned.some(item => item.name === leadName)) setLeadName(unassigned[0]?.name || '');
+    }, [leads.length, unassigned.length]);
+
+    function assign() {
+      if (!leadName || !userEmail) return;
+      setBusy(true);
+      setFeedback('');
+      saveLeadAssignment(leadName, userEmail, dueAt).then(() => {
+        setFeedback('Lead atandı.');
+        return onDataChange();
+      }).catch(error => setFeedback(error.message)).finally(() => setBusy(false));
+    }
+
+    const performanceRows = salesUsers.map(member => ({
+      ...member,
+      performance: (teamPerformance || []).find(row => row.email === member.email) || {},
+    }));
+
+    return (
+      <section style={mo.section}>
+        <div style={mo.head}>
+          <div><div style={wp.eyebrow}>PATRON MASASI</div><h2 style={mo.title}>Atama ve ekip temposu</h2></div>
+          <div style={mo.summary}><strong>{unassigned.length}</strong><span>Atanmamış lead</span></div>
+        </div>
+        <div className="responsive-opportunity-columns" style={mo.columns}>
+          <div style={mo.panel}>
+            <div style={mo.panelHead}><strong>Sıradaki lead’i ata</strong><span>Çalışanın Bugünkü İşler ekranına düşer</span></div>
+            <label style={tw.fieldLabel}>Lead</label>
+            <select value={leadName} onChange={event => setLeadName(event.target.value)} style={dialog.input}>
+              {!unassigned.length && <option value="">Atanmamış lead yok</option>}
+              {unassigned.map(lead => <option key={lead.name} value={lead.name}>{lead.name} · {lead.workflow?.stage_label || 'Bekliyor'}</option>)}
+            </select>
+            <div style={mo.formGrid}>
+              <div><label style={tw.fieldLabel}>Çalışan</label><select value={userEmail} onChange={event => setUserEmail(event.target.value)} style={dialog.input}>{salesUsers.map(member => <option key={member.email} value={member.email}>{member.name} · {member.title || (member.role === 'admin' ? 'Patron' : 'Çalışan')}</option>)}</select></div>
+              <div><label style={tw.fieldLabel}>Son tarih</label><input type="datetime-local" value={dueAt} onChange={event => setDueAt(event.target.value)} style={dialog.input}/></div>
+            </div>
+            {feedback && <div style={mo.feedback}>{feedback}</div>}
+            <button type="button" onClick={assign} disabled={busy || !leadName || !userEmail} style={{ ...av.primaryBtn, width: '100%', marginTop: 12, opacity: busy || !leadName ? .55 : 1 }}>{busy ? 'Atanıyor…' : 'Lead’i ata'}</button>
+          </div>
+          <div style={mo.panel}>
+            <div style={mo.panelHead}><strong>Bugünkü ekip performansı</strong><span>Yalnızca kaydedilen gerçek işlemler</span></div>
+            <div style={mo.table}>
+              {performanceRows.map(member => (
+                <div key={member.email} style={mo.memberRow}>
+                  <div style={mo.member}><div style={mo.avatar}>{(member.name || member.email).split(' ').map(word => word[0]).slice(0,2).join('').toUpperCase()}</div><span><strong>{member.name}</strong><small>{member.title || member.email}</small></span></div>
+                  <div style={mo.metric}><strong>{member.performance.active_assignments || 0}</strong><span>Aktif</span></div>
+                  <div style={mo.metric}><strong>{member.performance.checks_today || 0}</strong><span>Kontrol</span></div>
+                  <div style={mo.metric}><strong>{member.performance.contacts_today || 0}</strong><span>Görüşme</span></div>
+                  <div style={mo.metric}><strong>{member.performance.won_total || 0}</strong><span>Kazanılan</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const mo = {
+    section: { margin: '26px 0 30px', paddingTop: 24, borderTop: '1px solid var(--line)' },
+    head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginBottom: 14 },
+    title: { fontFamily: "'Space Grotesk'", fontSize: 25, margin: '5px 0 0', color: 'var(--tx)' },
+    summary: { display: 'flex', alignItems: 'baseline', gap: 8, color: 'var(--sub)' },
+    columns: { display: 'grid', gridTemplateColumns: 'minmax(0,.8fr) minmax(0,1.2fr)', gap: 12 },
+    panel: { padding: 18, border: '1px solid var(--line)', borderRadius: 8, background: 'var(--panel)' },
+    panelHead: { display: 'flex', justifyContent: 'space-between', gap: 12, color: 'var(--tx)', fontSize: 13 },
+    formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 },
+    feedback: { marginTop: 10, padding: 9, borderRadius: 7, background: 'var(--raised)', color: 'var(--sub)', fontSize: 12 },
+    table: { display: 'flex', flexDirection: 'column', gap: 7, marginTop: 16 },
+    memberRow: { display: 'grid', gridTemplateColumns: 'minmax(180px,1.6fr) repeat(4,minmax(58px,.45fr))', alignItems: 'center', gap: 8, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg)' },
+    member: { display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 },
+    avatar: { width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--accent-ink)', fontSize: 10, fontWeight: 800 },
+    metric: { display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--tx)', fontSize: 12 },
+  };
+
+  function CockpitMain({ leads, statuses, onSelect, onOpenAdmin, user, summary, teamUsers, teamPerformance, onDataChange }) {
     const [filter, setFilter] = React.useState('hepsi');
     const [selectedName, setSelectedName] = React.useState(leads[0]?.name);
 
@@ -1497,6 +1707,8 @@
             </div>
           ))}
         </div>
+
+        {user?.role === 'admin' && <ManagerOperations leads={leads} teamUsers={teamUsers} teamPerformance={teamPerformance} onDataChange={onDataChange}/>}
 
         <div className="responsive-main" style={wp.body}>
           <div style={{ minWidth: 0 }}>
@@ -1915,6 +2127,8 @@
     const scoreAvailable = scoreIsAvailable(lead);
     const playbook = lead.sales_playbook || {};
     const researchBrief = lead.research_brief_v2 || null;
+    const workflow = lead.workflow || {};
+    const contactReady = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
 
     React.useEffect(() => {
       if (!feedback) return;
@@ -1996,12 +2210,12 @@
               {lead.phone && <span style={ld.urlChip}>{lead.phone}</span>}
             </div>
             <div style={ld.quickActions}>
-              {lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={ld.quickBtn}>Telefonu aç</a>}
+              {contactReady && lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={ld.quickBtn}>Telefonu aç</a>}
               {lead.website?.website_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.website.website_url)}>Siteyi aç</button>}
               {socialVerified && lead.social?.instagram_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.social.instagram_url)}>Instagram aç</button>}
               {lead.maps_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.maps_url)}>Maps aç</button>}
               {lead.ai_email && <button style={ld.quickBtn} onClick={copyEmail}>{copied ? 'Taslak kopyalandi' : 'Taslagi kopyala'}</button>}
-              <button style={{ ...ld.quickBtn, background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'var(--accent)' }} onClick={onOpenResult}>Sonuç kaydet</button>
+              <button disabled={!contactReady} title={contactReady ? 'Temas ekranını aç' : 'Önce zorunlu kontrolleri tamamla'} style={{ ...ld.quickBtn, background: contactReady ? 'var(--accent)' : 'var(--raised)', color: contactReady ? 'var(--accent-ink)' : 'var(--muted)', borderColor: contactReady ? 'var(--accent)' : 'var(--line)', opacity: contactReady ? 1 : .65 }} onClick={onOpenResult}>{contactReady ? 'Temas ekranı' : `${workflow.completed_count || 0}/${workflow.required_count || 0} kontrol`}</button>
             </div>
           </div>
           <div style={ld.heroRight}>
@@ -3422,6 +3636,7 @@
     const [summary,     setSummary]     = React.useState(null);
     const [assignments, setAssignments] = React.useState([]);
     const [teamUsers,   setTeamUsers]   = React.useState([]);
+    const [teamPerformance, setTeamPerformance] = React.useState([]);
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
     const [searchOpen,  setSearchOpen]  = React.useState(false);
@@ -3451,6 +3666,7 @@
         summary: data.summary || null,
         assignments: Array.isArray(data.assignments) ? data.assignments : [],
       });
+      setTeamPerformance(Array.isArray(data.team_performance) ? data.team_performance : []);
     }
 
     function refreshWorkspace() {
@@ -3565,7 +3781,7 @@
         case 'analytics':
           return <AnalyticsView leads={sorted} statuses={statuses}/>;
         default:
-          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin} user={user} summary={summary} assignments={assignments}/>;
+          return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin} user={user} summary={summary} assignments={assignments} teamUsers={teamUsers} teamPerformance={teamPerformance} onDataChange={refreshWorkspace}/>;
       }
     }
 
@@ -3580,6 +3796,10 @@
           <ContactResultDialog
             lead={resultLead}
             onClose={() => setResultLead(null)}
+            onOpenLead={() => {
+              const index = sorted.findIndex(item => item.name === resultLead.name);
+              if (index >= 0) selectLead(index);
+            }}
             onSaved={() => {
               setResultLead(null);
               refreshWorkspace();

@@ -31,11 +31,62 @@ from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, ma
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.storage.supabase import _lead_row
+from src.workflow import build_lead_workflow, build_team_performance, required_manual_checks
 from scripts.migrate_leads import normalize_lead
 from scripts.reaudit_leads import _official_instagram_matches
 
 
 class HardeningTests(unittest.TestCase):
+    def test_workflow_requires_food_menu_and_blocks_contact_until_checks_complete(self):
+        lead = {
+            "name": "Örnek Restoran",
+            "category": "Restoran",
+            "phone": "+90 212 000 00 00",
+            "manual_verification": {
+                "google": {"checked": True, "status": "found"},
+                "instagram": {"checked": True, "status": "active"},
+                "menu": {"checked": False, "status": "unknown"},
+                "website": {"checked": True, "status": "working"},
+            },
+        }
+        self.assertEqual(required_manual_checks(lead), ["google", "instagram", "menu", "website"])
+        workflow = build_lead_workflow(lead)
+        self.assertFalse(workflow["ready_to_contact"])
+        self.assertEqual(workflow["stage"], "verification_required")
+        self.assertEqual(workflow["missing"], ["Menü"])
+
+    def test_workflow_marks_non_food_lead_ready_after_three_checks(self):
+        lead = {
+            "name": "Örnek Klinik",
+            "category": "Diş Kliniği",
+            "phone": "+90 216 000 00 00",
+            "manual_verification": {
+                "google": {"checked": True, "status": "found"},
+                "instagram": {"checked": True, "status": "not_found"},
+                "menu": {"checked": False, "status": "unknown"},
+                "website": {"checked": True, "status": "not_found"},
+            },
+        }
+        workflow = build_lead_workflow(lead)
+        self.assertTrue(workflow["ready_to_contact"])
+        self.assertEqual(workflow["stage"], "ready_to_contact")
+        self.assertEqual(workflow["completed_count"], 3)
+
+    def test_team_performance_uses_real_actor_events(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
+        rows = build_team_performance(
+            [{"user_email": "ahu@example.com", "status": "active"}],
+            [
+                {"actor_email": "ahu@example.com", "action": "manual_verification_saved", "happened_at": now.isoformat()},
+                {"actor_email": "ahu@example.com", "action": "contact_result_recorded", "channel": "phone", "outcome": "won", "happened_at": now.isoformat()},
+            ],
+            now=now,
+        )
+        self.assertEqual(rows[0]["checks_today"], 1)
+        self.assertEqual(rows[0]["contacts_today"], 1)
+        self.assertEqual(rows[0]["calls_today"], 1)
+        self.assertEqual(rows[0]["won_total"], 1)
+
     def test_manual_verification_is_validated_and_round_trips(self):
         verification = build_manual_verification(
             {

@@ -13,6 +13,7 @@ from src.activity import enrich_outreach_event
 from src.http_api import send_internal_error, send_json, send_options
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
+from src.workflow import build_lead_workflow, build_team_performance
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_lead_assignments,
@@ -72,7 +73,19 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
     return {
         "lead_count": len(leads),
         "assigned_count": len(active_assignments),
-        "today_call_count": sum(1 for event in events if _is_today_event(event, "call_completed")),
+        "unassigned_count": sum(1 for lead in leads if not lead.get("assigned_to")),
+        "verification_pending_count": sum(
+            1 for lead in leads
+            if (lead.get("workflow") or {}).get("stage") == "verification_required"
+        ),
+        "ready_to_contact_count": sum(
+            1 for lead in leads
+            if (lead.get("workflow") or {}).get("stage") == "ready_to_contact"
+        ),
+        "today_call_count": sum(
+            1 for event in events
+            if _is_today_event(event, "contact_result_recorded") and event.get("channel") == "phone"
+        ),
         "today_result_count": sum(
             1 for event in events if _is_today_event(event, "contact_result_recorded")
         ),
@@ -144,6 +157,10 @@ class handler(BaseHTTPRequestHandler):
                 }
                 for lead in leads
             ]
+            leads = [
+                {**lead, "workflow": build_lead_workflow(lead, events)}
+                for lead in leads
+            ]
             send_json(
                 self,
                 200,
@@ -157,6 +174,7 @@ class handler(BaseHTTPRequestHandler):
                         "avatar_url": user.get("avatar_url"),
                     },
                     "summary": _summary(leads, assignments, events),
+                    "team_performance": build_team_performance(assignments, events),
                     "leads": leads,
                     "assignments": assignments,
                     "outreach": events,
