@@ -36,19 +36,36 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
 
     try:
         url = assert_safe_public_url(url)
-        with httpx.Client(timeout=15, follow_redirects=True) as client:
-            response = client.get(
-                url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-                },
-            )
-            response.raise_for_status()
-            assert_safe_public_url(str(response.url))
+        with httpx.Client(timeout=15, follow_redirects=False, trust_env=False) as client:
+            for _ in range(7):
+                safe_url = assert_safe_public_url(url)
+                with client.stream(
+                    "GET",
+                    safe_url,
+                    headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                ) as response:
+                    if response.is_redirect:
+                        location = response.headers.get("location")
+                        if not location:
+                            raise ValueError("redirect without location")
+                        url = urljoin(safe_url, location)
+                        continue
+                    response.raise_for_status()
+                    content = bytearray()
+                    for chunk in response.iter_bytes():
+                        if len(content) + len(chunk) > 2_000_000:
+                            raise ValueError("website content is too large")
+                        content.extend(chunk)
+                    encoding = response.charset_encoding or "utf-8"
+                    html = bytes(content).decode(encoding, errors="replace")
+                    final_url = str(response.url)
+                    break
+            else:
+                raise ValueError("too many redirects")
     except Exception as exc:
         return {**empty, "status": "error", "error": str(exc)[:160]}
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
 
@@ -84,7 +101,7 @@ def research_website(url: str | None, *, max_links: int = 8) -> dict:
 
     return {
         "status": "ok",
-        "url": str(response.url),
+        "url": final_url,
         "title": title,
         "meta_description": meta_description,
         "headings": [h for h in headings if h][:8],

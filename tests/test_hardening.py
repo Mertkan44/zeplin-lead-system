@@ -102,6 +102,7 @@ class HardeningTests(unittest.TestCase):
                 "phone": "0216 000 00 00",
                 "research": {"google_places": {"status": "verified", "refreshed_at": now.isoformat()}},
                 "manual_verification": {
+                    "checked_at": now.isoformat(),
                     "google": {"checked": False},
                     "instagram": {"checked": True, "status": "active"},
                     "website": {"checked": True, "status": "working"},
@@ -115,11 +116,13 @@ class HardeningTests(unittest.TestCase):
         self.assertTrue(workflow["ready_to_contact"])
 
     def test_workflow_requires_food_menu_and_blocks_contact_until_checks_complete(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
         lead = {
             "name": "Örnek Restoran",
             "category": "Restoran",
             "phone": "+90 212 000 00 00",
             "manual_verification": {
+                "checked_at": now.isoformat(),
                 "google": {"checked": True, "status": "found"},
                 "instagram": {"checked": True, "status": "active"},
                 "menu": {"checked": False, "status": "unknown"},
@@ -127,24 +130,26 @@ class HardeningTests(unittest.TestCase):
             },
         }
         self.assertEqual(required_manual_checks(lead), ["google", "instagram", "menu", "website"])
-        workflow = build_lead_workflow(lead)
+        workflow = build_lead_workflow(lead, now=now)
         self.assertFalse(workflow["ready_to_contact"])
         self.assertEqual(workflow["stage"], "verification_required")
         self.assertEqual(workflow["missing"], ["Menü"])
 
     def test_workflow_marks_non_food_lead_ready_after_three_checks(self):
+        now = datetime(2026, 8, 1, 9, 0, tzinfo=timezone.utc)
         lead = {
             "name": "Örnek Klinik",
             "category": "Diş Kliniği",
             "phone": "+90 216 000 00 00",
             "manual_verification": {
+                "checked_at": now.isoformat(),
                 "google": {"checked": True, "status": "found"},
                 "instagram": {"checked": True, "status": "not_found"},
                 "menu": {"checked": False, "status": "unknown"},
                 "website": {"checked": True, "status": "not_found"},
             },
         }
-        workflow = build_lead_workflow(lead)
+        workflow = build_lead_workflow(lead, now=now)
         self.assertTrue(workflow["ready_to_contact"])
         self.assertEqual(workflow["stage"], "ready_to_contact")
         self.assertEqual(workflow["completed_count"], 3)
@@ -810,12 +815,14 @@ class HardeningTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            template_path.write_text("__DATA__ __SERVICES__", encoding="utf-8")
+            template_path.write_text('<script defer src="/bootstrap.js"></script>', encoding="utf-8")
             with patch("src.dashboard.build.validate_leads", return_value=[]):
                 build_dashboard(data_path, template_path, output_path)
             built = output_path.read_text(encoding="utf-8")
             self.assertNotIn("SECRET CUSTOMER", built)
-            self.assertIn(base64.b64encode(b"[]").decode(), built)
+            bootstrap = (output_path.parent / "bootstrap.js").read_text(encoding="utf-8")
+            self.assertNotIn("SECRET CUSTOMER", bootstrap)
+            self.assertIn("var BOOTSTRAP_LEADS = [];", bootstrap)
 
 
 if __name__ == "__main__":

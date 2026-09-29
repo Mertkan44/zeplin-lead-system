@@ -7,8 +7,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import require_auth, require_lead_access
-from src.http_api import read_json, send_internal_error, send_json, send_options
-from src.storage.supabase import insert_audit_event, is_enabled as supabase_enabled, set_lead_status
+from src.http_api import read_json, send_internal_error, send_json, send_options, text_field
+from src.storage.supabase import LEAD_STATUSES, insert_audit_event, is_enabled as supabase_enabled, set_lead_status
 
 
 class handler(BaseHTTPRequestHandler):
@@ -29,10 +29,20 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
             return
-        name = (payload.get("name") or "").strip()
-        status = (payload.get("status") or "").strip()
+        try:
+            name = text_field(payload, "name", max_len=300)
+            status = text_field(payload, "status", max_len=30)
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
+            return
         if not name or not status:
             send_json(self, 400, {"ok": False, "error": "name and status are required"}, allow_methods="POST, OPTIONS")
+            return
+        if status not in LEAD_STATUSES:
+            send_json(self, 400, {"ok": False, "error": "status is invalid"}, allow_methods="POST, OPTIONS")
+            return
+        if status in {"converted", "lost"}:
+            send_json(self, 409, {"ok": False, "error": "close the deal through an outreach action"}, allow_methods="POST, OPTIONS")
             return
         try:
             require_lead_access(user, name)

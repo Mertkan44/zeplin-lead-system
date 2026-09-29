@@ -1,0 +1,16 @@
+{
+  "name": "zeplin-lead-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:frontend": "esbuild src/dashboard/app.jsx --bundle --minify --format=iife --target=es2020 --outfile=public/app.js",
+    "build:dashboard": "npm run build:frontend && python src/dashboard/build.py"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

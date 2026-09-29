@@ -61,6 +61,8 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
         if lead_name and lead_name not in latest_results:
             latest_results[lead_name] = event
     for event in latest_results.values():
+        if any(lead.get("name") == event.get("lead_name") and lead.get("status") in {"converted", "lost"} for lead in leads):
+            continue
         follow_up_at = event.get("follow_up_at")
         if not follow_up_at:
             continue
@@ -146,10 +148,11 @@ class handler(BaseHTTPRequestHandler):
             return
         try:
             user_email = normalize_email(user.get("sub"))
-            leads = fetch_leads_full(limit=1000)
+            leads = fetch_leads_full(limit=None)
             assignments = fetch_lead_assignments(
                 user_email=None if user.get("role") == "admin" else user_email,
-                limit=1000,
+                status=None if user.get("role") == "admin" else "active",
+                limit=None,
             )
             if user.get("role") != "admin":
                 assigned_names = {item.get("lead_name") for item in assignments}
@@ -157,7 +160,7 @@ class handler(BaseHTTPRequestHandler):
             leads = attach_assignments_to_leads(leads, assignments)
             events = [
                 enrich_outreach_event(event)
-                for event in fetch_outreach_events(limit=1000)
+                for event in fetch_outreach_events(limit=None)
             ]
             if user.get("role") != "admin":
                 assigned_names = {lead.get("name") for lead in leads}

@@ -196,6 +196,8 @@ async def run(
         normalized = normalize_lead(lead)
         if normalized["name"] in existing_map:
             prior = existing_map[normalized["name"]]
+            if (prior.get("city") or "").strip().casefold() != (normalized.get("city") or "").strip().casefold():
+                raise ValueError(f"lead name collision across cities: {normalized['name']}")
             normalized["status"] = prior.get("status") or "yeni"
             updated_count += 1
         else:

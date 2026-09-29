@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from urllib.parse import quote_plus, urlparse
 from playwright.async_api import async_playwright
 from rich.console import Console
-from src.audit.website import audit_website
+from src.audit.website import _fetch_public, audit_website
 
 console = Console()
 
@@ -361,7 +361,7 @@ async def find_tiktok(page, business_name: str, website_data: dict) -> dict:
                   ''.join(words[:2]) if len(words) >= 2 else '']
     candidates = [c for c in set(candidates) if len(c) >= 3]
 
-    async with httpx.AsyncClient(timeout=6, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=6, follow_redirects=False, trust_env=False) as client:
         hdrs = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)"}
         for u in candidates[:4]:
             try:
@@ -459,9 +459,9 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
 
     if website_url:
         try:
-            await page.goto(website_url, wait_until="domcontentloaded")
-            await page.wait_for_timeout(2000)
-            for m in re.findall(r'instagram\.com/([a-zA-Z0-9_.]{2,30})/?', await page.content()):
+            async with httpx.AsyncClient(timeout=10, follow_redirects=False, trust_env=False) as website_client:
+                website_content = (await _fetch_public(website_client, website_url))["text"]
+            for m in re.findall(r'instagram\.com/([a-zA-Z0-9_.]{2,30})/?', website_content):
                 if m not in bl:
                     result.update(has_instagram=True,
                                   instagram_url=f"https://www.instagram.com/{m}/",
@@ -483,7 +483,7 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
                           ''.join(words[:2]) if len(words) >= 2 else '']
     guessed_candidates = list(dict.fromkeys(c for c in guessed_candidates if len(c) >= 3))
 
-    async with httpx.AsyncClient(timeout=6, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=6, follow_redirects=False, trust_env=False) as client:
         hdrs = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)"}
         searched_candidates: list[tuple[str, str]] = []
         try:
@@ -566,7 +566,8 @@ async def get_instagram_stats(page, username: str) -> dict:
 
         async with httpx.AsyncClient(
             timeout=8,
-            follow_redirects=True,
+            follow_redirects=False,
+            trust_env=False,
             headers={"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Version/16.0 Mobile/15E148 Safari/604.1"},
         ) as client:
             resp = await client.get(f"https://www.instagram.com/{username}/")

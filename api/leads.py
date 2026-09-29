@@ -29,18 +29,20 @@ class handler(BaseHTTPRequestHandler):
         query = parse_qs(urlparse(self.path).query)
         try:
             limit = min(max(int(query.get("limit", ["500"])[0]), 1), 1000)
+            offset = max(int(query.get("offset", ["0"])[0]), 0)
         except ValueError:
             limit = 500
+            offset = 0
         try:
-            leads = fetch_leads_full(limit=limit)
+            leads = fetch_leads_full(limit=None)
             if user.get("role") != "admin":
                 assignments = fetch_lead_assignments(
                     user_email=normalize_email(user.get("sub")),
                     status="active",
-                    limit=1000,
+                    limit=None,
                 )
                 assigned = {item.get("lead_name") for item in assignments}
                 leads = [lead for lead in leads if lead.get("name") in assigned]
-            send_json(self, 200, leads, allow_methods="GET, OPTIONS")
+            send_json(self, 200, leads[offset:offset + limit], allow_methods="GET, OPTIONS")
         except Exception as exc:
             send_internal_error(self, exc, error="lead fetch failed", allow_methods="GET, OPTIONS")

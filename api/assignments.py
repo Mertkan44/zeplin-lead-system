@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import normalize_email, require_admin, require_auth
-from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options, text_field
 from src.storage.supabase import (
     fetch_app_user_by_email,
     fetch_lead_assignment_by_id,
@@ -39,11 +39,13 @@ class handler(BaseHTTPRequestHandler):
         user_email = normalize_email(query.get("user", [None])[0])
         if user.get("role") != "admin":
             user_email = normalize_email(user.get("sub"))
+            status = "active"
         try:
             assignments = fetch_lead_assignments(
                 user_email=user_email or None,
                 lead_name=lead_name,
                 status=status,
+                limit=None,
             )
             send_json(self, 200, {"ok": True, "assignments": assignments}, allow_methods="GET, POST, PATCH, OPTIONS")
         except Exception as exc:
@@ -60,10 +62,18 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
-        lead_name = (payload.get("lead_name") or "").strip()
-        user_email = normalize_email(payload.get("user_email"))
-        due_at = payload.get("due_at")
-        status = (payload.get("status") or "active").strip()
+        try:
+            lead_name = text_field(payload, "lead_name", max_len=300)
+            user_email = normalize_email(text_field(payload, "user_email", max_len=320))
+            due_at = text_field(payload, "due_at", max_len=40) or None
+            status = text_field(payload, "status", max_len=20) or "active"
+            if "meta" in payload and not isinstance(payload["meta"], dict):
+                raise ValueError("meta must be an object")
+            if status not in {"active", "done", "snoozed", "archived"}:
+                raise ValueError("status is invalid")
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            return
         if not lead_name or not user_email:
             send_json(self, 400, {"ok": False, "error": "lead_name and user_email are required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
@@ -106,7 +116,15 @@ class handler(BaseHTTPRequestHandler):
             assignment_id = int(payload.get("id") or 0)
         except (TypeError, ValueError):
             assignment_id = 0
-        status = (payload.get("status") or "").strip()
+        try:
+            status = text_field(payload, "status", max_len=20)
+            if status not in {"active", "done", "snoozed", "archived"}:
+                raise ValueError("status is invalid")
+            if "meta" in payload and not isinstance(payload["meta"], dict):
+                raise ValueError("meta must be an object")
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
+            return
         if not assignment_id or not status:
             send_json(self, 400, {"ok": False, "error": "id and status are required"}, allow_methods="GET, POST, PATCH, OPTIONS")
             return
@@ -117,6 +135,11 @@ class handler(BaseHTTPRequestHandler):
                 return
             if user.get("role") != "admin" and normalize_email(assignment.get("user_email")) != normalize_email(user.get("sub")):
                 send_json(self, 403, {"ok": False, "error": "assignment belongs to another user"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                return
+            if user.get("role") != "admin" and (
+                assignment.get("status") != "active" or status not in {"active", "done", "snoozed"}
+            ):
+                send_json(self, 403, {"ok": False, "error": "assignment transition requires admin"}, allow_methods="GET, POST, PATCH, OPTIONS")
                 return
             update_lead_assignment(
                 assignment_id,

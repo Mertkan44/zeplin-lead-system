@@ -11,3 +11,4 @@ src/dashboard/static/index.html
 outreach_log.local.json
 .vercel
 .env*
+node_modules/

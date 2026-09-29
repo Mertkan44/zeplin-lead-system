@@ -17,13 +17,15 @@ DeepSeek defaults to `deepseek-v4-pro`, with thinking disabled for short sales
 reports so the response budget is reserved for the final text.
 The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODEL`
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
-`.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
+Supabase; local `.cache/ai_generations.json` is an optional best-effort cache.
 
-For a fresh Supabase project, run `supabase/schema.sql` in the SQL editor. For an
-existing project, apply migrations in order through
-`supabase/migrations/006_security_crm_hardening.sql`. The last migration adds stable
-lead identities, atomic queue claims, assignment integrity, audit events, and
-persistent AI generations.
+For a fresh Supabase project, run `supabase/schema.sql`, then migrations
+`006_security_crm_hardening.sql` through `012_last_admin_guard.sql` in order.
+For an existing project, apply all unapplied migrations in numeric order through
+`012_last_admin_guard.sql`. Migration 008 makes outreach writes atomic and
+idempotent; API writes require it. Migration 009 adds field-level lead updates.
+Take a database backup before applying schema changes and verify the migration
+on a preview database first.
 
 Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `SESSION_SECRET` in Vercel. Team members log in with their individual Supabase

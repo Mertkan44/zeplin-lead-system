@@ -32,7 +32,11 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
       - name: Build static dashboard
-        run: python src/dashboard/build.py
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:frontend
+          python src/dashboard/build.py
+          git diff --exit-code -- public/app.js public/bootstrap.js public/index.html
       - name: Verify generated HTML contains no lead payload
         run: |
           if grep -q "The Market at Bosphorus" public/index.html; then

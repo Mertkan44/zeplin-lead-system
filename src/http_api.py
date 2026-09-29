@@ -31,7 +31,12 @@ def _security_headers(handler: BaseHTTPRequestHandler) -> None:
 
 
 def read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
-    length = int(handler.headers.get("Content-Length", "0"))
+    try:
+        length = int(handler.headers.get("Content-Length", "0"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid content length") from exc
+    if length < 0 or length > 64_000:
+        raise ValueError("json body is too large")
     try:
         payload = json.loads(handler.rfile.read(length) or b"{}")
     except json.JSONDecodeError as exc:
@@ -39,6 +44,15 @@ def read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("json object is required")
     return payload
+
+
+def text_field(payload: dict[str, Any], name: str, *, max_len: int = 4000) -> str:
+    value = payload.get(name)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be text")
+    return value.strip()[:max_len]
 
 
 def send_json(

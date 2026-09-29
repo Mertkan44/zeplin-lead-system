@@ -6,14 +6,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields, has_email_evidence
+from src.ai.generator import AI_PROMPT_VERSION, ai_input_fingerprint, enrich_ai_fields, has_email_evidence
 from src.auth import require_auth, require_lead_access
-from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options, text_field
 from src.storage.supabase import (
-    fetch_leads_full,
+    fetch_lead_by_name,
     insert_audit_event,
     is_enabled as supabase_enabled,
-    upsert_leads,
+    patch_lead_fields,
+    ConcurrentLeadUpdateError,
 )
 
 
@@ -41,14 +42,18 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
             return
 
-        name = (payload.get("name") or "").strip()
+        try:
+            name = text_field(payload, "name", max_len=300)
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
+            return
         if not name:
             send_json(self, 400, {"ok": False, "error": "name is required"}, allow_methods="POST, OPTIONS")
             return
 
         try:
             require_lead_access(user, name)
-            lead = next((item for item in fetch_leads_full(limit=1000) if item.get("name") == name), None)
+            lead = fetch_lead_by_name(name)
             if not lead:
                 send_json(self, 404, {"ok": False, "error": "lead not found"}, allow_methods="POST, OPTIONS")
                 return
@@ -63,8 +68,9 @@ class handler(BaseHTTPRequestHandler):
 
             if (
                 lead.get("ai_prompt_version") == AI_PROMPT_VERSION
+                and lead.get("ai_input_fingerprint") == ai_input_fingerprint(lead)
                 and lead.get("ai_report")
-                and (lead.get("ai_email") or not has_email_evidence(lead))
+                and (lead.get("ai_email") or lead.get("ai_generation_status") == "complete" or not has_email_evidence(lead))
             ):
                 enriched = lead
                 cached = True
@@ -72,7 +78,12 @@ class handler(BaseHTTPRequestHandler):
                 enriched = enrich_ai_fields(lead)
                 if not enriched.get("ai_report"):
                     raise RuntimeError("AI provider returned an empty report")
-                upsert_leads([enriched])
+                patch_lead_fields(name, lead.get("supabase_updated_at"), {
+                    key: enriched.get(key) for key in (
+                        "research_brief", "ai_report", "ai_email", "ai_tier", "ai_prompt_version",
+                        "ai_input_fingerprint", "ai_generated_at", "ai_generation_status", "last_analyzed"
+                    )
+                })
                 cached = False
 
             insert_audit_event(
@@ -99,6 +110,8 @@ class handler(BaseHTTPRequestHandler):
             )
         except PermissionError as exc:
             send_json(self, 403, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
+        except ConcurrentLeadUpdateError as exc:
+            send_json(self, 409, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
         except RuntimeError as exc:
             detail = str(exc)
             self.log_error("AI report generation failed: %s", detail)
