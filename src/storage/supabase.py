@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -99,6 +100,24 @@ def upsert_leads(leads: list[dict[str, Any]], *, chunk_size: int = 100) -> int:
     total = 0
     rows = [_lead_row(lead) for lead in leads]
     with httpx.Client(timeout=60) as client:
+        for row in rows:
+            existing_response = client.get(
+                _postgrest_url(
+                    config, "leads",
+                    f"select=city,maps_url&name=eq.{_eq(row['name'])}&limit=1",
+                ),
+                headers=_headers(config),
+            )
+            existing_response.raise_for_status()
+            existing_rows = existing_response.json()
+            if existing_rows:
+                existing = existing_rows[0]
+                if (existing.get("city") or "").strip().casefold() != (row.get("city") or "").strip().casefold():
+                    raise ValueError(f"lead name collision across cities: {row['name']}")
+                existing_map = (existing.get("maps_url") or "").split("?", 1)[0]
+                incoming_map = (row.get("maps_url") or "").split("?", 1)[0]
+                if existing_map and incoming_map and existing_map != incoming_map:
+                    raise ValueError(f"lead name collision across places: {row['name']}")
         for index in range(0, len(rows), chunk_size):
             chunk = rows[index : index + chunk_size]
             response = client.post(
@@ -140,34 +159,7 @@ def insert_outreach_event(
     source: str = "dashboard",
     idempotency_key: str | None = None,
 ) -> None:
-    aliases = {
-        "note": "note_added",
-        "call_made": "call_completed",
-        "email_sent": "email_sent",
-        "meeting_scheduled": "follow_up_scheduled",
-        "reply_received": "follow_up_scheduled",
-        "draft_prepared": "email_drafted",
-        "outreach_review_started": "email_drafted",
-    }
-    action = aliases.get(action, action)
-    allowed_actions = {
-        "data_enrichment_started",
-        "note_added",
-        "call_started",
-        "call_completed",
-        "contact_result_recorded",
-        "draft_reviewed",
-        "manual_verification_saved",
-        "email_drafted",
-        "email_sent",
-        "follow_up_scheduled",
-        "proposal_created",
-        "proposal_sent",
-        "deal_won",
-        "deal_lost",
-    }
-    if action not in allowed_actions:
-        raise ValueError("outreach action is invalid")
+    action = normalize_outreach_action(action)
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
@@ -196,6 +188,81 @@ def insert_outreach_event(
         response.raise_for_status()
 
 
+def normalize_outreach_action(action: str) -> str:
+    aliases = {
+        "note": "note_added",
+        "call_made": "call_completed",
+        "email_sent": "email_sent",
+        "meeting_scheduled": "follow_up_scheduled",
+        "reply_received": "follow_up_scheduled",
+        "draft_prepared": "email_drafted",
+        "outreach_review_started": "email_drafted",
+    }
+    action = aliases.get(action, action)
+    allowed_actions = {
+        "data_enrichment_started",
+        "note_added",
+        "call_started",
+        "call_completed",
+        "contact_result_recorded",
+        "draft_reviewed",
+        "manual_verification_saved",
+        "email_drafted",
+        "email_sent",
+        "follow_up_scheduled",
+        "proposal_created",
+        "proposal_sent",
+        "deal_won",
+        "deal_lost",
+    }
+    if action not in allowed_actions:
+        raise ValueError("outreach action is invalid")
+    return action
+
+
+def record_outreach_action(
+    *,
+    lead_name: str,
+    action: str,
+    note: str | None,
+    happened_at: str | None,
+    actor_email: str,
+    source: str,
+    idempotency_key: str | None,
+    status: str | None = None,
+    assignment_status: str | None = None,
+    follow_up_at: str | None = None,
+    assignment_meta: dict[str, Any] | None = None,
+    activity: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    action = normalize_outreach_action(action)
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured.")
+    payload = {
+        "target_lead_name": lead_name,
+        "target_action": action,
+        "target_note": note,
+        "target_happened_at": happened_at,
+        "target_actor_email": actor_email,
+        "target_source": source,
+        "target_idempotency_key": idempotency_key or str(uuid.uuid4()),
+        "target_status": status,
+        "target_assignment_status": assignment_status,
+        "target_follow_up_at": follow_up_at,
+        "target_assignment_meta": assignment_meta or {},
+        "target_activity": activity or {},
+    }
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            f"{config.url}/rest/v1/rpc/record_outreach_action",
+            headers=_headers(config),
+            json=payload,
+        )
+        response.raise_for_status()
+        return response.json()
+
+
 def list_leads(limit: int = 20) -> list[dict[str, Any]]:
     config = supabase_config()
     if not config:
@@ -210,15 +277,24 @@ def list_leads(limit: int = 20) -> list[dict[str, Any]]:
         return response.json()
 
 
-def fetch_leads_full(limit: int = 500) -> list[dict[str, Any]]:
+def fetch_leads_full(limit: int | None = 500) -> list[dict[str, Any]]:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = f"select=raw,status,updated_at&order=sales_priority_score.desc.nullslast&limit={limit}"
+    rows: list[dict[str, Any]] = []
     with httpx.Client(timeout=30) as client:
-        response = client.get(_postgrest_url(config, "leads", query), headers=_headers(config))
-        response.raise_for_status()
-        rows = response.json()
+        while limit is None or len(rows) < limit:
+            page_size = min(1000, limit - len(rows)) if limit is not None else 1000
+            query = (
+                "select=raw,status,updated_at"
+                f"&order=sales_priority_score.desc.nullslast,id.asc&limit={page_size}&offset={len(rows)}"
+            )
+            response = client.get(_postgrest_url(config, "leads", query), headers=_headers(config))
+            response.raise_for_status()
+            page = response.json()
+            rows.extend(page)
+            if len(page) < page_size:
+                break
     leads: list[dict[str, Any]] = []
     for row in rows:
         raw = row.get("raw") or {}
@@ -229,18 +305,66 @@ def fetch_leads_full(limit: int = 500) -> list[dict[str, Any]]:
     return leads
 
 
-def fetch_outreach_events(limit: int = 500) -> list[dict[str, Any]]:
+def fetch_outreach_events(limit: int | None = 500, *, lead_name: str | None = None) -> list[dict[str, Any]]:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = (
-        "select=id,lead_name,action,note,happened_at,created_at,actor_email,source,idempotency_key"
-        f"&order=happened_at.desc&limit={limit}"
-    )
+    rows: list[dict[str, Any]] = []
     with httpx.Client(timeout=30) as client:
-        response = client.get(_postgrest_url(config, "outreach_events", query), headers=_headers(config))
+        while limit is None or len(rows) < limit:
+            page_size = min(1000, limit - len(rows)) if limit is not None else 1000
+            query = (
+                "select=id,lead_name,action,note,happened_at,created_at,actor_email,source,idempotency_key,channel,outcome,follow_up_at,service_slugs,contact_name"
+                f"&order=happened_at.desc,id.desc&limit={page_size}&offset={len(rows)}"
+            )
+            if lead_name:
+                query += f"&lead_name=eq.{_eq(lead_name)}"
+            response = client.get(_postgrest_url(config, "outreach_events", query), headers=_headers(config))
+            response.raise_for_status()
+            page = response.json()
+            rows.extend(page)
+            if len(page) < page_size:
+                break
+    return rows
+
+
+def fetch_lead_by_name(name: str) -> dict[str, Any] | None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured.")
+    query = f"select=raw,status,updated_at&name=eq.{_eq(name)}&limit=1"
+    with httpx.Client(timeout=20) as client:
+        response = client.get(_postgrest_url(config, "leads", query), headers=_headers(config))
         response.raise_for_status()
-        return response.json()
+        rows = response.json()
+    if not rows:
+        return None
+    raw = rows[0].get("raw") or {}
+    if not isinstance(raw, dict):
+        return None
+    return {**raw, "status": rows[0].get("status") or raw.get("status") or "yeni",
+            "supabase_updated_at": rows[0].get("updated_at")}
+
+
+class ConcurrentLeadUpdateError(RuntimeError):
+    pass
+
+
+def patch_lead_fields(name: str, expected_updated_at: str, fields: dict[str, Any]) -> None:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured.")
+    if not expected_updated_at:
+        raise ValueError("lead version is required")
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            f"{config.url}/rest/v1/rpc/patch_lead_fields",
+            headers=_headers(config),
+            json={"target_name": name, "expected_updated_at": expected_updated_at, "field_patch": fields},
+        )
+        response.raise_for_status()
+        if response.json() is not True:
+            raise ConcurrentLeadUpdateError("lead changed while this operation was running")
 
 
 def reset_sales_activity() -> dict[str, int | bool]:
@@ -390,26 +514,33 @@ def fetch_lead_assignments(
     user_email: str | None = None,
     lead_name: str | None = None,
     status: str | None = None,
-    limit: int = 500,
+    limit: int | None = 500,
 ) -> list[dict[str, Any]]:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = (
-        "select=id,lead_name,user_email,status,due_at,assigned_by,assigned_at,updated_at,meta"
-        "&order=updated_at.desc"
-        f"&limit={min(limit, 1000)}"
-    )
+    filters = ""
     if user_email:
-        query += f"&user_email=eq.{_eq(user_email.lower())}"
+        filters += f"&user_email=eq.{_eq(user_email.lower())}"
     if lead_name:
-        query += f"&lead_name=eq.{_eq(lead_name)}"
+        filters += f"&lead_name=eq.{_eq(lead_name)}"
     if status:
-        query += f"&status=eq.{_eq(status)}"
+        filters += f"&status=eq.{_eq(status)}"
+    rows: list[dict[str, Any]] = []
     with httpx.Client(timeout=20) as client:
-        response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
-        response.raise_for_status()
-        return response.json()
+        while limit is None or len(rows) < limit:
+            page_size = min(1000, limit - len(rows)) if limit is not None else 1000
+            query = (
+                "select=id,lead_name,user_email,status,due_at,assigned_by,assigned_at,updated_at,meta"
+                f"&order=updated_at.desc,id.desc&limit={page_size}&offset={len(rows)}{filters}"
+            )
+            response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
+            response.raise_for_status()
+            page = response.json()
+            rows.extend(page)
+            if len(page) < page_size:
+                break
+    return rows
 
 
 def fetch_lead_assignment_by_id(assignment_id: int) -> dict[str, Any] | None:
@@ -760,21 +891,32 @@ def claim_search_jobs(limit: int = 1) -> list[dict[str, Any]]:
         return claimed
 
 
-def record_token_usage(*, job_id: int, model: str, usage: dict[str, Any]) -> dict[str, Any]:
+def record_token_usage(*, job_id: int | None, model: str, usage: dict[str, Any], provider: str = "deepseek") -> dict[str, Any]:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured.")
     prompt_tokens = int(usage.get("prompt_tokens") or 0)
     cached_tokens = int(
-        usage.get("prompt_cache_hit_tokens")
+        usage.get("cached_tokens")
+        or usage.get("prompt_cache_hit_tokens")
         or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
         or 0
     )
     completion_tokens = int(usage.get("completion_tokens") or 0)
     total_tokens = int(usage.get("total_tokens") or prompt_tokens + completion_tokens)
-    input_rate = float(env("DEEPSEEK_INPUT_USD_PER_M_TOKENS", "0.28") or 0.28)
-    cached_rate = float(env("DEEPSEEK_CACHED_INPUT_USD_PER_M_TOKENS", "0.028") or 0.028)
-    output_rate = float(env("DEEPSEEK_OUTPUT_USD_PER_M_TOKENS", "0.42") or 0.42)
+    if provider == "deepseek":
+        input_raw = env("DEEPSEEK_INPUT_USD_PER_M_TOKENS", env("DEEPSEEK_INPUT_PRICE_PER_MILLION", "0.28"))
+        cached_raw = env("DEEPSEEK_CACHED_INPUT_USD_PER_M_TOKENS", "0.028")
+        output_raw = env("DEEPSEEK_OUTPUT_USD_PER_M_TOKENS", env("DEEPSEEK_OUTPUT_PRICE_PER_MILLION", "0.42"))
+    else:
+        prefix = provider.upper()
+        input_raw = env(f"{prefix}_INPUT_USD_PER_M_TOKENS")
+        cached_raw = env(f"{prefix}_CACHED_INPUT_USD_PER_M_TOKENS") or input_raw
+        output_raw = env(f"{prefix}_OUTPUT_USD_PER_M_TOKENS")
+    priced = all(value is not None for value in (input_raw, cached_raw, output_raw))
+    input_rate = float(input_raw or 0)
+    cached_rate = float(cached_raw or 0)
+    output_rate = float(output_raw or 0)
     uncached_tokens = max(prompt_tokens - cached_tokens, 0)
     cost = (
         uncached_tokens * input_rate
@@ -784,16 +926,17 @@ def record_token_usage(*, job_id: int, model: str, usage: dict[str, Any]) -> dic
     row = {
         "job_id": job_id,
         "kind": "usage",
-        "provider": "deepseek",
+        "provider": provider,
         "model": model,
         "estimated_tokens": 0,
         "actual_tokens": total_tokens,
         "estimated_cost_usd": 0,
-        "actual_cost_usd": round(cost, 6),
+        "actual_cost_usd": round(cost, 6) if priced else None,
         "meta": {
             "prompt_tokens": prompt_tokens,
             "cached_tokens": cached_tokens,
             "completion_tokens": completion_tokens,
+            "pricing_status": "priced" if priced else "unconfigured",
         },
     }
     with httpx.Client(timeout=20) as client:

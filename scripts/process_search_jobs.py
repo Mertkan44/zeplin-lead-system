@@ -7,13 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from besiktas import run as run_scan
-from src.ai.cache import usage_totals
-from src.storage.supabase import claim_search_jobs, record_token_usage, update_search_job
+from src.ai.usage import current_job_id
+from src.storage.supabase import claim_search_jobs, update_search_job
 
 
 async def process_job(job: dict) -> None:
     job_id = int(job["id"])
-    usage_before = usage_totals()
+    token = current_job_id.set(job_id)
     try:
         result = await run_scan(
             query=job["query"],
@@ -29,13 +29,11 @@ async def process_job(job: dict) -> None:
     except Exception as exc:
         update_search_job(job_id, status="failed", result={"error": str(exc)})
         raise
-    usage_after = usage_totals()
-    usage = {key: max(usage_after.get(key, 0) - usage_before.get(key, 0), 0) for key in usage_after}
-    if usage.get("total_tokens"):
-        record_token_usage(job_id=job_id, model=job.get("ai_mode") or "smart", usage=usage)
+    finally:
+        current_job_id.reset(token)
     update_search_job(
         job_id,
-        status="success",
+        status="partial_success" if result.get("failures") else "success",
         result=result,
     )
 

@@ -66,6 +66,9 @@ def select_best_candidate(lead: dict[str, Any], candidates: list[dict[str, Any]]
         display_name = (candidate.get("displayName") or {}).get("text") or ""
         name_score = _name_similarity(str(lead.get("name") or ""), display_name)
         location_score = _location_similarity(lead, candidate)
+        # A matching brand name is not enough to identify a branch in a different city.
+        if location_score == 0 and _normalized(lead.get("city")) and _normalized(candidate.get("formattedAddress")):
+            continue
         confidence = round((name_score * 0.8 + location_score * 0.2) * 100)
         ranked.append((confidence, name_score, candidate))
     if not ranked:

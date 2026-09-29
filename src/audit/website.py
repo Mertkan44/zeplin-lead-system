@@ -422,7 +422,7 @@ async def audit_website(
     headers = {"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"}
 
     try:
-        async with httpx.AsyncClient(timeout=timeout, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=timeout, headers=headers, trust_env=False) as client:
             page = await _fetch_public(client, safe_url)
             result["http_status"] = page["status_code"]
             result["content_type"] = page["headers"].get("content-type")

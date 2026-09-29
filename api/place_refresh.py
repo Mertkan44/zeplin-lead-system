@@ -12,14 +12,15 @@ if str(ROOT) not in sys.path:
 
 from src.auth import normalize_email, require_auth
 from src.config import env
-from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options, text_field
 from src.integrations.google_places import is_configured, merge_place_result, search_place
 from src.storage.supabase import (
     fetch_lead_assignments,
     fetch_leads_full,
+    fetch_lead_by_name,
     insert_audit_event,
     insert_run_log,
-    upsert_leads,
+    patch_lead_fields,
 )
 
 
@@ -42,7 +43,11 @@ def _places_refreshed_at(lead: dict):
 def _refresh_one(lead: dict) -> tuple[dict, dict]:
     result = search_place(lead)
     updated = merge_place_result(lead, result)
-    upsert_leads([updated])
+    patch_lead_fields(lead["name"], lead.get("supabase_updated_at"), {
+        key: updated.get(key) for key in (
+            "research", "maps_url", "address", "rating", "review_count", "phone", "website"
+        )
+    })
     return updated, result
 
 
@@ -61,7 +66,11 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, OPTIONS")
             return
-        lead_name = str(payload.get("lead_name") or "").strip()
+        try:
+            lead_name = text_field(payload, "lead_name", max_len=300)
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, OPTIONS")
+            return
         if not lead_name:
             send_json(self, 400, {"ok": False, "error": "lead_name is required"}, allow_methods="GET, POST, OPTIONS")
             return
@@ -69,8 +78,7 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 503, {"ok": False, "error": "Google Places is not configured"}, allow_methods="GET, POST, OPTIONS")
             return
         try:
-            leads = fetch_leads_full(limit=1000)
-            lead = next((item for item in leads if item.get("name") == lead_name), None)
+            lead = fetch_lead_by_name(lead_name)
             if not lead:
                 send_json(self, 404, {"ok": False, "error": "lead not found"}, allow_methods="GET, POST, OPTIONS")
                 return
@@ -107,7 +115,7 @@ class handler(BaseHTTPRequestHandler):
         try:
             batch_size = max(1, min(int(env("PLACES_REFRESH_BATCH_SIZE", "5") or 5), 10))
             stale_before = datetime.now(timezone.utc) - timedelta(days=30)
-            leads = fetch_leads_full(limit=1000)
+            leads = fetch_leads_full(limit=None)
             candidates = sorted(
                 [lead for lead in leads if (_places_refreshed_at(lead) or datetime.min.replace(tzinfo=timezone.utc)) < stale_before],
                 key=lambda lead: _places_refreshed_at(lead) or datetime.min.replace(tzinfo=timezone.utc),

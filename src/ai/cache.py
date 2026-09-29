@@ -81,7 +81,6 @@ def put(
         "usage": usage or {},
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    save_cache(cache, path)
     try:
         from src.storage.supabase import upsert_ai_generation
 
@@ -94,6 +93,11 @@ def put(
             usage=usage or {},
         )
     except Exception:
+        pass
+    try:
+        save_cache(cache, path)
+    except OSError:
+        # Vercel functions may only write to /tmp; remote storage is durable.
         pass
 
 

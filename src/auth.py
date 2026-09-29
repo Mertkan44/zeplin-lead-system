@@ -29,7 +29,7 @@ def auth_configured() -> bool:
 
 
 def normalize_email(value: str | None) -> str:
-    return (value or "").strip().lower()
+    return value.strip().lower() if isinstance(value, str) else ""
 
 
 def verify_admin_password(password: str | None) -> bool:
@@ -40,8 +40,8 @@ def verify_admin_password(password: str | None) -> bool:
 
 
 def make_password_hash(password: str) -> str:
-    if not password:
-        raise ValueError("password is required")
+    if not isinstance(password, str) or len(password) < 12:
+        raise ValueError("password must contain at least 12 characters")
     iterations = 210_000
     salt = os.urandom(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
@@ -206,27 +206,32 @@ def require_lead_access(user: dict[str, Any], lead_name: str) -> None:
         raise PermissionError("lead is not assigned to this user")
 
 
-def login_rate_limited(key: str) -> bool:
+def login_rate_limited(key: str, *, max_attempts: int = _LOGIN_MAX_ATTEMPTS) -> bool:
     key_hash = hashlib.sha256(key.encode("utf-8")).hexdigest()
     durable_result = supabase.check_login_rate_limit(
         key_hash,
-        max_attempts=_LOGIN_MAX_ATTEMPTS,
+        max_attempts=max_attempts,
         window_seconds=_LOGIN_WINDOW_SECONDS,
     )
     if durable_result is not None:
         return durable_result
+    if supabase.is_enabled():
+        # Serverless process-local counters cannot protect a shared login endpoint.
+        raise RuntimeError("durable login limiter is unavailable")
     now = time.time()
     cutoff = now - _LOGIN_WINDOW_SECONDS
     with _login_lock:
         attempts = [stamp for stamp in _login_attempts.get(key, []) if stamp >= cutoff]
         _login_attempts[key] = attempts
-        return len(attempts) >= _LOGIN_MAX_ATTEMPTS
+        return len(attempts) >= max_attempts
 
 
 def record_login_attempt(key: str, *, success: bool) -> None:
     key_hash = hashlib.sha256(key.encode("utf-8")).hexdigest()
     if supabase.record_login_attempt(key_hash, success=success):
         return
+    if supabase.is_enabled():
+        raise RuntimeError("durable login limiter is unavailable")
     with _login_lock:
         if success:
             _login_attempts.pop(key, None)

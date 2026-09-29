@@ -1,4 +1,3 @@
-import base64
 import json
 import sys
 from pathlib import Path
@@ -24,18 +23,15 @@ def build_dashboard(
     issues = validate_leads(data)
     if issues:
         raise ValueError("Invalid lead data:\n" + format_issues(issues, limit=50))
-    # Lead data is loaded only through authenticated APIs. Never publish CRM data in static HTML.
-    payload = base64.b64encode(b"[]").decode("ascii")
-    services_payload = base64.b64encode(
-        json.dumps(ZEPLIN_SERVICES, ensure_ascii=True).encode("utf-8")
-    ).decode("ascii")
-    html = (
-        template_path.read_text(encoding="utf-8")
-        .replace("__DATA__", payload)
-        .replace("__SERVICES__", services_payload)
-    )
+    # Lead data is loaded only through authenticated APIs. Never publish CRM data in static assets.
+    html = template_path.read_text(encoding="utf-8")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
+    bootstrap_template = (ROOT / "src" / "dashboard" / "bootstrap.js").read_text(encoding="utf-8")
+    bootstrap = bootstrap_template.replace(
+        "__SERVICES__", json.dumps(ZEPLIN_SERVICES, ensure_ascii=True, separators=(",", ":"))
+    )
+    (output_path.parent / "bootstrap.js").write_text(bootstrap, encoding="utf-8")
 
 
 if __name__ == "__main__":

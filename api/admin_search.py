@@ -7,7 +7,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import require_admin
-from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.http_api import read_json, send_internal_error, send_json, send_options, text_field
 from src.storage.supabase import (
     create_search_job,
     estimate_search_tokens,
@@ -15,10 +15,6 @@ from src.storage.supabase import (
     fetch_token_summary,
     is_enabled as supabase_enabled,
 )
-
-
-def _clean_text(value: str | None, *, max_len: int = 80) -> str:
-    return (value or "").strip()[:max_len]
 
 
 class handler(BaseHTTPRequestHandler):
@@ -62,14 +58,20 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 400, {"ok": False, "error": str(exc)})
             return
 
-        query = _clean_text(payload.get("query"))
-        city = _clean_text(payload.get("city"))
-        deep_research = bool(payload.get("deep_research", True))
-        ai_mode = _clean_text(payload.get("ai_mode") or "smart", max_len=20)
         try:
-            max_results = min(max(int(payload.get("max_results") or 10), 1), 30)
-        except (TypeError, ValueError):
-            max_results = 10
+            query = text_field(payload, "query", max_len=80)
+            city = text_field(payload, "city", max_len=80)
+            ai_mode = text_field(payload, "ai_mode", max_len=20) or "smart"
+            deep_research = payload.get("deep_research", True)
+            if not isinstance(deep_research, bool):
+                raise ValueError("deep_research must be boolean")
+            requested_max = payload.get("max_results", 10)
+            if isinstance(requested_max, bool) or not isinstance(requested_max, int) or not 1 <= requested_max <= 30:
+                raise ValueError("max_results must be an integer from 1 to 30")
+            max_results = requested_max
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)})
+            return
 
         if not query or not city:
             send_json(self, 400, {"ok": False, "error": "query and city are required"})

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from src.ai import cache
 from src.ai.llm import active_provider, complete_chat
+from src.ai.usage import current_job_id
 from src.config import env
 from src.services import lead_triggers, recommended_package
 
@@ -216,8 +219,15 @@ def _cache_payload(lead: dict[str, Any]) -> dict[str, Any]:
         "service_recommendation": lead.get("recommended_package"),
         "sales_priority_score": lead.get("sales_priority_score"),
         "research": lead.get("research"),
+        "audit_findings": lead.get("audit_findings"),
+        "verified_findings": lead.get("verified_findings"),
+        "sender_name": env("SALES_SENDER_NAME", "Zeplin Media satış ekibi"),
         "prompt_version": AI_PROMPT_VERSION,
     }
+
+
+def ai_input_fingerprint(lead: dict[str, Any]) -> str:
+    return cache.fingerprint(_cache_payload(lead))
 
 
 def _generate_cached(
@@ -234,7 +244,10 @@ def _generate_cached(
     provider = active_provider()
     model_name = model or env("GROQ_MODEL", "llama-3.3-70b-versatile") or "llama-3.3-70b-versatile"
     payload = _cache_payload(lead)
-    key = cache.cache_key(task=task, provider=provider, model=model_name, payload=payload)
+    key = cache.cache_key(
+        task=task, provider=provider, model=model_name,
+        payload={"lead": payload, "prompt": prompt, "system": _system(lead.get("sector", "default"))},
+    )
     if not force:
         cached = cache.get(key)
         if cached:
@@ -255,6 +268,15 @@ def _generate_cached(
         content=result.content,
         usage=result.usage,
     )
+    if result.usage:
+        try:
+            from src.storage.supabase import record_token_usage
+            record_token_usage(
+                job_id=current_job_id.get(), model=result.model,
+                provider=result.provider, usage=result.usage,
+            )
+        except Exception:
+            logging.exception("AI token usage could not be recorded")
     return result.content
 
 
@@ -338,4 +360,8 @@ def enrich_ai_fields(lead: dict[str, Any], *, force: bool = False) -> dict[str, 
         enriched["ai_email"] = None
     enriched["ai_tier"] = lead_ai_tier(enriched)
     enriched["ai_prompt_version"] = AI_PROMPT_VERSION
+    enriched["ai_input_fingerprint"] = ai_input_fingerprint(lead)
+    enriched["ai_generated_at"] = datetime.now(timezone.utc).isoformat()
+    enriched["last_analyzed"] = enriched["ai_generated_at"]
+    enriched["ai_generation_status"] = "complete"
     return enriched

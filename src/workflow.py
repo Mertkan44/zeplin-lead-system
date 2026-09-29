@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import re
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 _FOOD_TERMS = {
@@ -76,6 +77,8 @@ def build_lead_workflow(
     events = events or []
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     manual = lead.get("manual_verification") or {}
+    manual_checked_at = _parse_datetime(manual.get("checked_at"))
+    manual_is_fresh = bool(manual_checked_at and manual_checked_at >= now - timedelta(days=30))
     places = ((lead.get("research") or {}).get("google_places") or {})
     places_refreshed_at = _parse_datetime(places.get("refreshed_at"))
     places_verified = bool(
@@ -87,7 +90,7 @@ def build_lead_workflow(
     checks = []
     for key in required:
         value = manual.get(key) or {}
-        checked = bool(value.get("checked")) or (key == "google" and places_verified)
+        checked = (manual_is_fresh and bool(value.get("checked"))) or (key == "google" and places_verified)
         status = str(value.get("status") or "unknown")
         if key == "google" and places_verified:
             status = "found"
@@ -159,7 +162,7 @@ def build_team_performance(
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    today = now.date()
+    today = now.astimezone(ZoneInfo("Europe/Istanbul")).date()
     emails = {
         str(item.get("user_email") or "").strip().lower()
         for item in assignments
@@ -178,7 +181,7 @@ def build_team_performance(
         ]
         today_events = [
             event for event in actor_events
-            if (_parse_datetime(event.get("happened_at") or event.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)).date() == today
+            if (_parse_datetime(event.get("happened_at") or event.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)).astimezone(ZoneInfo("Europe/Istanbul")).date() == today
         ]
         active_assignments = [
             item for item in assignments
@@ -204,7 +207,8 @@ def build_team_performance(
                 ),
                 "won_total": sum(
                     1 for event in actor_events
-                    if event.get("action") == "contact_result_recorded" and event.get("outcome") == "won"
+                    if (event.get("action") == "contact_result_recorded" and event.get("outcome") == "won")
+                    or event.get("action") == "deal_won"
                 ),
                 "interested_today": sum(
                     1 for event in contact_events

@@ -57,11 +57,20 @@ class handler(BaseHTTPRequestHandler):
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)})
             return
+        if not isinstance(payload.get("email"), str) or not isinstance(payload.get("password"), str) or not isinstance(payload.get("role", ""), str):
+            send_json(self, 400, {"ok": False, "error": "email, password and role must be text"})
+            return
         client_ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
-        throttle_key = f"{client_ip}:{normalize_email(payload.get('email'))}"
-        if login_rate_limited(throttle_key):
+        email = normalize_email(payload.get("email"))
+        throttle_keys = [(f"pair:{client_ip}:{email}", 8), (f"ip:{client_ip}", 40), (f"account:{email}", 16)]
+        try:
+            limited = any(login_rate_limited(key, max_attempts=maximum) for key, maximum in throttle_keys)
+        except RuntimeError:
+            send_json(self, 503, {"ok": False, "error": "login protection is temporarily unavailable"})
+            return
+        if limited:
             insert_audit_event(
-                actor_email=normalize_email(payload.get("email")),
+                actor_email=email,
                 event_type="login_rate_limited",
                 target_type="auth",
                 meta={"ip": client_ip},
@@ -69,8 +78,15 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 429, {"ok": False, "error": "too many login attempts; try again later"})
             return
         user = authenticate_user(payload.get("email"), payload.get("password"), payload.get("role"))
+        try:
+            for key, _ in throttle_keys:
+                if user and key.startswith("ip:"):
+                    continue
+                record_login_attempt(key, success=bool(user))
+        except RuntimeError:
+            send_json(self, 503, {"ok": False, "error": "login protection is temporarily unavailable"})
+            return
         if not user:
-            record_login_attempt(throttle_key, success=False)
             insert_audit_event(
                 actor_email=normalize_email(payload.get("email")),
                 event_type="login_failed",
@@ -79,7 +95,6 @@ class handler(BaseHTTPRequestHandler):
             )
             send_json(self, 401, {"ok": False, "error": "invalid credentials"})
             return
-        record_login_attempt(throttle_key, success=True)
         insert_audit_event(
             actor_email=user.get("email"),
             event_type="login_succeeded",

@@ -5,7 +5,7 @@ create table if not exists public.admin_search_jobs (
   max_results integer not null default 10 check (max_results between 1 and 30),
   deep_research boolean not null default true,
   ai_mode text not null default 'smart' check (ai_mode in ('smart', 'flash', 'pro')),
-  status text not null default 'queued' check (status in ('queued', 'running', 'success', 'failed')),
+  status text not null default 'queued' check (status in ('queued', 'running', 'success', 'partial_success', 'failed')),
   created_by text,
   estimated_tokens integer not null default 0,
   estimated_cost_usd numeric not null default 0,

@@ -84,6 +84,13 @@ def build_contact_result(
     *,
     now: datetime | None = None,
 ) -> dict[str, Any]:
+    for key in ("channel", "outcome", "follow_up_at", "contact_name", "note"):
+        if key in payload and payload[key] is not None and not isinstance(payload[key], str):
+            raise ValueError(f"{key} must be text")
+    if "service_slugs" in payload and not isinstance(payload["service_slugs"], list):
+        raise ValueError("service_slugs must be a list")
+    if any(not isinstance(value, str) for value in (payload.get("service_slugs") or [])):
+        raise ValueError("service_slugs must contain text")
     channel = str(payload.get("channel") or "").strip().lower()
     outcome = str(payload.get("outcome") or "").strip().lower()
     if channel not in CONTACT_CHANNELS:
