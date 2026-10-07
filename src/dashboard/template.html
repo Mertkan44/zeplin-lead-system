@@ -116,6 +116,8 @@
     var BOOTSTRAP_LEADS = JSON.parse(atob('__DATA__'));
     var leads    = BOOTSTRAP_LEADS.slice();
     var services = JSON.parse(atob('__SERVICES__'));
+    // Default follow-up delays in days, from src/activity.py (one rule for UI and API).
+    var FOLLOW_UP_DELAYS = __FOLLOW_UP_DELAYS__;
     // CRM data lives only in memory for the current session; only UI
     // preferences (theme) are kept in localStorage. Purge older CRM caches.
     try {
@@ -220,6 +222,29 @@
   function getLeadEvents(name) {
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
   }
+  // One id per logical submission; a retry of the same submission reuses it.
+  function newRequestId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+
+  const OUTREACH_ERRORS = {
+    LEAD_VERSION_CONFLICT: 'Bu lead sen formu doldururken başka bir işlemle güncellendi. Güncel veriyi alıp tekrar kaydet.',
+    LEAD_NOT_ASSIGNED: 'Bu lead artık sana atanmış değil; sonuç kaydedilmedi.',
+    LEAD_NOT_FOUND: 'Lead bulunamadı; silinmiş veya birleştirilmiş olabilir.',
+    IDEMPOTENCY_KEY_REUSED: 'Form değişti; tekrar kaydet.',
+  };
+
+  function outreachError(code) {
+    const err = new Error(OUTREACH_ERRORS[code] || 'Sonuç kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+    err.code = code || 'outreach_save_failed';
+    return err;
+  }
+
   function persistOutreachEvent(evt) {
     if (!apiReady) return Promise.reject(new Error('api_not_ready'));
     return fetch('/api/outreach', {
@@ -240,17 +265,19 @@
         subject: evt.draftSubject,
         body: evt.draftBody,
         manual_verification: evt.manualVerification,
+        expected_revision: evt.expectedRevision ?? null,
         source: 'dashboard',
-        idempotency_key: `dashboard-${evt.ts}`,
+        idempotency_key: evt.requestId || newRequestId(),
       }),
-    }).then(res => {
+    }).then(async res => {
       notifyIfSessionExpired(res);
-      if (!res.ok) throw new Error('outreach_save_failed');
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw outreachError(data.code);
+      return data;
     });
   }
-  function addOutreach(name, action, date, note) {
-    const evt = { lead: name, action, date, note, ts: Date.now() };
+  function addOutreach(name, action, date, note, requestId) {
+    const evt = { lead: name, action, date, note, requestId, ts: Date.now() };
     return persistOutreachEvent(evt).then(() => {
       const arr = getOutreach();
       arr.push(evt);
@@ -260,25 +287,28 @@
     });
   }
 
-  function saveContactResult(lead, values) {
+  // values.followUpAt is sent only when the user picked a date; otherwise the
+  // server applies the default rule. requestId stays the same across retries.
+  function saveContactResult(lead, values, requestId) {
     const evt = {
       lead: lead.name,
       action: 'contact_result_recorded',
-      date: new Date().toISOString(),
       note: values.note || '',
       channel: values.channel,
       outcome: values.outcome,
       followUpAt: values.followUpAt || null,
       serviceSlugs: values.serviceSlugs || [],
       contactName: values.contactName || null,
+      expectedRevision: Number.isInteger(lead.revision) ? lead.revision : null,
+      requestId,
       ts: Date.now(),
     };
     return persistOutreachEvent(evt).then(data => {
-      const saved = normalizeOutreachEvent((data && data.event) || evt);
-      const arr = getOutreach();
+      const saved = normalizeOutreachEvent(data.event || evt);
+      const arr = getOutreach().filter(item => item.ts !== saved.ts);
       arr.push(saved);
       saveOutreach(arr);
-      if (data && data.status) remoteStatuses[lead.name] = data.status;
+      if (data.status) remoteStatuses[lead.name] = data.status;
       return data;
     });
   }
@@ -1175,8 +1205,7 @@
   }
 
   function followUpForOutcome(outcome) {
-    const delays = { reached_interested: 2, proposal_requested: 1, reached_later: 1, no_answer: 1 };
-    const days = delays[outcome];
+    const days = FOLLOW_UP_DELAYS[outcome];
     if (!days) return '';
     const date = new Date();
     date.setDate(date.getDate() + days);
@@ -1185,10 +1214,14 @@
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function ContactResultDialog({ lead, onClose, onSaved, onOpenLead }) {
+  function ContactResultDialog({ lead, onClose, onSaved, onOpenLead, onRefreshLead }) {
     const [channel, setChannel] = React.useState(lead?.phone ? 'phone' : lead?.social?.instagram_url ? 'instagram' : 'other');
-    const [outcome, setOutcome] = React.useState('reached_interested');
-    const [followUpAt, setFollowUpAt] = React.useState(followUpForOutcome('reached_interested'));
+    // No preselected outcome: an accidental submit must not record interest.
+    const [outcome, setOutcome] = React.useState('');
+    const [followUpAt, setFollowUpAt] = React.useState('');
+    const [followUpTouched, setFollowUpTouched] = React.useState(false);
+    const [errorCode, setErrorCode] = React.useState('');
+    const requestIdRef = React.useRef(null);
     const [contactName, setContactName] = React.useState('');
     const [note, setNote] = React.useState('');
     const [serviceSlugs, setServiceSlugs] = React.useState([]);
@@ -1196,7 +1229,7 @@
     const [copied, setCopied] = React.useState(false);
     const [busy, setBusy] = React.useState(false);
     const [error, setError] = React.useState('');
-    const needsFollowUp = ['reached_interested', 'proposal_requested', 'reached_later', 'no_answer'].includes(outcome);
+    const needsFollowUp = Object.prototype.hasOwnProperty.call(FOLLOW_UP_DELAYS, outcome);
     const workflow = lead?.workflow || {};
     const ready = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
     const playbook = lead?.sales_playbook || {};
@@ -1209,7 +1242,13 @@
 
     React.useEffect(() => {
       setFollowUpAt(followUpForOutcome(outcome));
+      setFollowUpTouched(false);
     }, [outcome]);
+
+    // A changed form is a new submission; an unchanged retry keeps its id.
+    React.useEffect(() => {
+      requestIdRef.current = null;
+    }, [channel, outcome, followUpAt, contactName, note, serviceSlugs, checkedQuestions, lead?.revision]);
 
     function openChannel() {
       if (!ready) return;
@@ -1244,26 +1283,33 @@
 
     function submit(event) {
       event.preventDefault();
+      if (!outcome) {
+        setError('Görüşmenin sonucunu seç.');
+        return;
+      }
       if (needsFollowUp && !followUpAt) {
         setError('Takip tarihi seçmelisin.');
         return;
       }
+      if (!requestIdRef.current) requestIdRef.current = newRequestId();
       setBusy(true);
       setError('');
+      setErrorCode('');
       const discoveryNote = checkedQuestions.length
         ? `Sorulan keşif başlıkları: ${checkedQuestions.map(index => questions[index]).filter(Boolean).join(' | ')}`
         : '';
       saveContactResult(lead, {
         channel,
         outcome,
-        followUpAt: needsFollowUp ? new Date(followUpAt).toISOString() : null,
+        followUpAt: needsFollowUp && followUpTouched ? new Date(followUpAt).toISOString() : null,
         contactName,
         note: [note, discoveryNote].filter(Boolean).join('\n'),
         serviceSlugs,
-      }).then(() => {
+      }, requestIdRef.current).then(() => {
         onSaved();
       }).catch(err => {
         setError(err.message || 'Sonuç kaydedilemedi.');
+        setErrorCode(err.code || '');
       }).finally(() => setBusy(false));
     }
 
@@ -1350,8 +1396,8 @@
           {needsFollowUp && (
             <div>
               <label htmlFor="follow-up-at" style={tw.fieldLabel}>Otomatik takip görevi</label>
-              <input id="follow-up-at" type="datetime-local" value={followUpAt} onChange={event => setFollowUpAt(event.target.value)} style={dialog.input} required/>
-              <div style={tw.autoHint}>Kaydedince bu tarih çalışanın Bugünkü İşler listesine otomatik eklenir.</div>
+              <input id="follow-up-at" type="datetime-local" value={followUpAt} onChange={event => { setFollowUpAt(event.target.value); setFollowUpTouched(true); }} style={dialog.input} required/>
+              <div style={tw.autoHint}>{followUpTouched ? 'Seçtiğin tarih' : `Varsayılan: ${FOLLOW_UP_DELAYS[outcome]} gün sonra 10:00 (İstanbul)`} · kaydedince Bugünkü İşler listesine eklenir.</div>
             </div>
           )}
 
@@ -1384,7 +1430,14 @@
           </div>
 
           </fieldset>
-          {error && <div style={tw.error}>{error}</div>}
+          {error && (
+            <div role="alert" style={tw.error}>
+              {error}
+              {errorCode === 'LEAD_VERSION_CONFLICT' && onRefreshLead && (
+                <button type="button" style={{ ...ld.btnGhost, marginLeft: 10 }} disabled={busy} onClick={() => { setBusy(true); onRefreshLead().finally(() => setBusy(false)); }}>Güncel veriyi al</button>
+              )}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
             <button type="button" style={ld.btnGhost} onClick={onClose} disabled={busy}>Vazgeç</button>
             <button type="submit" style={av.primaryBtn} disabled={busy || !ready}>{busy ? 'Kaydediliyor…' : 'Sonucu ve görevi kaydet'}</button>
@@ -2236,6 +2289,7 @@
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
     const [note,       setNote]       = React.useState('');
+    const noteRequestRef = React.useRef(null);
     const [feedback,   setFeedback]   = React.useState('');
     const [busy,       setBusy]       = React.useState(false);
     const findings   = lead.audit_findings || [];
@@ -2279,7 +2333,13 @@
       const value = note.trim();
       if (!value) return;
       setBusy(true);
-      addOutreach(lead.name, 'note_added', new Date().toISOString(), value).then(() => {
+      // Retrying the same unsaved text reuses its id, so a save that did reach
+      // the server is not stored twice.
+      if (!noteRequestRef.current || noteRequestRef.current.text !== value) {
+        noteRequestRef.current = { text: value, id: newRequestId() };
+      }
+      addOutreach(lead.name, 'note_added', new Date().toISOString(), value, noteRequestRef.current.id).then(() => {
+        noteRequestRef.current = null;
         setNote('');
         setFeedback('Not kaydedildi.');
         if (onDataChange) onDataChange();
@@ -3971,6 +4031,9 @@
               setResultLead(null);
               refreshWorkspace();
             }}
+            onRefreshLead={() => refreshWorkspace().then(() => {
+              setResultLead(current => (current && leads.find(item => item.name === current.name)) || current);
+            })}
           />
         )}
       </div>

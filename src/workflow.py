@@ -123,6 +123,9 @@ def build_lead_workflow(
     if status in {"converted", "lost"}:
         stage = "closed"
         stage_label = "Kapatıldı"
+    elif (latest_contact or {}).get("outcome") == "wrong_number":
+        stage = "verification_required"
+        stage_label = "Numarayı doğrula"
     elif follow_up_at and follow_up_at <= now:
         stage = "follow_up_due"
         stage_label = "Takip zamanı geldi"

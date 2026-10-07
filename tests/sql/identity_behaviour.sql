@@ -74,7 +74,7 @@ begin
 
   -- Readiness reports every check as passing.
   readiness := public.schema_readiness();
-  assert readiness ->> 'version' = '008', 'schema version is recorded';
+  assert readiness ->> 'version' >= '008', 'schema version is recorded';
   assert not exists (
     select 1 from jsonb_each(readiness -> 'checks') where value <> 'true'::jsonb
   ), 'all readiness checks pass: ' || (readiness -> 'checks')::text;

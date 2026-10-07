@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.lead_schema import format_issues, validate_leads
+from src.activity import FOLLOW_UP_DELAYS
 from src.services import ZEPLIN_SERVICES
 
 DEFAULT_DATA = ROOT / "leads_final.json"
@@ -33,6 +34,7 @@ def build_dashboard(
         template_path.read_text(encoding="utf-8")
         .replace("__DATA__", payload)
         .replace("__SERVICES__", services_payload)
+        .replace("__FOLLOW_UP_DELAYS__", json.dumps(FOLLOW_UP_DELAYS, sort_keys=True))
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")

@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import api.health as health_api
 from src.lead_identity import find_identity_conflicts, google_place_id, lead_external_id
-from src.storage.supabase import _in_list, _lead_row, evaluate_schema_readiness
+from src.storage.supabase import REQUIRED_SCHEMA_VERSION, _in_list, _lead_row, evaluate_schema_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
 ALL_CHECKS = {
@@ -31,10 +31,10 @@ def _lead(name, place_id=None, phone=None, website=None, lead_id=None, verified=
 
 class SchemaReadinessTests(unittest.TestCase):
     def test_ready_only_with_required_version_and_all_checks(self):
-        self.assertTrue(evaluate_schema_readiness({"version": "008", "checks": ALL_CHECKS})["ready"])
-        old = evaluate_schema_readiness({"version": "007", "checks": ALL_CHECKS})
+        self.assertTrue(evaluate_schema_readiness({"version": REQUIRED_SCHEMA_VERSION, "checks": ALL_CHECKS})["ready"])
+        old = evaluate_schema_readiness({"version": "008", "checks": ALL_CHECKS})
         self.assertFalse(old["ready"])
-        broken = evaluate_schema_readiness({"version": "008", "checks": {**ALL_CHECKS, "idempotency_constraint": False}})
+        broken = evaluate_schema_readiness({"version": REQUIRED_SCHEMA_VERSION, "checks": {**ALL_CHECKS, "idempotency_constraint": False}})
         self.assertFalse(broken["ready"])
         self.assertEqual(broken["failed_checks"], ["idempotency_constraint"])
 

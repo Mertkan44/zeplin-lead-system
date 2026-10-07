@@ -28,7 +28,20 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-Migration 008 is required by the current code. It repairs idempotent outreach
+The current code requires migration 009. Always apply new migrations before
+deploying the code that needs them; every migration also works with the previous
+code version.
+
+Migration 009 records a contact result in one transaction (`record_contact_result`):
+the event, the lead status, the owner's follow-up date and an audit event are
+written together or not at all, ownership is re-checked inside the transaction, a
+stale form (lead `revision` changed meanwhile) gets 409, and the idempotency key
+(one UUID per submission) makes retries return the first answer instead of writing
+again. Won and lost results close the open follow-up; a wrong number sends the
+lead back to verification. Default follow-up dates come from `FOLLOW_UP_DELAYS` in
+`src/activity.py` for both the API and the dashboard.
+
+Migration 008 repairs idempotent outreach
 writes (databases built from migrations rejected every `on_conflict=idempotency_key`
 insert), adds stable `lead_id` columns and `lead_sources` (Google place ids) next to
 the name-based keys, and records the schema version. Check a deployment with
