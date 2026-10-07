@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -113,6 +114,26 @@ def build_contact_result(
         "contact_name": str(payload.get("contact_name") or "").strip()[:120] or None,
         "note": str(payload.get("note") or "").strip()[:4000] or None,
     }
+
+
+def contact_request_hash(lead_name: str, payload: dict[str, Any]) -> str:
+    """Fingerprint of what the user submitted, for idempotent retries.
+
+    Built from the submitted fields, not from computed ones such as the default
+    follow-up date, so a retry an hour later still matches the first attempt.
+    """
+    fields = {
+        "lead_name": lead_name,
+        "channel": str(payload.get("channel") or "").strip().lower(),
+        "outcome": str(payload.get("outcome") or "").strip().lower(),
+        "follow_up_at": payload.get("follow_up_at") or None,
+        "service_slugs": [str(item) for item in payload.get("service_slugs") or []],
+        "contact_name": str(payload.get("contact_name") or "").strip(),
+        "note": str(payload.get("note") or "").strip(),
+        "expected_revision": payload.get("expected_revision"),
+    }
+    canonical = json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def encode_activity_note(activity: dict[str, Any]) -> str:

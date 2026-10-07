@@ -14,6 +14,8 @@
       --bg: #0a0a0b; --panel: #141418; --panel2: #17171c; --raised: #1c1c22;
       --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
       --tx: #f3f3f0; --sub: #93938f; --muted: #5c5c5a;
+      --selected-bg: #000000; --selected-tx: #f3f3f0;
+      --warn-bg: rgba(244,197,107,0.12); --warn-tx: #f4c56b;
       --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.06), transparent 60%);
       --r: 26px; --rs: 18px;
     }
@@ -22,6 +24,8 @@
       --bg: #faf9f4; --panel: #ffffff; --panel2: #f3f1e9; --raised: #efece0;
       --line: #e9e4d6; --line2: #ddd6c2;
       --tx: #0c0b08; --sub: #4a4535; --muted: #8b856f;
+      --selected-bg: #0c0b08; --selected-tx: #faf9f4;
+      --warn-bg: #fff4dc; --warn-tx: #855500;
       --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.14), transparent 60%);
     }
     html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
@@ -112,19 +116,33 @@
     var BOOTSTRAP_LEADS = JSON.parse(atob('__DATA__'));
     var leads    = BOOTSTRAP_LEADS.slice();
     var services = JSON.parse(atob('__SERVICES__'));
-    var STATUS_KEY   = 'zeplin_lead_statuses_v4';
-    var OUTREACH_KEY = 'zeplin_outreach_v2';
+    // Default follow-up delays in days, from src/activity.py (one rule for UI and API).
+    var FOLLOW_UP_DELAYS = __FOLLOW_UP_DELAYS__;
+    // CRM data lives only in memory for the current session; only UI
+    // preferences (theme) are kept in localStorage. Purge older CRM caches.
     try {
       [
         'zeplin_lead_statuses_v1',
         'zeplin_lead_statuses_v2',
         'zeplin_lead_statuses_v3',
+        'zeplin_lead_statuses_v4',
         'zeplin_outreach_v1',
+        'zeplin_outreach_v2',
       ].forEach(key => localStorage.removeItem(key));
     } catch(e) {}
     var remoteStatuses = {};
     var outreachEvents = [];
     var apiReady = false;
+    // Bumped whenever the signed-in user changes so late responses from the
+    // previous session are dropped instead of written into the new one.
+    var crmSession = 0;
+    function clearCrmState() {
+      crmSession += 1;
+      leads = [];
+      remoteStatuses = {};
+      outreachEvents = [];
+      apiReady = false;
+    }
   </script>
 
   <script type="text/babel">
@@ -149,14 +167,8 @@
     } catch(e) { return str; }
   }
 
-  function readLocalStatuses() {
-    try { return JSON.parse(localStorage.getItem(STATUS_KEY) || '{}'); } catch(e) { return {}; }
-  }
-  function writeLocalStatuses(obj) {
-    localStorage.setItem(STATUS_KEY, JSON.stringify(obj || {}));
-  }
   function getStatuses() {
-    return Object.assign({}, readLocalStatuses(), remoteStatuses);
+    return Object.assign({}, remoteStatuses);
   }
   function persistStatus(name, s) {
     if (!apiReady) return Promise.reject(new Error('api_not_ready'));
@@ -165,6 +177,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, status: s }),
     }).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) throw new Error('status_save_failed');
       return res.json();
     });
@@ -179,9 +192,6 @@
     });
   }
 
-  function readLocalOutreach() {
-    try { return JSON.parse(localStorage.getItem(OUTREACH_KEY) || '[]'); } catch(e) { return []; }
-  }
   function normalizeOutreachEvent(item) {
     if (!item) return null;
     return {
@@ -204,15 +214,37 @@
     };
   }
   function getOutreach() {
-    return outreachEvents.length ? outreachEvents : readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
+    return outreachEvents;
   }
   function saveOutreach(arr) {
     outreachEvents = (arr || []).map(normalizeOutreachEvent).filter(Boolean);
-    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
   }
   function getLeadEvents(name) {
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
   }
+  // One id per logical submission; a retry of the same submission reuses it.
+  function newRequestId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+
+  const OUTREACH_ERRORS = {
+    LEAD_VERSION_CONFLICT: 'Bu lead sen formu doldururken başka bir işlemle güncellendi. Güncel veriyi alıp tekrar kaydet.',
+    LEAD_NOT_ASSIGNED: 'Bu lead artık sana atanmış değil; sonuç kaydedilmedi.',
+    LEAD_NOT_FOUND: 'Lead bulunamadı; silinmiş veya birleştirilmiş olabilir.',
+    IDEMPOTENCY_KEY_REUSED: 'Form değişti; tekrar kaydet.',
+  };
+
+  function outreachError(code) {
+    const err = new Error(OUTREACH_ERRORS[code] || 'Sonuç kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
+    err.code = code || 'outreach_save_failed';
+    return err;
+  }
+
   function persistOutreachEvent(evt) {
     if (!apiReady) return Promise.reject(new Error('api_not_ready'));
     return fetch('/api/outreach', {
@@ -233,16 +265,19 @@
         subject: evt.draftSubject,
         body: evt.draftBody,
         manual_verification: evt.manualVerification,
+        expected_revision: evt.expectedRevision ?? null,
         source: 'dashboard',
-        idempotency_key: `dashboard-${evt.ts}`,
+        idempotency_key: evt.requestId || newRequestId(),
       }),
-    }).then(res => {
-      if (!res.ok) throw new Error('outreach_save_failed');
-      return res.json();
+    }).then(async res => {
+      notifyIfSessionExpired(res);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw outreachError(data.code);
+      return data;
     });
   }
-  function addOutreach(name, action, date, note) {
-    const evt = { lead: name, action, date, note, ts: Date.now() };
+  function addOutreach(name, action, date, note, requestId) {
+    const evt = { lead: name, action, date, note, requestId, ts: Date.now() };
     return persistOutreachEvent(evt).then(() => {
       const arr = getOutreach();
       arr.push(evt);
@@ -252,25 +287,28 @@
     });
   }
 
-  function saveContactResult(lead, values) {
+  // values.followUpAt is sent only when the user picked a date; otherwise the
+  // server applies the default rule. requestId stays the same across retries.
+  function saveContactResult(lead, values, requestId) {
     const evt = {
       lead: lead.name,
       action: 'contact_result_recorded',
-      date: new Date().toISOString(),
       note: values.note || '',
       channel: values.channel,
       outcome: values.outcome,
       followUpAt: values.followUpAt || null,
       serviceSlugs: values.serviceSlugs || [],
       contactName: values.contactName || null,
+      expectedRevision: Number.isInteger(lead.revision) ? lead.revision : null,
+      requestId,
       ts: Date.now(),
     };
     return persistOutreachEvent(evt).then(data => {
-      const saved = normalizeOutreachEvent((data && data.event) || evt);
-      const arr = getOutreach();
+      const saved = normalizeOutreachEvent(data.event || evt);
+      const arr = getOutreach().filter(item => item.ts !== saved.ts);
       arr.push(saved);
       saveOutreach(arr);
-      if (data && data.status) remoteStatuses[lead.name] = data.status;
+      if (data.status) remoteStatuses[lead.name] = data.status;
       return data;
     });
   }
@@ -286,6 +324,7 @@
         status: 'active',
       }),
     }).then(async response => {
+      notifyIfSessionExpired(response);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Atama kaydedilemedi.');
       return data;
@@ -336,18 +375,25 @@
     leads = rows.slice();
     remoteStatuses = {};
     leads.forEach(l => { remoteStatuses[l.name] = l.status || 'yeni'; });
-    writeLocalStatuses(getStatuses());
   }
 
   function applyRemoteOutreach(rows) {
     if (!Array.isArray(rows)) return;
     outreachEvents = rows.map(normalizeOutreachEvent).filter(Boolean);
-    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
+  }
+
+  // A 401 from any CRM endpoint means the session is gone: App clears the CRM
+  // state and returns to login. 403 only means "not allowed" and keeps the session.
+  function notifyIfSessionExpired(res) {
+    if (res.status === 401 && !String(res.url || '').includes('/api/auth')) {
+      window.dispatchEvent(new Event('zeplin:session-expired'));
+    }
   }
 
   function fetchJSON(url, options) {
     const opts = { credentials: 'same-origin', ...(options || {}) };
     return fetch(url, opts).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) {
         return res.json().catch(() => ({})).then(data => {
           throw new Error(data.error || `request_failed_${res.status}`);
@@ -361,6 +407,7 @@
     const opts = { credentials: 'same-origin', ...(options || {}) };
     opts.headers = { 'Content-Type': 'application/json', ...((options || {}).headers || {}) };
     return fetch(url, opts).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) {
         return res.json().catch(() => ({})).then(data => {
           throw new Error(data.error || `request_failed_${res.status}`);
@@ -968,7 +1015,7 @@
     brandSub:     { fontSize: 11, color: 'var(--muted)', marginTop: 1 },
     nav:          { display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5, overflowX: 'auto', flexShrink: 1 },
     item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'transparent', color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
-    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: '#000', color: 'var(--tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
+    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'var(--selected-bg)', color: 'var(--selected-tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
     badge:        { fontSize: 10.5, background: 'var(--raised)', color: 'var(--sub)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
@@ -1158,8 +1205,7 @@
   }
 
   function followUpForOutcome(outcome) {
-    const delays = { reached_interested: 2, proposal_requested: 1, reached_later: 1, no_answer: 1 };
-    const days = delays[outcome];
+    const days = FOLLOW_UP_DELAYS[outcome];
     if (!days) return '';
     const date = new Date();
     date.setDate(date.getDate() + days);
@@ -1168,10 +1214,14 @@
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function ContactResultDialog({ lead, onClose, onSaved, onOpenLead }) {
+  function ContactResultDialog({ lead, onClose, onSaved, onOpenLead, onRefreshLead }) {
     const [channel, setChannel] = React.useState(lead?.phone ? 'phone' : lead?.social?.instagram_url ? 'instagram' : 'other');
-    const [outcome, setOutcome] = React.useState('reached_interested');
-    const [followUpAt, setFollowUpAt] = React.useState(followUpForOutcome('reached_interested'));
+    // No preselected outcome: an accidental submit must not record interest.
+    const [outcome, setOutcome] = React.useState('');
+    const [followUpAt, setFollowUpAt] = React.useState('');
+    const [followUpTouched, setFollowUpTouched] = React.useState(false);
+    const [errorCode, setErrorCode] = React.useState('');
+    const requestIdRef = React.useRef(null);
     const [contactName, setContactName] = React.useState('');
     const [note, setNote] = React.useState('');
     const [serviceSlugs, setServiceSlugs] = React.useState([]);
@@ -1179,7 +1229,7 @@
     const [copied, setCopied] = React.useState(false);
     const [busy, setBusy] = React.useState(false);
     const [error, setError] = React.useState('');
-    const needsFollowUp = ['reached_interested', 'proposal_requested', 'reached_later', 'no_answer'].includes(outcome);
+    const needsFollowUp = Object.prototype.hasOwnProperty.call(FOLLOW_UP_DELAYS, outcome);
     const workflow = lead?.workflow || {};
     const ready = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
     const playbook = lead?.sales_playbook || {};
@@ -1192,7 +1242,13 @@
 
     React.useEffect(() => {
       setFollowUpAt(followUpForOutcome(outcome));
+      setFollowUpTouched(false);
     }, [outcome]);
+
+    // A changed form is a new submission; an unchanged retry keeps its id.
+    React.useEffect(() => {
+      requestIdRef.current = null;
+    }, [channel, outcome, followUpAt, contactName, note, serviceSlugs, checkedQuestions, lead?.revision]);
 
     function openChannel() {
       if (!ready) return;
@@ -1227,26 +1283,33 @@
 
     function submit(event) {
       event.preventDefault();
+      if (!outcome) {
+        setError('Görüşmenin sonucunu seç.');
+        return;
+      }
       if (needsFollowUp && !followUpAt) {
         setError('Takip tarihi seçmelisin.');
         return;
       }
+      if (!requestIdRef.current) requestIdRef.current = newRequestId();
       setBusy(true);
       setError('');
+      setErrorCode('');
       const discoveryNote = checkedQuestions.length
         ? `Sorulan keşif başlıkları: ${checkedQuestions.map(index => questions[index]).filter(Boolean).join(' | ')}`
         : '';
       saveContactResult(lead, {
         channel,
         outcome,
-        followUpAt: needsFollowUp ? new Date(followUpAt).toISOString() : null,
+        followUpAt: needsFollowUp && followUpTouched ? new Date(followUpAt).toISOString() : null,
         contactName,
         note: [note, discoveryNote].filter(Boolean).join('\n'),
         serviceSlugs,
-      }).then(() => {
+      }, requestIdRef.current).then(() => {
         onSaved();
       }).catch(err => {
         setError(err.message || 'Sonuç kaydedilemedi.');
+        setErrorCode(err.code || '');
       }).finally(() => setBusy(false));
     }
 
@@ -1333,8 +1396,8 @@
           {needsFollowUp && (
             <div>
               <label htmlFor="follow-up-at" style={tw.fieldLabel}>Otomatik takip görevi</label>
-              <input id="follow-up-at" type="datetime-local" value={followUpAt} onChange={event => setFollowUpAt(event.target.value)} style={dialog.input} required/>
-              <div style={tw.autoHint}>Kaydedince bu tarih çalışanın Bugünkü İşler listesine otomatik eklenir.</div>
+              <input id="follow-up-at" type="datetime-local" value={followUpAt} onChange={event => { setFollowUpAt(event.target.value); setFollowUpTouched(true); }} style={dialog.input} required/>
+              <div style={tw.autoHint}>{followUpTouched ? 'Seçtiğin tarih' : `Varsayılan: ${FOLLOW_UP_DELAYS[outcome]} gün sonra 10:00 (İstanbul)`} · kaydedince Bugünkü İşler listesine eklenir.</div>
             </div>
           )}
 
@@ -1367,7 +1430,14 @@
           </div>
 
           </fieldset>
-          {error && <div style={tw.error}>{error}</div>}
+          {error && (
+            <div role="alert" style={tw.error}>
+              {error}
+              {errorCode === 'LEAD_VERSION_CONFLICT' && onRefreshLead && (
+                <button type="button" style={{ ...ld.btnGhost, marginLeft: 10 }} disabled={busy} onClick={() => { setBusy(true); onRefreshLead().finally(() => setBusy(false)); }}>Güncel veriyi al</button>
+              )}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
             <button type="button" style={ld.btnGhost} onClick={onClose} disabled={busy}>Vazgeç</button>
             <button type="submit" style={av.primaryBtn} disabled={busy || !ready}>{busy ? 'Kaydediliyor…' : 'Sonucu ve görevi kaydet'}</button>
@@ -1756,7 +1826,7 @@
     const dateStr = React.useMemo(() => new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), []);
 
     const kpis = [
-      { label: user?.role === 'admin' ? 'Atanan Lead' : 'Bana Atanan', value: String(assignedCount || leads.length), delta: `${leads.length} aktif kayıt`, dot: 'var(--accent)' },
+      { label: user?.role === 'admin' ? 'Atanan Lead' : 'Bana Atanan', value: String(assignedCount), delta: `${leads.length} görünür kayıt`, dot: 'var(--accent)' },
       { label: 'Bugünkü Arama', value: String(todayCalls),    delta: 'gerçek aktivite',  dot: '#ffcf4a' },
       { label: 'Takip Bekleyen',value: String(followUps),     delta: 'yeniden temas',    dot: '#7cc5ff' },
       { label: 'Kazanılan',     value: String(converted),     delta: 'müşteri oldu',     dot: '#b6f24a' },
@@ -1994,6 +2064,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lead_name: lead.name }),
       }).then(async response => {
+        notifyIfSessionExpired(response);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || 'Google verisi yenilenemedi.');
         if (data.place?.status !== 'verified') throw new Error('Google’da güvenilir işletme eşleşmesi bulunamadı; manuel kontrol et.');
@@ -2218,6 +2289,7 @@
     const [showEmail,  setShowEmail]  = React.useState(false);
     const [copied,     setCopied]     = React.useState(false);
     const [note,       setNote]       = React.useState('');
+    const noteRequestRef = React.useRef(null);
     const [feedback,   setFeedback]   = React.useState('');
     const [busy,       setBusy]       = React.useState(false);
     const findings   = lead.audit_findings || [];
@@ -2261,14 +2333,20 @@
       const value = note.trim();
       if (!value) return;
       setBusy(true);
-      addOutreach(lead.name, 'note_added', new Date().toISOString(), value).then(() => {
+      // Retrying the same unsaved text reuses its id, so a save that did reach
+      // the server is not stored twice.
+      if (!noteRequestRef.current || noteRequestRef.current.text !== value) {
+        noteRequestRef.current = { text: value, id: newRequestId() };
+      }
+      addOutreach(lead.name, 'note_added', new Date().toISOString(), value, noteRequestRef.current.id).then(() => {
+        noteRequestRef.current = null;
+        setNote('');
         setFeedback('Not kaydedildi.');
+        if (onDataChange) onDataChange();
       }).catch(() => {
-        setFeedback('Not kaydedilemedi. Bağlantıyı kontrol et.');
+        setFeedback('Not kaydedilemedi; metnin duruyor. Bağlantıyı kontrol edip tekrar kaydet.');
       }).finally(() => {
         setBusy(false);
-        setNote('');
-        if (onDataChange) onDataChange();
       });
     }
 
@@ -3340,7 +3418,7 @@
           </div>
           <div style={{ display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5 }}>
             {[7, 30, 90, 'all'].map(days => (
-              <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? '#000' : 'transparent', color: periodDays === days ? 'var(--tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
+              <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? 'var(--selected-bg)' : 'transparent', color: periodDays === days ? 'var(--selected-tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
                 {days === 'all' ? 'Tümü' : days === 90 ? 'Çeyrek' : `${days}g`}
               </button>
             ))}
@@ -3598,16 +3676,12 @@
 
   // ── Login ──────────────────────────────────────────────────────────────────
 
-  function LoginView({ onSubmit }) {
+  function LoginView({ onSubmit, notice }) {
     const [role, setRole]         = React.useState('admin');
     const [email, setEmail]       = React.useState('');
     const [password, setPassword] = React.useState('');
     const [error, setError]       = React.useState(false);
     const [busy, setBusy]         = React.useState(false);
-
-    const totalLeads = leads.length;
-    const converted   = leads.filter(l => (getStatuses()[l.name] || 'yeni') === 'converted').length;
-    const pipelineVal = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
 
     function submit(e) {
       e.preventDefault();
@@ -3632,11 +3706,6 @@
             <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Bugün kimi arayacağını bilerek başla.</div>
             <div style={{ marginTop: 14, fontSize: 14.5, color: '#a6a28f', lineHeight: 1.5 }}>Yapay zekâ her lead için sıradaki en iyi aksiyonu, gerekçesini ve hazır mesajını hazırlar. Sen sadece ara.</div>
           </div>
-          <div style={{ position: 'relative', display: 'flex', gap: 26, flexWrap: 'wrap' }}>
-            <div><div style={lv.statVal}>{totalLeads}</div><div style={lv.statLbl}>Aktif lead</div></div>
-            <div><div style={{ ...lv.statVal, color: '#fff' }}>{converted}</div><div style={lv.statLbl}>Kazanıldı</div></div>
-            <div><div style={{ ...lv.statVal, color: '#fff' }}>~{fmt(pipelineVal)} ₺</div><div style={lv.statLbl}>Pipeline değeri</div></div>
-          </div>
         </div>
 
         <div style={lv.formPane}>
@@ -3658,6 +3727,7 @@
               </label>
             </div>
 
+            {notice && !error && <div style={lv.notice} role="status">{notice}</div>}
             {error && <div style={lv.error}>E-posta veya şifre hatalı. Tekrar dene.</div>}
 
             <button style={{ ...lv.submitBtn, opacity: busy ? 0.75 : 1 }} disabled={busy}>
@@ -3688,6 +3758,7 @@
     error:        { marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
     submitBtn:    { marginTop: 18, width: '100%', height: 46, border: 'none', borderRadius: 12, background: 'var(--accent)', color: 'var(--accent-ink)', fontFamily: "'Instrument Sans'", fontSize: 14.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 },
     spinner:      { width: 15, height: 15, border: '2px solid rgba(18,20,10,0.35)', borderTopColor: '#12140a', borderRadius: 999, display: 'inline-block', animation: 'zspin .7s linear infinite' },
+    notice:       { marginTop: 12, padding: '10px 12px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
     hint:         { marginTop: 14, fontSize: 11.5, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 },
   };
 
@@ -3772,6 +3843,7 @@
     const [teamUsers,   setTeamUsers]   = React.useState([]);
     const [teamPerformance, setTeamPerformance] = React.useState([]);
     const [integrations, setIntegrations] = React.useState({});
+    const [schemaStatus, setSchemaStatus] = React.useState(null);
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
     const [searchOpen,  setSearchOpen]  = React.useState(false);
@@ -3803,27 +3875,31 @@
       });
       setTeamPerformance(Array.isArray(data.team_performance) ? data.team_performance : []);
       setIntegrations(data.integrations || {});
+      setSchemaStatus(data.schema || null);
     }
 
     function refreshWorkspace() {
+      const session = crmSession;
       return fetchJSON('/api/workspace')
         .then(data => {
+          if (session !== crmSession) return;
           hydrateWorkspace(data);
           setDataError('');
         })
         .catch(err => {
-          apiReady = false;
+          if (session !== crmSession) return;
           setDataError(err.message);
-          leads = [];
-          outreachEvents = [];
-          syncSharedState({ summary: null, assignments: [] });
         });
     }
 
     function refreshTeamUsers() {
+      const session = crmSession;
       return fetchJSON('/api/users')
-        .then(data => setTeamUsers(Array.isArray(data.users) ? data.users : []))
+        .then(data => {
+          if (session === crmSession) setTeamUsers(Array.isArray(data.users) ? data.users : []);
+        })
         .catch(err => {
+          if (session !== crmSession) return;
           console.warn('Users API fallback:', err);
           setTeamUsers(user ? [user] : []);
         });
@@ -3925,6 +4001,20 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
         <Topbar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick} onOpenSearch={openSearch} theme={theme} onToggleTheme={onToggleTheme} user={user} onLogout={onLogout}/>
+        {schemaStatus && !schemaStatus.ready && (
+          <div role="alert" style={staleBanner.root}>
+            <span>
+              Veritabanı şeması bu sürümle uyumlu değil (kurulu: {schemaStatus.version || 'bilinmiyor'}, gereken: {schemaStatus.required_version}).
+              {schemaStatus.failed_checks?.length ? ` Eksik: ${schemaStatus.failed_checks.join(', ')}.` : ''} Eksik migration'ları README'deki sırayla uygula.
+            </span>
+          </div>
+        )}
+        {dataError && sorted.length > 0 && (
+          <div role="status" style={staleBanner.root}>
+            <span>Veriler güncellenemedi; son alınan veriler gösteriliyor. ({dataError})</span>
+            <button type="button" style={staleBanner.btn} onClick={() => refreshWorkspace()}>Tekrar dene</button>
+          </div>
+        )}
         <div style={{ display: 'flex', flex: 1, minWidth: 0 }}>
           {renderContent()}
         </div>
@@ -3941,11 +4031,19 @@
               setResultLead(null);
               refreshWorkspace();
             }}
+            onRefreshLead={() => refreshWorkspace().then(() => {
+              setResultLead(current => (current && leads.find(item => item.name === current.name)) || current);
+            })}
           />
         )}
       </div>
     );
   }
+
+  const staleBanner = {
+    root: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 16px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderBottom: '1px solid var(--line)', fontSize: 13, fontWeight: 600 },
+    btn: { height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid currentColor', background: 'transparent', color: 'inherit', font: '700 12.5px Instrument Sans', cursor: 'pointer' },
+  };
 
   // ── Root: theme + auth gate ─────────────────────────────────────────────────
 
@@ -3954,6 +4052,21 @@
     const [auth, setAuth]   = React.useState({ loading: true, configured: false, authenticated: false, user: null });
     const [logoutOpen, setLogoutOpen] = React.useState(false);
     const [logoutBusy, setLogoutBusy] = React.useState(false);
+    const [logoutError, setLogoutError] = React.useState('');
+    const [loginNotice, setLoginNotice] = React.useState('');
+
+    function endSession(notice) {
+      clearCrmState();
+      setLogoutOpen(false);
+      setLoginNotice(notice || '');
+      setAuth({ loading: false, configured: true, authenticated: false, user: null });
+    }
+
+    React.useEffect(() => {
+      function onExpired() { endSession('Oturumun sona erdi. Devam etmek için tekrar giriş yap.'); }
+      window.addEventListener('zeplin:session-expired', onExpired);
+      return () => window.removeEventListener('zeplin:session-expired', onExpired);
+    }, []);
 
     React.useEffect(() => {
       document.documentElement.dataset.theme = theme;
@@ -3976,17 +4089,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
       }).then(data => {
+        clearCrmState();
+        setLoginNotice('');
         setAuth({ loading: false, configured: true, authenticated: true, user: data.user || null });
       });
     }
 
     function logout() {
       setLogoutBusy(true);
+      setLogoutError('');
       fetchJSON('/api/auth', { method: 'DELETE' })
-        .then(() => {
-          setLogoutOpen(false);
-          setAuth({ loading: false, configured: true, authenticated: false, user: null });
-        })
+        .then(() => endSession(''))
+        .catch(() => setLogoutError('Çıkış yapılamadı. Bağlantını kontrol edip tekrar dene.'))
         .finally(() => setLogoutBusy(false));
     }
 
@@ -3995,19 +4109,19 @@
     }
 
     if (!auth.authenticated) {
-      return <LoginView onSubmit={login}/>;
+      return <LoginView onSubmit={login} notice={loginNotice}/>;
     }
 
     return (
       <React.Fragment>
-        <Dashboard user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
+        <Dashboard key={auth.user?.email || 'session'} user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
         {logoutOpen && (
           <ConfirmDialog
             title="Oturumu kapat"
-            text="Bu cihazdaki Zeplin oturumun kapatılacak."
+            text={logoutError || 'Bu cihazdaki Zeplin oturumun kapatılacak.'}
             confirmLabel="Çıkış yap"
             busy={logoutBusy}
-            onCancel={() => setLogoutOpen(false)}
+            onCancel={() => { setLogoutOpen(false); setLogoutError(''); }}
             onConfirm={logout}
           />
         )}

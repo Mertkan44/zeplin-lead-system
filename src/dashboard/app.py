@@ -8,14 +8,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.storage.supabase import (
-    fetch_lead_assignments,
     fetch_leads_full,
     fetch_outreach_events,
     insert_outreach_event,
     is_enabled as supabase_enabled,
     set_lead_status,
 )
-from src.auth import current_user, normalize_email, require_lead_access
+from src.auth import current_user, lead_read_scope, normalize_email, require_lead_access
 
 PUBLIC_DIR = ROOT / "public"
 
@@ -44,12 +43,10 @@ def get_leads():
     if supabase_enabled():
         try:
             leads = fetch_leads_full(limit=limit)
-            if user.get("role") != "admin":
-                assignments = fetch_lead_assignments(
-                    user_email=normalize_email(user.get("sub")), status="active", limit=1000
-                )
-                assigned = {item.get("lead_name") for item in assignments}
-                leads = [lead for lead in leads if lead.get("name") in assigned]
+            scope = lead_read_scope(user)
+            if scope is not None:
+                readable_names, _ = scope
+                leads = [lead for lead in leads if lead.get("name") in readable_names]
             return jsonify(leads)
         except Exception as exc:
             app.logger.exception("Supabase lead fetch failed")
@@ -91,12 +88,10 @@ def get_outreach():
         limit = min(int(request.args.get("limit", 500)), 1000)
         lead_name = request.args.get("lead")
         events = fetch_outreach_events(limit=limit)
-        if user.get("role") != "admin":
-            assignments = fetch_lead_assignments(
-                user_email=normalize_email(user.get("sub")), status="active", limit=1000
-            )
-            assigned = {item.get("lead_name") for item in assignments}
-            events = [event for event in events if event.get("lead_name") in assigned]
+        scope = lead_read_scope(user)
+        if scope is not None:
+            readable_names, _ = scope
+            events = [event for event in events if event.get("lead_name") in readable_names]
         if lead_name:
             events = [event for event in events if event.get("lead_name") == lead_name]
         return jsonify(events)

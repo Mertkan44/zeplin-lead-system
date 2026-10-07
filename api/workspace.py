@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import normalize_email, require_auth
+from src.auth import lead_read_scope, normalize_email, require_auth
 from src.activity import enrich_outreach_event
 from src.http_api import send_internal_error, send_json, send_options
 from src.sales_assistant import build_sales_playbook
@@ -22,6 +22,7 @@ from src.storage.supabase import (
     fetch_leads_full,
     fetch_outreach_events,
     is_enabled as supabase_enabled,
+    schema_status,
 )
 
 
@@ -60,9 +61,12 @@ def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> 
         lead_name = event.get("lead_name") or ""
         if lead_name and lead_name not in latest_results:
             latest_results[lead_name] = event
-    for event in latest_results.values():
+    closed_names = {
+        lead.get("name") for lead in leads if lead.get("status") in {"converted", "lost"}
+    }
+    for lead_name, event in latest_results.items():
         follow_up_at = event.get("follow_up_at")
-        if not follow_up_at:
+        if not follow_up_at or lead_name in closed_names:
             continue
         try:
             due = datetime.fromisoformat(str(follow_up_at).replace("Z", "+00:00")).astimezone(
@@ -147,21 +151,20 @@ class handler(BaseHTTPRequestHandler):
         try:
             user_email = normalize_email(user.get("sub"))
             leads = fetch_leads_full(limit=1000)
-            assignments = fetch_lead_assignments(
-                user_email=None if user.get("role") == "admin" else user_email,
-                limit=1000,
-            )
-            if user.get("role") != "admin":
-                assigned_names = {item.get("lead_name") for item in assignments}
-                leads = [lead for lead in leads if lead.get("name") in assigned_names]
+            scope = lead_read_scope(user)
+            if scope is None:
+                assignments = fetch_lead_assignments(limit=1000)
+            else:
+                readable_names, assignments = scope
+                leads = [lead for lead in leads if lead.get("name") in readable_names]
             leads = attach_assignments_to_leads(leads, assignments)
             events = [
                 enrich_outreach_event(event)
                 for event in fetch_outreach_events(limit=1000)
             ]
-            if user.get("role") != "admin":
-                assigned_names = {lead.get("name") for lead in leads}
-                events = [event for event in events if event.get("lead_name") in assigned_names]
+            if scope is not None:
+                visible_names = {lead.get("name") for lead in leads}
+                events = [event for event in events if event.get("lead_name") in visible_names]
             latest_manual: dict[str, dict] = {}
             for event in events:
                 lead_name = event.get("lead_name")
@@ -195,11 +198,19 @@ class handler(BaseHTTPRequestHandler):
                 {**lead, "workflow": build_lead_workflow(lead, events)}
                 for lead in leads
             ]
+            schema = None
+            if scope is None:
+                try:
+                    schema = schema_status()
+                except Exception as exc:
+                    self.log_error("schema readiness check failed: %s", exc)
+                    schema = {"ready": False, "version": None, "failed_checks": ["readiness_check_failed"]}
             send_json(
                 self,
                 200,
                 {
                     "ok": True,
+                    "schema": schema,
                     "user": {
                         "email": user_email,
                         "name": user.get("name"),

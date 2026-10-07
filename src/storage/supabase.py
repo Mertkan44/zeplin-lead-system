@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -10,6 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from src.config import env
+from src.lead_identity import lead_external_id
 
 
 @dataclass(frozen=True)
@@ -56,12 +56,8 @@ def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
     data_quality = lead.get("data_quality") or {}
     now = datetime.now(timezone.utc).isoformat()
     maps_url = str(lead.get("maps_url") or "").strip()
-    identity = (
-        f"{str(lead.get('name') or '').strip().casefold()}|"
-        f"{str(lead.get('city') or '').strip().casefold()}"
-    )
     return {
-        "external_id": f"name-city:{hashlib.sha256(identity.encode('utf-8')).hexdigest()}",
+        "external_id": lead_external_id(lead),
         "name": lead.get("name"),
         "sector": lead.get("sector"),
         "city": lead.get("city"),
@@ -128,6 +124,66 @@ def set_lead_status(name: str, status: str) -> None:
             json={"status": status, "updated_at": datetime.now(timezone.utc).isoformat()},
         )
         response.raise_for_status()
+
+
+class CommandRejected(Exception):
+    """A database command refused the request (PostgREST PTxxx error)."""
+
+    def __init__(self, status: int, code: str):
+        super().__init__(code)
+        self.status = status
+        self.code = code
+
+
+def record_contact_result(
+    *,
+    idempotency_key: str,
+    request_hash: str,
+    actor_email: str,
+    actor_is_admin: bool,
+    lead_name: str,
+    expected_revision: int | None,
+    activity: dict[str, Any],
+    note: str,
+    lead_status: str,
+    assignment_status: str,
+) -> dict[str, Any]:
+    """Record a contact result atomically through public.record_contact_result."""
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    payload = {
+        "p_idempotency_key": idempotency_key,
+        "p_request_hash": request_hash,
+        "p_actor_email": actor_email,
+        "p_actor_is_admin": actor_is_admin,
+        "p_lead_name": lead_name,
+        "p_expected_revision": expected_revision,
+        "p_channel": activity["channel"],
+        "p_outcome": activity["outcome"],
+        "p_follow_up_at": activity.get("follow_up_at"),
+        "p_service_slugs": activity.get("service_slugs") or [],
+        "p_contact_name": activity.get("contact_name"),
+        "p_note": note,
+        "p_lead_status": lead_status,
+        "p_assignment_status": assignment_status,
+    }
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            f"{config.url}/rest/v1/rpc/record_contact_result",
+            headers=_headers(config),
+            json=payload,
+        )
+    if response.status_code in {400, 403, 404, 409}:
+        try:
+            body = response.json()
+        except ValueError:
+            body = {}
+        code = str(body.get("message") or "")
+        if str(body.get("code") or "").startswith("PT") and code.isupper():
+            raise CommandRejected(response.status_code, code)
+    response.raise_for_status()
+    return response.json()
 
 
 def insert_outreach_event(
@@ -214,9 +270,15 @@ def fetch_leads_full(limit: int = 500) -> list[dict[str, Any]]:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = f"select=raw,status,updated_at&order=sales_priority_score.desc.nullslast&limit={limit}"
+    query = f"select=raw,status,updated_at,revision&order=sales_priority_score.desc.nullslast&limit={limit}"
     with httpx.Client(timeout=30) as client:
         response = client.get(_postgrest_url(config, "leads", query), headers=_headers(config))
+        if response.status_code == 400 and "revision" in response.text:
+            # Database older than migration 009: keep the workspace readable so
+            # the admin sees the schema banner instead of an empty screen.
+            response = client.get(
+                _postgrest_url(config, "leads", query.replace(",revision", "")), headers=_headers(config)
+            )
         response.raise_for_status()
         rows = response.json()
     leads: list[dict[str, Any]] = []
@@ -225,6 +287,7 @@ def fetch_leads_full(limit: int = 500) -> list[dict[str, Any]]:
         if isinstance(raw, dict):
             raw["status"] = row.get("status") or raw.get("status") or "yeni"
             raw["supabase_updated_at"] = row.get("updated_at")
+            raw["revision"] = row.get("revision")
             leads.append(raw)
     return leads
 
@@ -385,6 +448,90 @@ def set_app_user_active(email: str, active: bool) -> None:
         response.raise_for_status()
 
 
+ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
+
+
+REQUIRED_SCHEMA_VERSION = "009"
+
+
+def fetch_schema_readiness() -> dict[str, Any]:
+    """Raw `schema_readiness()` result; a database older than 008 has no such RPC."""
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    with httpx.Client(timeout=10) as client:
+        response = client.post(f"{config.url}/rest/v1/rpc/schema_readiness", headers=_headers(config), json={})
+        if response.status_code == 404:
+            return {"version": None, "checks": {"schema_readiness": False}}
+        response.raise_for_status()
+        return response.json() or {}
+
+
+def evaluate_schema_readiness(raw: dict[str, Any]) -> dict[str, Any]:
+    version = raw.get("version")
+    failed = sorted(name for name, passed in (raw.get("checks") or {}).items() if passed is not True)
+    version_ok = bool(version) and str(version) >= REQUIRED_SCHEMA_VERSION
+    return {
+        "ready": version_ok and not failed,
+        "version": version,
+        "required_version": REQUIRED_SCHEMA_VERSION,
+        "failed_checks": failed,
+    }
+
+
+def schema_status() -> dict[str, Any]:
+    return evaluate_schema_readiness(fetch_schema_readiness())
+
+
+def _count(client: httpx.Client, config: SupabaseConfig, table: str, query: str) -> int:
+    response = client.get(
+        _postgrest_url(config, table, f"select=id&{query}&limit=1"),
+        headers=_headers(config, prefer="count=exact"),
+    )
+    response.raise_for_status()
+    total = (response.headers.get("content-range") or "*/0").rsplit("/", 1)[-1]
+    return int(total) if total.isdigit() else 0
+
+
+def fetch_identity_snapshot() -> dict[str, Any]:
+    """Read-only data for scripts/lead_identity_report.py."""
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    with httpx.Client(timeout=60) as client:
+        leads: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = client.get(
+                _postgrest_url(
+                    config,
+                    "leads",
+                    "select=id,name,city,phone,maps_url,website_url,external_id,"
+                    "research:raw->research"
+                    f"&order=id.asc&limit=1000&offset={offset}",
+                ),
+                headers=_headers(config),
+            )
+            response.raise_for_status()
+            page = response.json()
+            leads.extend(page)
+            if len(page) < 1000:
+                break
+            offset += 1000
+        sources_response = client.get(
+            _postgrest_url(config, "lead_sources", "select=lead_id,provider,provider_id&limit=10000"),
+            headers=_headers(config),
+        )
+        sources = sources_response.json() if sources_response.status_code == 200 else None
+        lead_id_gaps = None
+        if sources is not None:
+            lead_id_gaps = {
+                "outreach_events": _count(client, config, "outreach_events", "lead_id=is.null"),
+                "lead_assignments": _count(client, config, "lead_assignments", "lead_id=is.null"),
+            }
+    return {"leads": leads, "sources": sources, "lead_id_gaps": lead_id_gaps}
+
+
 def fetch_lead_assignments(
     *,
     user_email: str | None = None,
@@ -410,6 +557,35 @@ def fetch_lead_assignments(
         response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
         response.raise_for_status()
         return response.json()
+
+
+def _in_list(values: list[str]) -> str:
+    quoted = []
+    for value in values:
+        escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+        quoted.append(f'"{escaped}"')
+    return quote(f"({','.join(quoted)})", safe="")
+
+
+def fetch_active_assignments_for_leads(lead_names: list[str]) -> list[dict[str, Any]]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    names = sorted({name for name in lead_names if name})
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=20) as client:
+        for start in range(0, len(names), 100):
+            chunk = names[start:start + 100]
+            query = (
+                "select=id,lead_name,user_email,status"
+                f"&lead_name=in.{_in_list(chunk)}"
+                "&status=eq.active"
+                "&limit=1000"
+            )
+            response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
+            response.raise_for_status()
+            rows.extend(response.json())
+    return rows
 
 
 def fetch_lead_assignment_by_id(assignment_id: int) -> dict[str, Any] | None:
@@ -440,7 +616,7 @@ def upsert_lead_assignment(
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    if status not in {"active", "done", "snoozed", "archived"}:
+    if status not in ASSIGNMENT_STATUSES:
         raise ValueError("assignment status is invalid")
     payload = {
         "target_lead_name": lead_name,
@@ -468,7 +644,7 @@ def update_lead_assignment(
     meta: dict[str, Any] | None = None,
     due_at: str | None | object = _UNSET,
 ) -> None:
-    if status not in {"active", "done", "snoozed", "archived"}:
+    if status not in ASSIGNMENT_STATUSES:
         raise ValueError("assignment status is invalid")
     config = supabase_config()
     if not config:

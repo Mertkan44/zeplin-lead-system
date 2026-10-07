@@ -19,11 +19,54 @@ The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODE
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 `.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
 
-For a fresh Supabase project, run `supabase/schema.sql` in the SQL editor. For an
-existing project, apply migrations in order through
-`supabase/migrations/006_security_crm_hardening.sql`. The last migration adds stable
-lead identities, atomic queue claims, assignment integrity, audit events, and
-persistent AI generations.
+Database schema lives in `supabase/migrations/` (001 … latest), the only
+hand-edited source. Every migration is idempotent.
+
+- **Fresh project:** run `supabase/schema.sql` once in the Supabase SQL editor. It is
+  generated from the migrations (`python scripts/build_schema.py`); do not edit it.
+- **Existing project:** run each migration you have not applied yet, in order.
+  Re-running one that is already applied is safe. Older projects bootstrapped with
+  the removed `apply_live_schema.sql` are covered by migrations 003–005.
+
+The current code requires migration 009. Always apply new migrations before
+deploying the code that needs them; every migration also works with the previous
+code version.
+
+Migration 009 records a contact result in one transaction (`record_contact_result`):
+the event, the lead status, the owner's follow-up date and an audit event are
+written together or not at all, ownership is re-checked inside the transaction, a
+stale form (lead `revision` changed meanwhile) gets 409, and the idempotency key
+(one UUID per submission) makes retries return the first answer instead of writing
+again. Won and lost results close the open follow-up; a wrong number sends the
+lead back to verification. Default follow-up dates come from `FOLLOW_UP_DELAYS` in
+`src/activity.py` for both the API and the dashboard.
+
+Migration 008 repairs idempotent outreach
+writes (databases built from migrations rejected every `on_conflict=idempotency_key`
+insert), adds stable `lead_id` columns and `lead_sources` (Google place ids) next to
+the name-based keys, and records the schema version. Check a deployment with
+`GET /api/health`: it answers 200 when the schema is ready and 503 otherwise; admins
+also see the version and any failed checks, and the admin workspace shows a banner.
+
+Before relying on lead ids, review the identity dry run (read-only):
+
+```bash
+venv/bin/python scripts/lead_identity_report.py                 # live Supabase
+venv/bin/python scripts/lead_identity_report.py --file leads_final.json
+```
+
+It lists leads that share a Google place id, phone or website, place ids already
+recorded for another lead, and rows still missing `lead_id`. Nothing is merged
+automatically. Reviewed merges are one-off SQL files in `supabase/data_fixes/`
+(run once in the SQL editor; each is atomic and refuses to run twice).
+
+CI proves that a fresh install and an upgrade from every historical `schema.sql`
+end in the same schema, then runs `tests/sql/` behaviour checks. Locally, with any
+throwaway PostgreSQL server:
+
+```bash
+python scripts/schema_parity.py --dsn postgresql://postgres@localhost:5432/postgres
+```
 
 Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `SESSION_SECRET` in Vercel. Team members log in with their individual Supabase
@@ -156,7 +199,13 @@ data is intentionally available only through the API.
 
 `src/dashboard/template.html` is the source template. `public/index.html` is
 generated without embedding CRM lead records. After authentication, the dashboard
-reads role-filtered live data from Vercel API routes backed by Supabase.
+reads role-filtered live data from Vercel API routes backed by Supabase. CRM data is
+kept in memory only; logout, a 401 response, or a user switch clears it.
+
+Lead access follows one server-side policy (`src/auth.py`): admins see every lead; a
+sales user reads and writes leads with an active assignment, and keeps read-only
+access to leads they closed or paused only while no one else owns them. An archived
+assignment (the lead was handed over) grants nothing.
 
 Admin search runs as a queue-backed workflow. The Vercel API creates `admin_search_jobs`
 and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then runs

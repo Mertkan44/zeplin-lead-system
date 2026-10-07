@@ -7,9 +7,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import normalize_email, require_auth
+from src.auth import lead_read_scope, require_auth
 from src.http_api import send_internal_error, send_json, send_options
-from src.storage.supabase import fetch_lead_assignments, fetch_leads_full, is_enabled as supabase_enabled
+from src.storage.supabase import fetch_leads_full, is_enabled as supabase_enabled
 
 
 class handler(BaseHTTPRequestHandler):
@@ -33,14 +33,10 @@ class handler(BaseHTTPRequestHandler):
             limit = 500
         try:
             leads = fetch_leads_full(limit=limit)
-            if user.get("role") != "admin":
-                assignments = fetch_lead_assignments(
-                    user_email=normalize_email(user.get("sub")),
-                    status="active",
-                    limit=1000,
-                )
-                assigned = {item.get("lead_name") for item in assignments}
-                leads = [lead for lead in leads if lead.get("name") in assigned]
+            scope = lead_read_scope(user)
+            if scope is not None:
+                readable_names, _ = scope
+                leads = [lead for lead in leads if lead.get("name") in readable_names]
             send_json(self, 200, leads, allow_methods="GET, OPTIONS")
         except Exception as exc:
             send_internal_error(self, exc, error="lead fetch failed", allow_methods="GET, OPTIONS")
