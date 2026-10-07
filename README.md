@@ -44,7 +44,8 @@ venv/bin/python scripts/lead_identity_report.py --file leads_final.json
 
 It lists leads that share a Google place id, phone or website, place ids already
 recorded for another lead, and rows still missing `lead_id`. Nothing is merged
-automatically.
+automatically. Reviewed merges are one-off SQL files in `supabase/data_fixes/`
+(run once in the SQL editor; each is atomic and refuses to run twice).
 
 CI proves that a fresh install and an upgrade from every historical `schema.sql`
 end in the same schema, then runs `tests/sql/` behaviour checks. Locally, with any

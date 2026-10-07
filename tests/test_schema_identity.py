@@ -111,7 +111,8 @@ class LeadIdentityTests(unittest.TestCase):
             capture_output=True, text=True, check=True, cwd=ROOT,
         )
         report = json.loads(result.stdout)
-        self.assertEqual(report["lead_count"], 49)
+        self.assertEqual(report["lead_count"], len(json.loads((ROOT / "leads_final.json").read_text(encoding="utf-8"))))
+        self.assertEqual(report["shared_place_id"], [])
         self.assertIn("shared_place_id", report)
 
 
