@@ -1,6 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from collections import Counter
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -18,12 +18,22 @@ from src.workflow import build_lead_workflow, build_team_performance
 from src.integrations.google_places import is_configured as places_configured
 from src.storage.supabase import (
     attach_assignments_to_leads,
-    fetch_lead_assignments,
-    fetch_leads_full,
-    fetch_outreach_events,
+    fetch_activity_states,
+    fetch_all_assignments,
+    fetch_all_leads,
+    fetch_events_since,
+    fetch_leads_by_names,
     is_enabled as supabase_enabled,
     schema_status,
 )
+
+# Recent events feed today's counts and the activity feed. Current state (latest
+# contact result, latest manual verification) comes from lead_activity_state, so
+# it does not depend on this window; a lead's full timeline is /api/outreach?lead=.
+ACTIVITY_WINDOW_DAYS = 30
+# The browser gets at most this many window events (newest first) plus every
+# lead's latest contact and verification; counts still use the whole window.
+FEED_EVENT_LIMIT = 1000
 
 
 def _lead_ready_for_email(lead: dict) -> bool:
@@ -50,17 +60,15 @@ def _is_today_event(event: dict, action: str) -> bool:
     return event_date == datetime.now(ZoneInfo("Europe/Istanbul")).date()
 
 
-def _summary(leads: list[dict], assignments: list[dict], events: list[dict]) -> dict:
+def _summary(
+    leads: list[dict],
+    assignments: list[dict],
+    events: list[dict],
+    latest_results: dict[str, dict],
+) -> dict:
     active_assignments = [item for item in assignments if item.get("status") == "active"]
     now = datetime.now(ZoneInfo("Europe/Istanbul"))
     due_follow_ups = []
-    latest_results: dict[str, dict] = {}
-    for event in events:
-        if event.get("action") != "contact_result_recorded":
-            continue
-        lead_name = event.get("lead_name") or ""
-        if lead_name and lead_name not in latest_results:
-            latest_results[lead_name] = event
     closed_names = {
         lead.get("name") for lead in leads if lead.get("status") in {"converted", "lost"}
     }
@@ -150,35 +158,57 @@ class handler(BaseHTTPRequestHandler):
             return
         try:
             user_email = normalize_email(user.get("sub"))
-            leads = fetch_leads_full(limit=1000)
             scope = lead_read_scope(user)
             if scope is None:
-                assignments = fetch_lead_assignments(limit=1000)
+                leads = fetch_all_leads()
+                assignments = fetch_all_assignments()
             else:
                 readable_names, assignments = scope
-                leads = [lead for lead in leads if lead.get("name") in readable_names]
+                leads = fetch_leads_by_names(readable_names) if readable_names else []
             leads = attach_assignments_to_leads(leads, assignments)
+            visible_names = {lead.get("name") for lead in leads}
+            lead_ids = [lead.get("lead_id") for lead in leads if lead.get("lead_id") is not None]
+            states = fetch_activity_states(None if scope is None else lead_ids) if lead_ids or scope is None else {}
+            since = (datetime.now(timezone.utc) - timedelta(days=ACTIVITY_WINDOW_DAYS)).isoformat()
             events = [
                 enrich_outreach_event(event)
-                for event in fetch_outreach_events(limit=1000)
+                for event in (fetch_events_since(since, None if scope is None else visible_names) if visible_names else [])
             ]
-            if scope is not None:
-                visible_names = {lead.get("name") for lead in leads}
-                events = [event for event in events if event.get("lead_name") in visible_names]
+            feed = events[:FEED_EVENT_LIMIT]
+            feed_truncated = len(events) > FEED_EVENT_LIMIT
+
+            latest_results: dict[str, dict] = {}
             latest_manual: dict[str, dict] = {}
-            for event in events:
-                lead_name = event.get("lead_name")
-                if (
-                    lead_name
-                    and lead_name not in latest_manual
-                    and event.get("action") == "manual_verification_saved"
-                    and event.get("manual_verification")
-                ):
-                    latest_manual[lead_name] = {
-                        **event["manual_verification"],
-                        "checked_at": event.get("happened_at") or event.get("created_at"),
-                        "checked_by": event.get("actor_email"),
-                    }
+            won_by_actor: Counter = Counter()
+            seen_event_ids = {event.get("id") for event in feed}
+            names_by_id = {lead.get("lead_id"): lead.get("name") for lead in leads}
+            for lead_id, state in states.items():
+                lead_name = names_by_id.get(lead_id)
+                if not lead_name:
+                    continue
+                contact = state.get("latest_contact")
+                if contact:
+                    contact = enrich_outreach_event(dict(contact))
+                    latest_results[lead_name] = contact
+                    if contact.get("outcome") == "won" and state.get("latest_contact_actor"):
+                        won_by_actor[state["latest_contact_actor"]] += 1
+                    if contact.get("id") not in seen_event_ids:
+                        feed.append(contact)
+                        seen_event_ids.add(contact.get("id"))
+                manual_event = state.get("latest_manual_verification")
+                if manual_event:
+                    manual_event = enrich_outreach_event(dict(manual_event))
+                    if manual_event.get("manual_verification"):
+                        latest_manual[lead_name] = {
+                            **manual_event["manual_verification"],
+                            "checked_at": manual_event.get("happened_at") or manual_event.get("created_at"),
+                            "checked_by": manual_event.get("actor_email"),
+                        }
+                    if manual_event.get("id") not in seen_event_ids:
+                        feed.append(manual_event)
+                        seen_event_ids.add(manual_event.get("id"))
+            feed.sort(key=lambda event: (event.get("happened_at") or "", event.get("id") or 0), reverse=True)
+
             leads = [
                 {**lead, "manual_verification": latest_manual.get(lead.get("name"))}
                 for lead in leads
@@ -195,7 +225,13 @@ class handler(BaseHTTPRequestHandler):
                 for lead in leads
             ]
             leads = [
-                {**lead, "workflow": build_lead_workflow(lead, events)}
+                {
+                    **lead,
+                    "workflow": build_lead_workflow(
+                        lead,
+                        [latest_results[lead["name"]]] if lead.get("name") in latest_results else [],
+                    ),
+                }
                 for lead in leads
             ]
             schema = None
@@ -218,12 +254,13 @@ class handler(BaseHTTPRequestHandler):
                         "title": user.get("title"),
                         "avatar_url": user.get("avatar_url"),
                     },
-                    "summary": _summary(leads, assignments, events),
-                    "team_performance": build_team_performance(assignments, events),
+                    "summary": _summary(leads, assignments, events, latest_results),
+                    "team_performance": build_team_performance(assignments, events, won_totals=won_by_actor),
                     "integrations": {"google_places": places_configured()},
                     "leads": leads,
                     "assignments": assignments,
-                    "outreach": events,
+                    "outreach": feed,
+                    "outreach_truncated": feed_truncated,
                 },
                 allow_methods="GET, OPTIONS",
             )

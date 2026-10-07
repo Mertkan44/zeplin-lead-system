@@ -16,7 +16,9 @@ from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.integrations.google_places import is_configured, merge_place_result, search_place
 from src.storage.supabase import (
     fetch_lead_assignments,
-    fetch_leads_full,
+    fetch_lead_by_name,
+    fetch_leads_by_names,
+    fetch_places_refresh_state,
     insert_audit_event,
     insert_run_log,
     upsert_leads,
@@ -33,10 +35,6 @@ def _parse_datetime(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
-
-
-def _places_refreshed_at(lead: dict):
-    return _parse_datetime((((lead.get("research") or {}).get("google_places") or {}).get("refreshed_at")))
 
 
 def _refresh_one(lead: dict) -> tuple[dict, dict]:
@@ -69,8 +67,7 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 503, {"ok": False, "error": "Google Places is not configured"}, allow_methods="GET, POST, OPTIONS")
             return
         try:
-            leads = fetch_leads_full(limit=1000)
-            lead = next((item for item in leads if item.get("name") == lead_name), None)
+            lead = fetch_lead_by_name(lead_name)
             if not lead:
                 send_json(self, 404, {"ok": False, "error": "lead not found"}, allow_methods="GET, POST, OPTIONS")
                 return
@@ -107,11 +104,15 @@ class handler(BaseHTTPRequestHandler):
         try:
             batch_size = max(1, min(int(env("PLACES_REFRESH_BATCH_SIZE", "5") or 5), 10))
             stale_before = datetime.now(timezone.utc) - timedelta(days=30)
-            leads = fetch_leads_full(limit=1000)
-            candidates = sorted(
-                [lead for lead in leads if (_places_refreshed_at(lead) or datetime.min.replace(tzinfo=timezone.utc)) < stale_before],
-                key=lambda lead: _places_refreshed_at(lead) or datetime.min.replace(tzinfo=timezone.utc),
+            oldest = datetime.min.replace(tzinfo=timezone.utc)
+            stale = sorted(
+                (
+                    row for row in fetch_places_refresh_state()
+                    if (_parse_datetime(row.get("refreshed_at")) or oldest) < stale_before
+                ),
+                key=lambda row: _parse_datetime(row.get("refreshed_at")) or oldest,
             )[:batch_size]
+            candidates = fetch_leads_by_names([row["name"] for row in stale])
             refreshed = []
             failed = []
             for lead in candidates:

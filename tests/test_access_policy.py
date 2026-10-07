@@ -12,12 +12,20 @@ import api.assignments as assignments_api
 import api.leads as leads_api
 import api.outreach as outreach_api
 import api.workspace as workspace_api
-from src.auth import readable_lead_names
+from src.auth import lead_read_scope
 from src.workflow import build_lead_workflow, build_team_performance
 
 ADMIN = {"sub": "admin@example.com", "role": "admin", "name": "Admin"}
 ALI = {"sub": "ali@example.com", "role": "sales", "name": "Ali"}
 BERK = {"sub": "berk@example.com", "role": "sales", "name": "Berk"}
+
+# Every storage function the read paths may call; the fake answers all of them.
+_STORAGE_FUNCTIONS = (
+    "fetch_lead_assignments", "fetch_active_assignments_for_leads", "fetch_lead_assignment_by_id",
+    "fetch_readable_leads", "fetch_all_leads", "fetch_leads_by_names", "fetch_lead_by_name",
+    "fetch_lead_by_id", "fetch_all_assignments", "fetch_activity_states", "fetch_events_since",
+    "fetch_event_page", "list_leads_page",
+)
 
 
 def _assignment(row_id, lead, email, status):
@@ -25,12 +33,13 @@ def _assignment(row_id, lead, email, status):
 
 
 class FakeStore:
-    """In-memory stand-in for the Supabase rows the access policy reads."""
+    """In-memory stand-in for Supabase. fetch_readable_leads mirrors
+    public.readable_leads; the SQL itself is tested in tests/sql/."""
 
     def __init__(self):
         self.leads = [
-            {"name": name, "status": "contacted", "scoring": {"score": 50}}
-            for name in ("Handed Over", "Own Closed", "Closed Then Reassigned", "Own Active")
+            {"lead_id": index + 1, "name": name, "status": "contacted", "scoring": {"score": 50}}
+            for index, name in enumerate(("Handed Over", "Own Closed", "Closed Then Reassigned", "Own Active"))
         ]
         self.assignments = [
             # Ali owned it, admin moved it to Berk: Ali's row is archived.
@@ -44,11 +53,41 @@ class FakeStore:
             _assignment(6, "Own Active", ALI["sub"], "active"),
         ]
         self.events = [
-            {"id": index, "lead_name": lead["name"], "action": "note_added", "note": "x",
+            {"id": index + 1, "lead_name": lead["name"], "action": "note_added", "note": "x",
              "happened_at": "2026-10-01T09:00:00+00:00", "actor_email": BERK["sub"]}
             for index, lead in enumerate(self.leads)
         ]
+        self.states = {}
         self.updated = []
+        self.list_calls = []
+
+    def fetch_readable_leads(self, email):
+        rows = []
+        for item in self.assignments:
+            if item["user_email"] != email:
+                continue
+            other_owner = any(
+                other["lead_name"] == item["lead_name"] and other["status"] == "active" and other["user_email"] != email
+                for other in self.assignments
+            )
+            if item["status"] == "active" or (item["status"] in {"done", "snoozed"} and not other_owner):
+                rows.append({"lead_name": item["lead_name"], "can_write": item["status"] == "active"})
+        return rows
+
+    def fetch_all_leads(self):
+        return [dict(lead) for lead in self.leads]
+
+    def fetch_leads_by_names(self, names):
+        return [dict(lead) for lead in self.leads if lead["name"] in set(names)]
+
+    def fetch_lead_by_name(self, name):
+        return next((dict(lead) for lead in self.leads if lead["name"] == name), None)
+
+    def fetch_lead_by_id(self, lead_id):
+        return next((dict(lead) for lead in self.leads if lead["lead_id"] == lead_id), None)
+
+    def fetch_all_assignments(self):
+        return [dict(item) for item in self.assignments]
 
     def fetch_lead_assignments(self, *, user_email=None, lead_name=None, status=None, limit=500):
         return [
@@ -66,6 +105,27 @@ class FakeStore:
 
     def fetch_lead_assignment_by_id(self, assignment_id):
         return next((dict(item) for item in self.assignments if item["id"] == assignment_id), None)
+
+    def fetch_activity_states(self, lead_ids=None):
+        return {key: value for key, value in self.states.items() if lead_ids is None or key in lead_ids}
+
+    def fetch_events_since(self, since_iso, lead_names=None):
+        return [
+            dict(event) for event in self.events
+            if lead_names is None or event["lead_name"] in set(lead_names)
+        ]
+
+    def fetch_event_page(self, *, lead_names, before_id, limit):
+        rows = [
+            dict(event) for event in self.events
+            if (lead_names is None or event["lead_name"] in set(lead_names))
+            and (before_id is None or event["id"] < before_id)
+        ]
+        return sorted(rows, key=lambda event: event["id"], reverse=True)[:limit]
+
+    def list_leads_page(self, **kwargs):
+        self.list_calls.append(kwargs)
+        return {"items": [], "total": 0, "total_is_exact": True, "next_cursor": None}
 
     def update_lead_assignment(self, assignment_id, *, status, meta=None, due_at=None):
         self.updated.append((assignment_id, status))
@@ -98,18 +158,10 @@ class AccessPolicyTests(unittest.TestCase):
             stack.enter_context(patch.object(module, "require_auth", return_value=user))
             if hasattr(module, "supabase_enabled"):
                 stack.enter_context(patch.object(module, "supabase_enabled", return_value=True))
-            for name in ("fetch_lead_assignments", "fetch_active_assignments_for_leads", "fetch_lead_assignment_by_id"):
+            for name in _STORAGE_FUNCTIONS:
                 stack.enter_context(patch(f"src.storage.supabase.{name}", getattr(store, name)))
                 if hasattr(module, name):
                     stack.enter_context(patch.object(module, name, getattr(store, name)))
-            if hasattr(module, "fetch_leads_full"):
-                stack.enter_context(
-                    patch.object(module, "fetch_leads_full", lambda limit=500: [dict(lead) for lead in store.leads])
-                )
-            if hasattr(module, "fetch_outreach_events"):
-                stack.enter_context(
-                    patch.object(module, "fetch_outreach_events", lambda limit=500: [dict(event) for event in store.events])
-                )
             if hasattr(module, "update_lead_assignment"):
                 stack.enter_context(patch.object(module, "update_lead_assignment", store.update_lead_assignment))
             if hasattr(module, "insert_audit_event"):
@@ -122,21 +174,17 @@ class AccessPolicyTests(unittest.TestCase):
             getattr(handler, f"do_{method}")()
         return captured["status"], captured["payload"]
 
-    def test_readable_names_exclude_handed_over_and_reassigned_leads(self):
-        names = readable_lead_names(ALI["sub"], self.store.assignments)
-        self.assertEqual(names, {"Own Closed", "Own Active"})
-        self.assertEqual(
-            readable_lead_names(BERK["sub"], self.store.assignments),
-            {"Handed Over", "Closed Then Reassigned"},
-        )
+    def _scope(self, user):
+        with patch("src.storage.supabase.fetch_readable_leads", self.store.fetch_readable_leads), \
+                patch("src.storage.supabase.fetch_lead_assignments", self.store.fetch_lead_assignments):
+            return lead_read_scope(user)
 
-    def test_snoozed_assignment_is_readable_only_without_another_owner(self):
-        rows = [
-            _assignment(1, "Paused", ALI["sub"], "snoozed"),
-            _assignment(2, "Paused Elsewhere", ALI["sub"], "snoozed"),
-            _assignment(3, "Paused Elsewhere", BERK["sub"], "active"),
-        ]
-        self.assertEqual(readable_lead_names(ALI["sub"], rows), {"Paused"})
+    def test_read_scope_excludes_handed_over_and_reassigned_leads(self):
+        names, visible = self._scope(ALI)
+        self.assertEqual(names, {"Own Closed", "Own Active"})
+        self.assertNotIn("archived", {item["status"] for item in visible})
+        self.assertEqual(self._scope(BERK)[0], {"Handed Over", "Closed Then Reassigned"})
+        self.assertIsNone(self._scope(ADMIN))
 
     def test_workspace_hides_handed_over_lead_from_previous_owner(self):
         status, payload = self._call(workspace_api, "GET", ALI, path="/api/workspace")
@@ -159,11 +207,52 @@ class AccessPolicyTests(unittest.TestCase):
         _, payload = self._call(workspace_api, "GET", ALI, path="/api/workspace")
         self.assertIsNone(payload["schema"])
 
-    def test_lead_and_outreach_lists_use_the_same_scope(self):
-        _, leads = self._call(leads_api, "GET", ALI, path="/api/leads")
-        self.assertEqual({lead["name"] for lead in leads}, {"Own Closed", "Own Active"})
-        _, events = self._call(outreach_api, "GET", ALI, path="/api/outreach?lead=Handed%20Over")
-        self.assertEqual(events, [])
+    def test_detail_and_timeline_use_the_same_scope(self):
+        status, _ = self._call(leads_api, "GET", ALI, path="/api/leads?name=Handed%20Over")
+        self.assertEqual(status, 404)
+        status, payload = self._call(leads_api, "GET", ALI, path="/api/leads?id=2")
+        self.assertEqual((status, payload["lead"]["name"]), (200, "Own Closed"))
+        _, payload = self._call(outreach_api, "GET", ALI, path="/api/outreach?lead=Handed%20Over")
+        self.assertEqual(payload["items"], [])
+        _, payload = self._call(outreach_api, "GET", ALI, path="/api/outreach")
+        self.assertEqual({event["lead_name"] for event in payload["items"]}, {"Own Closed", "Own Active"})
+        _, payload = self._call(outreach_api, "GET", ADMIN, path="/api/outreach?limit=2")
+        self.assertEqual(([event["id"] for event in payload["items"]], payload["next_before"]), ([4, 3], 3))
+
+    def test_list_passes_the_session_actor_and_validates_input(self):
+        self._call(leads_api, "GET", ALI, path="/api/leads?limit=500&q=kafe&status=follow_up")
+        call = self.store.list_calls[-1]
+        self.assertEqual((call["actor_email"], call["is_admin"], call["limit"], call["search"]),
+                         ("ali@example.com", False, 100, "kafe"))
+        for bad in ("status=nope", "limit=x", "cursor=%%%"):
+            status, _ = self._call(leads_api, "GET", ALI, path=f"/api/leads?{bad}")
+            self.assertEqual(status, 400, bad)
+
+    def test_list_cursor_round_trips(self):
+        cursor = leads_api.encode_cursor({"priority": 87, "id": 1400})
+        self.assertEqual(leads_api.decode_cursor(cursor), (87, 1400))
+        self.assertEqual(leads_api.decode_cursor(leads_api.encode_cursor({"priority": None, "id": 5})), (None, 5))
+        self._call(leads_api, "GET", ALI, path=f"/api/leads?cursor={cursor}")
+        last = self.store.list_calls[-1]
+        self.assertEqual((last["after_priority"], last["after_id"]), (87, 1400))
+
+    def test_workflow_uses_the_projection_not_the_event_window(self):
+        # The latest contact is older than the event window; the projection still has it.
+        self.store.states[4] = {
+            "lead_id": 4,
+            "latest_contact": {"id": 99, "lead_name": "Own Active", "action": "contact_result_recorded",
+                               "outcome": "won", "channel": "phone", "happened_at": "2026-01-01T09:00:00+00:00",
+                               "actor_email": "ali@example.com"},
+            "latest_contact_actor": "ali@example.com",
+            "latest_manual_verification": None,
+        }
+        self.store.leads[3]["status"] = "converted"
+        _, payload = self._call(workspace_api, "GET", ALI, path="/api/workspace")
+        lead = next(item for item in payload["leads"] if item["name"] == "Own Active")
+        self.assertEqual(lead["workflow"]["latest_outcome"], "won")
+        self.assertIn(99, {event.get("id") for event in payload["outreach"]})
+        ali = next(row for row in payload["team_performance"] if row["email"] == "ali@example.com")
+        self.assertEqual(ali["won_total"], 1)
 
     def test_closed_lead_is_read_only_for_previous_owner(self):
         status, _ = self._call(

@@ -219,6 +219,12 @@
   function saveOutreach(arr) {
     outreachEvents = (arr || []).map(normalizeOutreachEvent).filter(Boolean);
   }
+  // Adds server rows (e.g. a lead's full timeline) without duplicating known events.
+  function mergeOutreach(rows) {
+    const byKey = new Map(outreachEvents.map(event => [event.ts, event]));
+    (rows || []).map(normalizeOutreachEvent).filter(Boolean).forEach(event => byKey.set(event.ts, event));
+    outreachEvents = [...byKey.values()];
+  }
   function getLeadEvents(name) {
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
   }
@@ -2290,7 +2296,22 @@
     const [copied,     setCopied]     = React.useState(false);
     const [note,       setNote]       = React.useState('');
     const noteRequestRef = React.useRef(null);
+    const [, setTimelineVersion] = React.useState(0);
     const [feedback,   setFeedback]   = React.useState('');
+
+    // The workspace carries the last 30 days of events; load this lead's full timeline.
+    React.useEffect(() => {
+      const session = crmSession;
+      let cancelled = false;
+      fetchJSON(`/api/outreach?lead=${encodeURIComponent(lead.name)}&limit=200`)
+        .then(data => {
+          if (cancelled || session !== crmSession || !Array.isArray(data.items)) return;
+          mergeOutreach(data.items);
+          setTimelineVersion(version => version + 1);
+        })
+        .catch(err => console.warn('Timeline could not be loaded:', err));
+      return () => { cancelled = true; };
+    }, [lead.name]);
     const [busy,       setBusy]       = React.useState(false);
     const findings   = lead.audit_findings || [];
     const opportunityFindings = findings.filter(finding => finding.finding_type === 'opportunity');

@@ -28,9 +28,16 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-The current code requires migration 009. Always apply new migrations before
+The current code requires migration 010. Always apply new migrations before
 deploying the code that needs them; every migration also works with the previous
 code version.
+
+Migration 010 moves reads into the database: `readable_leads` holds the access rule,
+`lead_activity_state` keeps each lead's latest contact result and manual verification
+(updated by a trigger on `outreach_events`, rebuilt with `rebuild_lead_activity_state()`),
+and `list_leads` serves the paginated lead list. No read path is capped at "the first
+1,000 leads" or "the last 1,000 events" any more. Migration 010 contains no DROP or
+DELETE statements, so it can be applied through the Supabase connector.
 
 Migration 009 records a contact result in one transaction (`record_contact_result`):
 the event, the lead status, the owner's follow-up date and an audit event are
@@ -146,7 +153,11 @@ Role-ready backend endpoints:
 GET/POST/DELETE /api/auth
 GET/POST/PATCH /api/users          # admin only
 GET/POST/PATCH /api/assignments    # admin assigns, users update assignment status
-GET /api/workspace                 # role-shaped dashboard payload
+GET /api/workspace                 # role-shaped dashboard payload (events: last 30 days, feed capped at 1,000)
+GET /api/leads                     # paginated list: ?cursor=&limit=1-100&q=&status= -> {items, next_cursor, total}
+GET /api/leads?id=123 | ?name=...  # one lead with assignments and latest activity
+GET /api/outreach?lead=...         # timeline, newest first: &before=<event id>&limit=1-200 -> {items, next_before}
+GET /api/health                    # 200/503 on schema readiness (details for admins)
 POST /api/place_refresh            # refresh one assigned lead from Places API (New)
 GET /api/place_refresh             # CRON_SECRET-protected daily refresh batch
 ```
@@ -202,10 +213,11 @@ generated without embedding CRM lead records. After authentication, the dashboar
 reads role-filtered live data from Vercel API routes backed by Supabase. CRM data is
 kept in memory only; logout, a 401 response, or a user switch clears it.
 
-Lead access follows one server-side policy (`src/auth.py`): admins see every lead; a
-sales user reads and writes leads with an active assignment, and keeps read-only
-access to leads they closed or paused only while no one else owns them. An archived
-assignment (the lead was handed over) grants nothing.
+Lead access follows one policy, `public.readable_leads` (migration 010), used by every
+read path through `src/auth.py`: admins see every lead; a sales user reads and writes
+leads with an active assignment, and keeps read-only access to leads they closed or
+paused only while no one else owns them. An archived assignment (the lead was handed
+over) grants nothing. Writes additionally re-check the active assignment.
 
 Admin search runs as a queue-backed workflow. The Vercel API creates `admin_search_jobs`
 and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then runs

@@ -50,12 +50,17 @@ def _eq(value: str) -> str:
     return quote(str(value), safe="")
 
 
+_READ_ONLY_LEAD_KEYS = {"lead_id", "revision", "supabase_updated_at"}
+
+
 def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
     scoring = lead.get("scoring") or {}
     package = lead.get("recommended_package") or {}
     data_quality = lead.get("data_quality") or {}
     now = datetime.now(timezone.utc).isoformat()
     maps_url = str(lead.get("maps_url") or "").strip()
+    # Database-side fields attached on read must not be written back into raw.
+    raw = {key: value for key, value in lead.items() if key not in _READ_ONLY_LEAD_KEYS}
     return {
         "external_id": lead_external_id(lead),
         "name": lead.get("name"),
@@ -82,7 +87,7 @@ def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
         "ai_report": lead.get("ai_report"),
         "ai_email": lead.get("ai_email"),
         "last_analyzed": lead.get("last_analyzed"),
-        "raw": lead,
+        "raw": raw,
         "updated_at": now,
     }
 
@@ -266,44 +271,224 @@ def list_leads(limit: int = 20) -> list[dict[str, Any]]:
         return response.json()
 
 
-def fetch_leads_full(limit: int = 500) -> list[dict[str, Any]]:
+_LEAD_COLUMNS = "id,raw,status,updated_at,revision,sales_priority_score"
+_EVENT_COLUMNS = (
+    "id,lead_id,lead_name,action,note,happened_at,created_at,actor_email,source,idempotency_key,"
+    "channel,outcome,follow_up_at,service_slugs,contact_name"
+)
+_PAGE = 1000
+_NAME_CHUNK = 100
+
+
+def _require_config() -> SupabaseConfig:
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = f"select=raw,status,updated_at,revision&order=sales_priority_score.desc.nullslast&limit={limit}"
-    with httpx.Client(timeout=30) as client:
-        response = client.get(_postgrest_url(config, "leads", query), headers=_headers(config))
-        if response.status_code == 400 and "revision" in response.text:
-            # Database older than migration 009: keep the workspace readable so
-            # the admin sees the schema banner instead of an empty screen.
+    return config
+
+
+def _lead_from_row(row: dict[str, Any]) -> dict[str, Any] | None:
+    raw = row.get("raw") or {}
+    if not isinstance(raw, dict):
+        return None
+    raw["lead_id"] = row.get("id")
+    raw["status"] = row.get("status") or raw.get("status") or "yeni"
+    raw["supabase_updated_at"] = row.get("updated_at")
+    raw["revision"] = row.get("revision")
+    return raw
+
+
+def _priority_order(row: dict[str, Any]) -> tuple:
+    """Same order as the database: highest priority first, unknown last, then id."""
+    priority = row.get("sales_priority_score")
+    return (priority is None, -(priority or 0), row.get("id") or 0)
+
+
+def _get_all(client: httpx.Client, config: SupabaseConfig, table: str, query: str) -> list[dict[str, Any]]:
+    """Follow offset pages until a short page; the query must carry a stable order."""
+    rows: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        response = client.get(
+            _postgrest_url(config, table, f"{query}&limit={_PAGE}&offset={offset}"),
+            headers=_headers(config),
+        )
+        response.raise_for_status()
+        page = response.json()
+        rows.extend(page)
+        if len(page) < _PAGE:
+            return rows
+        offset += _PAGE
+
+
+def _chunks(values: list[Any]) -> list[list[Any]]:
+    return [values[start:start + _NAME_CHUNK] for start in range(0, len(values), _NAME_CHUNK)]
+
+
+def fetch_all_leads() -> list[dict[str, Any]]:
+    """Every lead, highest sales priority first. Admin scope only."""
+    config = _require_config()
+    with httpx.Client(timeout=60) as client:
+        rows = _get_all(
+            client, config, "leads",
+            f"select={_LEAD_COLUMNS}&order=sales_priority_score.desc.nullslast,id.asc",
+        )
+    return [lead for lead in (_lead_from_row(row) for row in rows) if lead is not None]
+
+
+def fetch_leads_by_names(names: set[str] | list[str]) -> list[dict[str, Any]]:
+    """The given leads only (a sales user's readable scope), highest priority first."""
+    config = _require_config()
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=60) as client:
+        for chunk in _chunks(sorted(name for name in names if name)):
             response = client.get(
-                _postgrest_url(config, "leads", query.replace(",revision", "")), headers=_headers(config)
+                _postgrest_url(config, "leads", f"select={_LEAD_COLUMNS}&name=in.{_in_list(chunk)}"),
+                headers=_headers(config),
             )
+            response.raise_for_status()
+            rows.extend(response.json())
+    rows.sort(key=_priority_order)
+    return [lead for lead in (_lead_from_row(row) for row in rows) if lead is not None]
+
+
+def fetch_lead_by_name(name: str) -> dict[str, Any] | None:
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.get(
+            _postgrest_url(config, "leads", f"select={_LEAD_COLUMNS}&name=eq.{_eq(name)}&limit=1"),
+            headers=_headers(config),
+        )
         response.raise_for_status()
         rows = response.json()
-    leads: list[dict[str, Any]] = []
-    for row in rows:
-        raw = row.get("raw") or {}
-        if isinstance(raw, dict):
-            raw["status"] = row.get("status") or raw.get("status") or "yeni"
-            raw["supabase_updated_at"] = row.get("updated_at")
-            raw["revision"] = row.get("revision")
-            leads.append(raw)
-    return leads
+    return _lead_from_row(rows[0]) if rows else None
 
 
-def fetch_outreach_events(limit: int = 500) -> list[dict[str, Any]]:
-    config = supabase_config()
-    if not config:
-        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = (
-        "select=id,lead_name,action,note,happened_at,created_at,actor_email,source,idempotency_key"
-        f"&order=happened_at.desc&limit={limit}"
-    )
-    with httpx.Client(timeout=30) as client:
-        response = client.get(_postgrest_url(config, "outreach_events", query), headers=_headers(config))
+def fetch_lead_by_id(lead_id: int) -> dict[str, Any] | None:
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.get(
+            _postgrest_url(config, "leads", f"select={_LEAD_COLUMNS}&id=eq.{int(lead_id)}&limit=1"),
+            headers=_headers(config),
+        )
+        response.raise_for_status()
+        rows = response.json()
+    return _lead_from_row(rows[0]) if rows else None
+
+
+def fetch_readable_leads(user_email: str) -> list[dict[str, Any]]:
+    """Rows of public.readable_leads: the leads a sales user may read (migration 010)."""
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.post(
+            f"{config.url}/rest/v1/rpc/readable_leads",
+            headers=_headers(config),
+            json={"p_email": user_email},
+        )
         response.raise_for_status()
         return response.json()
+
+
+def fetch_activity_states(lead_ids: list[int] | None = None) -> dict[int, dict[str, Any]]:
+    """lead_activity_state rows by lead id; None means every lead (admin)."""
+    config = _require_config()
+    columns = (
+        "lead_id,latest_contact,latest_contact_at,latest_contact_actor,latest_outcome,"
+        "latest_follow_up_at,contact_result_count,latest_manual_verification,latest_manual_verification_at"
+    )
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=60) as client:
+        if lead_ids is None:
+            rows = _get_all(client, config, "lead_activity_state", f"select={columns}&order=lead_id.asc")
+        else:
+            for chunk in _chunks(sorted({int(item) for item in lead_ids if item is not None})):
+                ids = ",".join(str(item) for item in chunk)
+                response = client.get(
+                    _postgrest_url(config, "lead_activity_state", f"select={columns}&lead_id=in.({ids})"),
+                    headers=_headers(config),
+                )
+                response.raise_for_status()
+                rows.extend(response.json())
+    return {int(row["lead_id"]): row for row in rows}
+
+
+def fetch_events_since(since_iso: str, lead_names: set[str] | list[str] | None = None) -> list[dict[str, Any]]:
+    """Events newer than since_iso, newest first; None means every lead (admin)."""
+    config = _require_config()
+    base = f"select={_EVENT_COLUMNS}&happened_at=gte.{_eq(since_iso)}&order=happened_at.desc,id.desc"
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=60) as client:
+        if lead_names is None:
+            rows = _get_all(client, config, "outreach_events", base)
+        else:
+            for chunk in _chunks(sorted(name for name in lead_names if name)):
+                rows.extend(_get_all(client, config, "outreach_events", f"{base}&lead_name=in.{_in_list(chunk)}"))
+            rows.sort(key=lambda row: (row.get("happened_at") or "", row.get("id") or 0), reverse=True)
+    return rows
+
+
+def fetch_event_page(
+    *,
+    lead_names: set[str] | list[str] | None,
+    before_id: int | None,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Newest events first, keyset-paginated by id; None means every lead (admin)."""
+    config = _require_config()
+    limit = min(max(int(limit), 1), 200)
+    base = f"select={_EVENT_COLUMNS}&order=id.desc&limit={limit}"
+    if before_id is not None:
+        base += f"&id=lt.{int(before_id)}"
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=30) as client:
+        chunks = [None] if lead_names is None else _chunks(sorted(name for name in lead_names if name))
+        for chunk in chunks:
+            query = base if chunk is None else f"{base}&lead_name=in.{_in_list(chunk)}"
+            response = client.get(_postgrest_url(config, "outreach_events", query), headers=_headers(config))
+            response.raise_for_status()
+            rows.extend(response.json())
+    rows.sort(key=lambda row: row.get("id") or 0, reverse=True)
+    return rows[:limit]
+
+
+def list_leads_page(
+    *,
+    actor_email: str,
+    is_admin: bool,
+    after_priority: int | None,
+    after_id: int | None,
+    limit: int,
+    search: str | None,
+    status: str | None,
+) -> dict[str, Any]:
+    """One page of public.list_leads (migration 010): minimal rows, cursor, exact total."""
+    config = _require_config()
+    with httpx.Client(timeout=30) as client:
+        response = client.post(
+            f"{config.url}/rest/v1/rpc/list_leads",
+            headers=_headers(config),
+            json={
+                "p_actor_email": actor_email,
+                "p_is_admin": is_admin,
+                "p_after_priority": after_priority,
+                "p_after_id": after_id,
+                "p_limit": limit,
+                "p_search": search,
+                "p_status": status,
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+def fetch_places_refresh_state() -> list[dict[str, Any]]:
+    """Name and last Places refresh time of every lead, for the daily cron."""
+    config = _require_config()
+    with httpx.Client(timeout=60) as client:
+        return _get_all(
+            client, config, "leads",
+            "select=id,name,refreshed_at:raw->research->google_places->>refreshed_at&order=id.asc",
+        )
 
 
 def reset_sales_activity() -> dict[str, int | bool]:
@@ -451,7 +636,7 @@ def set_app_user_active(email: str, active: bool) -> None:
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
 
 
-REQUIRED_SCHEMA_VERSION = "009"
+REQUIRED_SCHEMA_VERSION = "010"
 
 
 def fetch_schema_readiness() -> dict[str, Any]:
@@ -530,6 +715,17 @@ def fetch_identity_snapshot() -> dict[str, Any]:
                 "lead_assignments": _count(client, config, "lead_assignments", "lead_id=is.null"),
             }
     return {"leads": leads, "sources": sources, "lead_id_gaps": lead_id_gaps}
+
+
+def fetch_all_assignments() -> list[dict[str, Any]]:
+    """Every assignment row (admin workspace), newest change first."""
+    config = _require_config()
+    with httpx.Client(timeout=60) as client:
+        return _get_all(
+            client, config, "lead_assignments",
+            "select=id,lead_name,user_email,status,due_at,assigned_by,assigned_at,updated_at,meta"
+            "&order=updated_at.desc,id.desc",
+        )
 
 
 def fetch_lead_assignments(

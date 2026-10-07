@@ -19,7 +19,7 @@ from scripts.migrate_leads import SOCIAL_DEFAULTS, deep_merge, normalize_lead
 from src.audit.finder import find_from_google_maps, get_instagram_stats
 from src.audit.website import audit_website
 from src.dashboard.build import build_dashboard
-from src.storage.supabase import fetch_leads_full, upsert_leads
+from src.storage.supabase import fetch_all_leads, upsert_leads
 
 
 def _instagram_username(url: str | None) -> str | None:
@@ -302,7 +302,7 @@ async def _reaudit_one(lead: dict, semaphore: asyncio.Semaphore, check_links: bo
 
 async def run(args: argparse.Namespace) -> list[dict]:
     if args.source == "supabase":
-        leads = fetch_leads_full(limit=1000)
+        leads = fetch_all_leads()
     else:
         leads = json.loads((ROOT / args.input).read_text(encoding="utf-8"))
     if args.limit:

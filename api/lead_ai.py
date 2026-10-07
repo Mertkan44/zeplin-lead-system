@@ -10,7 +10,7 @@ from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields, has_email_evid
 from src.auth import require_auth, require_lead_access
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
-    fetch_leads_full,
+    fetch_lead_by_name,
     insert_audit_event,
     is_enabled as supabase_enabled,
     upsert_leads,
@@ -48,7 +48,7 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             require_lead_access(user, name)
-            lead = next((item for item in fetch_leads_full(limit=1000) if item.get("name") == name), None)
+            lead = fetch_lead_by_name(name)
             if not lead:
                 send_json(self, 404, {"ok": False, "error": "lead not found"}, allow_methods="POST, OPTIONS")
                 return
