@@ -21,8 +21,7 @@ begin
 end;
 $$;
 
-drop trigger if exists leads_bump_revision on public.leads;
-create trigger leads_bump_revision
+create or replace trigger leads_bump_revision
 before update on public.leads
 for each row execute function public.bump_lead_revision();
 
