@@ -10,6 +10,8 @@ if str(ROOT) not in sys.path:
 from src.auth import normalize_email, require_admin, require_auth
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
+    ASSIGNMENT_STATUSES,
+    fetch_active_assignments_for_leads,
     fetch_app_user_by_email,
     fetch_lead_assignment_by_id,
     fetch_lead_assignments,
@@ -118,6 +120,23 @@ class handler(BaseHTTPRequestHandler):
             if user.get("role") != "admin" and normalize_email(assignment.get("user_email")) != normalize_email(user.get("sub")):
                 send_json(self, 403, {"ok": False, "error": "assignment belongs to another user"}, allow_methods="GET, POST, PATCH, OPTIONS")
                 return
+            if status not in ASSIGNMENT_STATUSES:
+                send_json(self, 400, {"ok": False, "error": "assignment status is invalid"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                return
+            if user.get("role") != "admin":
+                # Only admins hand leads over; a sales user must not revive an
+                # archived assignment or reclaim a lead someone else now owns.
+                if assignment.get("status") == "archived" or status == "archived":
+                    send_json(self, 403, {"ok": False, "error": "only admins can change archived assignments"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                    return
+                if status == "active" and assignment.get("status") != "active":
+                    other_owners = [
+                        item for item in fetch_active_assignments_for_leads([assignment.get("lead_name") or ""])
+                        if normalize_email(item.get("user_email")) != normalize_email(user.get("sub"))
+                    ]
+                    if other_owners:
+                        send_json(self, 409, {"ok": False, "error": "lead is assigned to another user"}, allow_methods="GET, POST, PATCH, OPTIONS")
+                        return
             update_lead_assignment(
                 assignment_id,
                 status=status,

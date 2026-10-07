@@ -385,6 +385,9 @@ def set_app_user_active(email: str, active: bool) -> None:
         response.raise_for_status()
 
 
+ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
+
+
 def fetch_lead_assignments(
     *,
     user_email: str | None = None,
@@ -410,6 +413,35 @@ def fetch_lead_assignments(
         response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
         response.raise_for_status()
         return response.json()
+
+
+def _in_list(values: list[str]) -> str:
+    quoted = []
+    for value in values:
+        escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+        quoted.append(f'"{escaped}"')
+    return quote(f"({','.join(quoted)})", safe="")
+
+
+def fetch_active_assignments_for_leads(lead_names: list[str]) -> list[dict[str, Any]]:
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    names = sorted({name for name in lead_names if name})
+    rows: list[dict[str, Any]] = []
+    with httpx.Client(timeout=20) as client:
+        for start in range(0, len(names), 100):
+            chunk = names[start:start + 100]
+            query = (
+                "select=id,lead_name,user_email,status"
+                f"&lead_name=in.{_in_list(chunk)}"
+                "&status=eq.active"
+                "&limit=1000"
+            )
+            response = client.get(_postgrest_url(config, "lead_assignments", query), headers=_headers(config))
+            response.raise_for_status()
+            rows.extend(response.json())
+    return rows
 
 
 def fetch_lead_assignment_by_id(assignment_id: int) -> dict[str, Any] | None:
@@ -440,7 +472,7 @@ def upsert_lead_assignment(
     config = supabase_config()
     if not config:
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    if status not in {"active", "done", "snoozed", "archived"}:
+    if status not in ASSIGNMENT_STATUSES:
         raise ValueError("assignment status is invalid")
     payload = {
         "target_lead_name": lead_name,
@@ -468,7 +500,7 @@ def update_lead_assignment(
     meta: dict[str, Any] | None = None,
     due_at: str | None | object = _UNSET,
 ) -> None:
-    if status not in {"active", "done", "snoozed", "archived"}:
+    if status not in ASSIGNMENT_STATUSES:
         raise ValueError("assignment status is invalid")
     config = supabase_config()
     if not config:

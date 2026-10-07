@@ -14,6 +14,8 @@
       --bg: #0a0a0b; --panel: #141418; --panel2: #17171c; --raised: #1c1c22;
       --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
       --tx: #f3f3f0; --sub: #93938f; --muted: #5c5c5a;
+      --selected-bg: #000000; --selected-tx: #f3f3f0;
+      --warn-bg: rgba(244,197,107,0.12); --warn-tx: #f4c56b;
       --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.06), transparent 60%);
       --r: 26px; --rs: 18px;
     }
@@ -22,6 +24,8 @@
       --bg: #faf9f4; --panel: #ffffff; --panel2: #f3f1e9; --raised: #efece0;
       --line: #e9e4d6; --line2: #ddd6c2;
       --tx: #0c0b08; --sub: #4a4535; --muted: #8b856f;
+      --selected-bg: #0c0b08; --selected-tx: #faf9f4;
+      --warn-bg: #fff4dc; --warn-tx: #855500;
       --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.14), transparent 60%);
     }
     html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
@@ -112,19 +116,31 @@
     var BOOTSTRAP_LEADS = JSON.parse(atob('W10='));
     var leads    = BOOTSTRAP_LEADS.slice();
     var services = JSON.parse(atob('W3sic2x1ZyI6ICJ3ZWJzaXRlX2NyZWF0aW9uIiwgIm5hbWUiOiAiV2Vic2l0ZSBPbHVcdTAxNWZ0dXJtYSIsICJjYXRlZ29yeSI6ICJXZWIiLCAiZGVzYyI6ICJcdTAxMzBcdTAxNWZsZXRtZW5pbiBoZWRlZmxlcmluZSBnXHUwMGY2cmUgbW9iaWwgdXl1bWx1LCBnXHUwMGZjdmVuIHZlcmVuIHZlIGlsZXRpXHUwMTVmaW0gb2Rha2xcdTAxMzEgd2Vic2l0ZSBvbHVcdTAxNWZ0dXJtYS4iLCAic2VydmljZV90eXBlIjogInByb2plY3QiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJkaXJlY3QiLCAidHJpZ2dlcnMiOiBbIm5vX3dlYnNpdGUiXSwgImRlbGl2ZXJhYmxlcyI6IFsiXHUwMTMwaHRpeWFcdTAwZTcgYW5hbGl6aSwgc2F5ZmEgcGxhblx1MDEzMSB2ZSBpXHUwMGU3ZXJpayBtaW1hcmlzaSIsICJNb2JpbCB1eXVtbHUgYXJheVx1MDBmY3ogdGFzYXJcdTAxMzFtXHUwMTMxIHZlIGdlbGlcdTAxNWZ0aXJtZSIsICJGb3JtLCB0ZWxlZm9uLCBXaGF0c0FwcCwgaGFyaXRhIHZlIHNvc3lhbCBtZWR5YSBiYVx1MDExZmxhbnRcdTAxMzFsYXJcdTAxMzEiLCAiWWF5XHUwMTMxbmxhbWEsIHRlbWVsIHRla25payBrb250cm9sbGVyIHZlIGt1bGxhblx1MDEzMW0gdGVzbGltaSJdLCAiZGlzY292ZXJ5X3F1ZXN0aW9ucyI6IFsiV2Vic2l0ZSBoYW5naSBhbmEgaGVkZWZlIGhpem1ldCBlZGVjZWs6IHRhblx1MDEzMXRcdTAxMzFtLCByZXplcnZhc3lvbiwgc2F0XHUwMTMxXHUwMTVmIHZleWEgbGVhZCB0b3BsYW1hPyIsICJIYW5naSBoaXptZXRsZXIsIFx1MDBmY3JcdTAwZmNubGVyIHZlIGxva2FzeW9ubGFyIFx1MDBmNm5lIFx1MDBlN1x1MDEzMWthclx1MDEzMWxhY2FrPyIsICJBbGFuIGFkXHUwMTMxLCBob3N0aW5nLCBtZXRpbmxlciB2ZSBnXHUwMGY2cnNlbGxlciBoYXpcdTAxMzFyIG1cdTAxMzE/Il0sICJleGNsdXNpb25zIjogWyJBbGFuIGFkXHUwMTMxIHZlIGhvc3RpbmcgYmVkZWxpIiwgIkZvdG9cdTAxMWZyYWYvdmlkZW8gXHUwMGU3ZWtpbWkiLCAiU1x1MDBmY3Jla2xpIGlcdTAwZTdlcmlrIHZlIGJha1x1MDEzMW0iXSwgInNlY3RvcnMiOiBudWxsLCAib3duZXIiOiAiV2ViIiwgIm9mZmVyIjogIldlYnNpdGUgT2x1XHUwMTVmdHVybWEiLCAic2FsZXNfYW5nbGUiOiAiXHUwMTMwXHUwMTVmbGV0bWVuaW4gaGVkZWZsZXJpbmUgZ1x1MDBmNnJlIG1vYmlsIHV5dW1sdSwgZ1x1MDBmY3ZlbiB2ZXJlbiB2ZSBpbGV0aVx1MDE1ZmltIG9kYWtsXHUwMTMxIHdlYnNpdGUgb2x1XHUwMTVmdHVybWEuIiwgImRldGVjdHMiOiAiIiwgInByaWNlX21pbiI6IDAsICJwcmljZV9tYXgiOiAwLCAicHJpY2luZ19zdGF0dXMiOiAiYXBwcm92YWxfcmVxdWlyZWQiLCAibW9udGhseSI6IGZhbHNlfSwgeyJzbHVnIjogInNlb19vcmdhbmljIiwgIm5hbWUiOiAiU0VPIHZlIE9yZ2FuaWsgR1x1MDBmNnJcdTAwZmNuXHUwMGZjcmxcdTAwZmNrIiwgImNhdGVnb3J5IjogIlNFTyIsICJkZXNjIjogIlx1MDEzMFx1MDE1ZmxldG1lbmluIGFyYW1hIG1vdG9ybGFyXHUwMTMxbmRhIGRvXHUwMTFmcnUgc29yZ3VsYXJkYSBnXHUwMGY2clx1MDBmY25tZXNpbmkgdmUgb3JnYW5payB0YWxlcCBrYXphbm1hc1x1MDEzMW5cdTAxMzEgZ2VsaVx1MDE1ZnRpcmVuIFNFTyBcdTAwZTdhbFx1MDEzMVx1MDE1Zm1hc1x1MDEzMS4iLCAic2VydmljZV90eXBlIjogIm1vbnRobHkiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJjb25kaXRpb25hbCIsICJ0cmlnZ2VycyI6IFsibm9fc3NsIiwgIm5vdF9tb2JpbGUiLCAic2xvd19zaXRlIiwgIm5vX3NjaGVtYSIsICJub19vZyJdLCAiZGVsaXZlcmFibGVzIjogWyJUZWtuaWsgU0VPIGRlbmV0aW1pIHZlIFx1MDBmNm5jZWxpa2xpIGFrc2l5b24gcGxhblx1MDEzMSIsICJBbmFodGFyIGtlbGltZSwgcmFraXAgdmUgYXJhbWEgbml5ZXRpIGFyYVx1MDE1ZnRcdTAxMzFybWFzXHUwMTMxIiwgIlNheWZhLCBpXHUwMGU3ZXJpayB2ZSB5ZXJlbCBnXHUwMGY2clx1MDBmY25cdTAwZmNybFx1MDBmY2sgb3B0aW1pemFzeW9udSIsICJTZWFyY2ggQ29uc29sZSB0YWtpYmkgdmUgYXlsXHUwMTMxayBcdTAwZTdhbFx1MDEzMVx1MDE1Zm1hIHJhcG9ydSJdLCAiZGlzY292ZXJ5X3F1ZXN0aW9ucyI6IFsiSGFuZ2kgaGl6bWV0bGVyIHZlIGJcdTAwZjZsZ2VsZXIgaVx1MDBlN2luIEdvb2dsZSdkYSBnXHUwMGY2clx1MDBmY25tZWsgaXN0aXlvcnN1bnV6PyIsICJNZXZjdXQgd2Vic2l0ZSwgU2VhcmNoIENvbnNvbGUgdmUgdHJhZmlrIHZlcmlsZXJpbmUgZXJpXHUwMTVmaW0gdmFyIG1cdTAxMzE/IiwgIlx1MDEzMFx1MDBlN2VyaWsgXHUwMGZjcmV0aW1pbmkgdmUgd2Vic2l0ZSBkZVx1MDExZmlcdTAxNWZpa2xpa2xlcmluaSBraW0gb25heWxheWFjYWs/Il0sICJleGNsdXNpb25zIjogWyJTXHUwMTMxcmFsYW1hIGdhcmFudGlzaSIsICJSZWtsYW0geVx1MDBmNm5ldGltaSB2ZSBiXHUwMGZjdFx1MDBlN2VzaSIsICJcdTAwZGNjcmV0bGkgYmFja2xpbmsgc2F0XHUwMTMxbiBhbFx1MDEzMW1cdTAxMzEiXSwgInNlY3RvcnMiOiBudWxsLCAib3duZXIiOiAiU0VPIiwgIm9mZmVyIjogIlNFTyB2ZSBPcmdhbmlrIEdcdTAwZjZyXHUwMGZjblx1MDBmY3JsXHUwMGZjayIsICJzYWxlc19hbmdsZSI6ICJcdTAxMzBcdTAxNWZsZXRtZW5pbiBhcmFtYSBtb3Rvcmxhclx1MDEzMW5kYSBkb1x1MDExZnJ1IHNvcmd1bGFyZGEgZ1x1MDBmNnJcdTAwZmNubWVzaW5pIHZlIG9yZ2FuaWsgdGFsZXAga2F6YW5tYXNcdTAxMzFuXHUwMTMxIGdlbGlcdTAxNWZ0aXJlbiBTRU8gXHUwMGU3YWxcdTAxMzFcdTAxNWZtYXNcdTAxMzEuIiwgImRldGVjdHMiOiAiIiwgInByaWNlX21pbiI6IDAsICJwcmljZV9tYXgiOiAwLCAicHJpY2luZ19zdGF0dXMiOiAiYXBwcm92YWxfcmVxdWlyZWQiLCAibW9udGhseSI6IHRydWV9LCB7InNsdWciOiAic29jaWFsX21lZGlhIiwgIm5hbWUiOiAiU29zeWFsIE1lZHlhIFlcdTAwZjZuZXRpbWkiLCAiY2F0ZWdvcnkiOiAiU29zeWFsIE1lZHlhIiwgImRlc2MiOiAiTWFya2FuXHUwMTMxbiBzb3N5YWwgbWVkeWEgaGVzYXBsYXJcdTAxMzFuXHUwMTMxbiBzdHJhdGVqaSwgaVx1MDBlN2VyaWsgcGxhblx1MDEzMSwgeWF5XHUwMTMxbiB2ZSB0YWtpcCBzXHUwMGZjcmVcdTAwZTdsZXJpeWxlIGRcdTAwZmN6ZW5saSB5XHUwMGY2bmV0aW1pLiIsICJzZXJ2aWNlX3R5cGUiOiAibW9udGhseSIsICJyZWNvbW1lbmRhdGlvbl9tb2RlIjogImNvbmRpdGlvbmFsIiwgInRyaWdnZXJzIjogWyJub19pbnN0YWdyYW0iLCAibG93X2VuZ2FnZW1lbnQiLCAibG93X2ZvbGxvd2VycyJdLCAiZGVsaXZlcmFibGVzIjogWyJBeWxcdTAxMzFrIHNvc3lhbCBtZWR5YSBzdHJhdGVqaXNpIHZlIGlcdTAwZTdlcmlrIHRha3ZpbWkiLCAiUGF5bGFcdTAxNWZcdTAxMzFtIG1ldGlubGVyaSwgeWF5XHUwMTMxbiBwbGFuXHUwMTMxIHZlIGhlc2FwIGRcdTAwZmN6ZW5pIiwgIkthcHNhbSBkYWhpbGluZGUgeW9ydW0gdmUgbWVzYWogdGFraWJpIiwgIkF5bFx1MDEzMWsgcGVyZm9ybWFucyBkZVx1MDExZmVybGVuZGlybWVzaSJdLCAiZGlzY292ZXJ5X3F1ZXN0aW9ucyI6IFsiSGFuZ2kgc29zeWFsIG1lZHlhIGthbmFsbGFyXHUwMTMxIHlcdTAwZjZuZXRpbGVjZWsgdmUgaGVkZWYga2l0bGUga2ltPyIsICJBeWxcdTAxMzFrIHBheWxhXHUwMTVmXHUwMTMxbSBzXHUwMTMxa2xcdTAxMzFcdTAxMWZcdTAxMzEgdmUgaVx1MDBlN2VyaWsgb25heVx1MDEzMW5cdTAxMzEgdmVyZWNlayBraVx1MDE1Zmkga2ltPyIsICJNZXZjdXQgZm90b1x1MDExZnJhZi92aWRlbyBhclx1MDE1Zml2aSB2YXIgbVx1MDEzMSwgZFx1MDBmY3plbmxpIFx1MDBlN2VraW0gZ2VyZWtpeW9yIG11PyJdLCAiZXhjbHVzaW9ucyI6IFsiRm90b1x1MDExZnJhZi92aWRlbyBcdTAwZTdla2ltaSIsICJSZWtsYW0gYlx1MDBmY3RcdTAwZTdlc2kgdmUgeVx1MDBmNm5ldGltaSIsICJJbmZsdWVuY2VyIGdpZGVybGVyaSJdLCAic2VjdG9ycyI6IG51bGwsICJvd25lciI6ICJTb2NpYWwiLCAib2ZmZXIiOiAiU29zeWFsIE1lZHlhIFlcdTAwZjZuZXRpbWkiLCAic2FsZXNfYW5nbGUiOiAiTWFya2FuXHUwMTMxbiBzb3N5YWwgbWVkeWEgaGVzYXBsYXJcdTAxMzFuXHUwMTMxbiBzdHJhdGVqaSwgaVx1MDBlN2VyaWsgcGxhblx1MDEzMSwgeWF5XHUwMTMxbiB2ZSB0YWtpcCBzXHUwMGZjcmVcdTAwZTdsZXJpeWxlIGRcdTAwZmN6ZW5saSB5XHUwMGY2bmV0aW1pLiIsICJkZXRlY3RzIjogIiIsICJwcmljZV9taW4iOiAwLCAicHJpY2VfbWF4IjogMCwgInByaWNpbmdfc3RhdHVzIjogImFwcHJvdmFsX3JlcXVpcmVkIiwgIm1vbnRobHkiOiB0cnVlfSwgeyJzbHVnIjogInBvc3RfZGVzaWduIiwgIm5hbWUiOiAiUG9zdCBUYXNhclx1MDEzMW1sYXJcdTAxMzEiLCAiY2F0ZWdvcnkiOiAiU29zeWFsIE1lZHlhIiwgImRlc2MiOiAiTWFya2Ega2ltbGlcdTAxMWZpbmUgdXlndW4sIHNvc3lhbCBtZWR5YSBmb3JtYXRsYXJcdTAxMzFuZGEgdGVraWwgdmV5YSBzZXJpIHBvc3QgdGFzYXJcdTAxMzFtbGFyXHUwMTMxLiIsICJzZXJ2aWNlX3R5cGUiOiAicHJvamVjdF9vcl9tb250aGx5IiwgInJlY29tbWVuZGF0aW9uX21vZGUiOiAiZGlzY292ZXJ5X29ubHkiLCAidHJpZ2dlcnMiOiBbXSwgImRlbGl2ZXJhYmxlcyI6IFsiR1x1MDBmNnJzZWwgZGlsIHZlIHRhc2FyXHUwMTMxbSB5XHUwMGY2blx1MDBmY25cdTAwZmNuIGJlbGlybGVubWVzaSIsICJGZWVkIHBvc3R1LCBjYXJvdXNlbCB2ZSBzdG9yeSB1eWFybGFtYWxhclx1MDEzMSIsICJLYXBzYW0gZGFoaWxpbmRlIG1ldGluIHllcmxlXHUwMTVmaW1pIHZlIHJldml6eW9uIiwgIllheVx1MDEzMW5hIGhhelx1MDEzMXIgcGxhdGZvcm0gZm9ybWF0bGFyXHUwMTMxbmRhIHRlc2xpbSJdLCAiZGlzY292ZXJ5X3F1ZXN0aW9ucyI6IFsiQXlsXHUwMTMxayB2ZXlhIHByb2plIGJhemxcdTAxMzEga2FcdTAwZTcgdGFzYXJcdTAxMzFtIGdlcmVraXlvcj8iLCAiTWFya2Ega1x1MDEzMWxhdnV6dSwgbG9nbyB2ZSBrdXJ1bXNhbCByZW5rbGVyIGhhelx1MDEzMXIgbVx1MDEzMT8iLCAiTWV0aW5sZXJpIHZlIGthbXBhbnlhIGJpbGdpbGVyaW5pIGtpbSBzYVx1MDExZmxheWFjYWs/Il0sICJleGNsdXNpb25zIjogWyJGb3RvXHUwMTFmcmFmL3ZpZGVvIFx1MDBmY3JldGltaSIsICJTb3N5YWwgbWVkeWEgaGVzYXAgeVx1MDBmNm5ldGltaSIsICJTXHUwMTMxblx1MDEzMXJzXHUwMTMxeiByZXZpenlvbiJdLCAic2VjdG9ycyI6IG51bGwsICJvd25lciI6ICJEZXNpZ24iLCAib2ZmZXIiOiAiUG9zdCBUYXNhclx1MDEzMW1sYXJcdTAxMzEiLCAic2FsZXNfYW5nbGUiOiAiTWFya2Ega2ltbGlcdTAxMWZpbmUgdXlndW4sIHNvc3lhbCBtZWR5YSBmb3JtYXRsYXJcdTAxMzFuZGEgdGVraWwgdmV5YSBzZXJpIHBvc3QgdGFzYXJcdTAxMzFtbGFyXHUwMTMxLiIsICJkZXRlY3RzIjogIiIsICJwcmljZV9taW4iOiAwLCAicHJpY2VfbWF4IjogMCwgInByaWNpbmdfc3RhdHVzIjogImFwcHJvdmFsX3JlcXVpcmVkIiwgIm1vbnRobHkiOiBmYWxzZX0sIHsic2x1ZyI6ICJhZF9tYW5hZ2VtZW50IiwgIm5hbWUiOiAiUmVrbGFtIFlcdTAwZjZuZXRpbWkiLCAiY2F0ZWdvcnkiOiAiUmVrbGFtIiwgImRlc2MiOiAiTWV0YSBBZHMgdmUgR29vZ2xlIEFkcyBrYW1wYW55YWxhclx1MDEzMW5cdTAxMzFuIGhlZGVmLCBiXHUwMGZjdFx1MDBlN2UsIGtyZWF0aWYgdmUgcGVyZm9ybWFucyB0YWtpYml5bGUgeVx1MDBmNm5ldGltaS4iLCAic2VydmljZV90eXBlIjogIm1vbnRobHkiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJkaXNjb3Zlcnlfb25seSIsICJ0cmlnZ2VycyI6IFtdLCAiZGVsaXZlcmFibGVzIjogWyJSZWtsYW0gaGVzYWJcdTAxMzEgdmUgbWV2Y3V0IGthbXBhbnlhbGFyXHUwMTMxbiBrb250cm9sXHUwMGZjIiwgIkhlZGVmIGtpdGxlLCBiXHUwMGZjdFx1MDBlN2UgdmUga2FtcGFueWEgcGxhblx1MDEzMSIsICJLYW1wYW55YSBrdXJ1bHVtdSwgb3B0aW1pemFzeW9udSB2ZSB0YWtpYmkiLCAiUGVyZm9ybWFucyB2ZSBoYXJjYW1hIHJhcG9ydSJdLCAiZGlzY292ZXJ5X3F1ZXN0aW9ucyI6IFsiSGFuZ2kgcGxhdGZvcm1sYXJkYSByZWtsYW0gdmVyaWxlY2VrIHZlIGFuYSBoZWRlZiBuZWRpcj8iLCAiQXlsXHUwMTMxayByZWtsYW0gYlx1MDBmY3RcdTAwZTdlc2kgbmUga2FkYXI/IiwgIkt1bGxhblx1MDEzMWxhY2FrIGtyZWF0aWZsZXIgdmUgeVx1MDBmNm5sZW5kaXJpbGVjZWsgc2F5ZmEgaGF6XHUwMTMxciBtXHUwMTMxPyJdLCAiZXhjbHVzaW9ucyI6IFsiUmVrbGFtIHBsYXRmb3JtdSBiXHUwMGZjdFx1MDBlN2VzaSIsICJXZWJzaXRlIG9sdVx1MDE1ZnR1cm1hIiwgIlx1MDBjN2VraW0gdmUga2Fwc2FtIGRcdTAxMzFcdTAxNWZcdTAxMzEga3JlYXRpZiBcdTAwZmNyZXRpbWkiXSwgInNlY3RvcnMiOiBudWxsLCAib3duZXIiOiAiUGVyZm9ybWFuY2UiLCAib2ZmZXIiOiAiUmVrbGFtIFlcdTAwZjZuZXRpbWkiLCAic2FsZXNfYW5nbGUiOiAiTWV0YSBBZHMgdmUgR29vZ2xlIEFkcyBrYW1wYW55YWxhclx1MDEzMW5cdTAxMzFuIGhlZGVmLCBiXHUwMGZjdFx1MDBlN2UsIGtyZWF0aWYgdmUgcGVyZm9ybWFucyB0YWtpYml5bGUgeVx1MDBmNm5ldGltaS4iLCAiZGV0ZWN0cyI6ICIiLCAicHJpY2VfbWluIjogMCwgInByaWNlX21heCI6IDAsICJwcmljaW5nX3N0YXR1cyI6ICJhcHByb3ZhbF9yZXF1aXJlZCIsICJtb250aGx5IjogdHJ1ZX0sIHsic2x1ZyI6ICJwaG90b192aWRlb19zaG9vdCIsICJuYW1lIjogIlZpZGVvIHZlIEZvdG9cdTAxMWZyYWYgXHUwMGM3ZWtpbWkiLCAiY2F0ZWdvcnkiOiAiUHJvZFx1MDBmY2tzaXlvbiIsICJkZXNjIjogIlx1MDEzMFx1MDE1ZmxldG1lLCBtZWthbiwgZWtpcCwgXHUwMGZjclx1MDBmY24gdmV5YSBoaXptZXQgaVx1MDBlN2luIHByb2Zlc3lvbmVsIGZvdG9cdTAxMWZyYWYgdmUgdmlkZW8gaVx1MDBlN2VyaWsgXHUwMGZjcmV0aW1pLiIsICJzZXJ2aWNlX3R5cGUiOiAicHJvamVjdCIsICJyZWNvbW1lbmRhdGlvbl9tb2RlIjogImRpc2NvdmVyeV9vbmx5IiwgInRyaWdnZXJzIjogW10sICJkZWxpdmVyYWJsZXMiOiBbIlx1MDBjN2VraW0gXHUwMGY2bmNlc2kgYnJpZWYsIGtvbnNlcHQgdmUgXHUwMGU3ZWtpbSBwbGFuXHUwMTMxIiwgIkthcHNhbSBkYWhpbGluZGUgZm90b1x1MDExZnJhZiB2ZSB2aWRlbyBcdTAwZTdla2ltaSIsICJTZVx1MDBlN2ltLCB0ZW1lbCBrdXJndSB2ZSByZW5rIGRcdTAwZmN6ZW5sZW1lIiwgIkJlbGlybGVuZW4gZm9ybWF0bGFyZGEgZGlqaXRhbCB0ZXNsaW0iXSwgImRpc2NvdmVyeV9xdWVzdGlvbnMiOiBbIk5lbGVyIFx1MDBlN2VraWxlY2VrIHZlIGlcdTAwZTdlcmlrbGVyIG5lcmVsZXJkZSBrdWxsYW5cdTAxMzFsYWNhaz8iLCAiXHUwMGM3ZWtpbSBtZWthblx1MDEzMSwgc1x1MDBmY3Jlc2ksIGVraXAgdmUgbW9kZWwgaWh0aXlhY1x1MDEzMSBuZWRpcj8iLCAiS2FcdTAwZTcgZm90b1x1MDExZnJhZiB2ZSBrYVx1MDBlNyB2aWRlbyB0ZXNsaW1pIGJla2xlbml5b3I/Il0sICJleGNsdXNpb25zIjogWyJNZWthbiwgbW9kZWwsIG95dW5jdSB2ZSB1bGFcdTAxNWZcdTAxMzFtIGdpZGVybGVyaSIsICJLYXBzYW0gZFx1MDEzMVx1MDE1Zlx1MDEzMSBpbGVyaSBwb3N0LXByb2RcdTAwZmNrc2l5b24iLCAiU1x1MDEzMW5cdTAxMzFyc1x1MDEzMXogcmV2aXp5b24iXSwgInNlY3RvcnMiOiBudWxsLCAib3duZXIiOiAiUHJvZHVjdGlvbiIsICJvZmZlciI6ICJWaWRlbyB2ZSBGb3RvXHUwMTFmcmFmIFx1MDBjN2VraW1pIiwgInNhbGVzX2FuZ2xlIjogIlx1MDEzMFx1MDE1ZmxldG1lLCBtZWthbiwgZWtpcCwgXHUwMGZjclx1MDBmY24gdmV5YSBoaXptZXQgaVx1MDBlN2luIHByb2Zlc3lvbmVsIGZvdG9cdTAxMWZyYWYgdmUgdmlkZW8gaVx1MDBlN2VyaWsgXHUwMGZjcmV0aW1pLiIsICJkZXRlY3RzIjogIiIsICJwcmljZV9taW4iOiAwLCAicHJpY2VfbWF4IjogMCwgInByaWNpbmdfc3RhdHVzIjogImFwcHJvdmFsX3JlcXVpcmVkIiwgIm1vbnRobHkiOiBmYWxzZX0sIHsic2x1ZyI6ICJtZW51X3Nob290IiwgIm5hbWUiOiAiTWVuXHUwMGZjIFx1MDBjN2VraW1pIiwgImNhdGVnb3J5IjogIlByb2RcdTAwZmNrc2l5b24iLCAiZGVzYyI6ICJSZXN0b3JhbiB2ZSBrYWZlbGVyIGlcdTAwZTdpbiBcdTAwZmNyXHUwMGZjbmxlcmkgaVx1MDE1ZnRhaCBhXHUwMGU3XHUwMTMxY1x1MDEzMSB2ZSBtYXJrYSBkaWxpbmUgdXlndW4gZ1x1MDBmNnN0ZXJlbiBtZW5cdTAwZmMgZm90b1x1MDExZnJhZi92aWRlbyBcdTAwZTdla2ltaS4iLCAic2VydmljZV90eXBlIjogInByb2plY3QiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJkaXNjb3Zlcnlfb25seSIsICJ0cmlnZ2VycyI6IFtdLCAiZGVsaXZlcmFibGVzIjogWyJcdTAwZGNyXHUwMGZjbiBsaXN0ZXNpLCBcdTAwZTdla2ltIHNcdTAxMzFyYXNcdTAxMzEgdmUgZ1x1MDBmNnJzZWwgc3RpbCBwbGFuXHUwMTMxIiwgIlllbWVrIHZlIGlcdTAwZTdlY2VrIGZvdG9cdTAxMWZyYWYvdmlkZW8gXHUwMGU3ZWtpbWkiLCAiUmVuaywgXHUwMTMxXHUwMTVmXHUwMTMxayB2ZSB0ZW1lbCByZXRvdWNoIGRcdTAwZmN6ZW5sZW1lbGVyaSIsICJNZW5cdTAwZmMsIHNvc3lhbCBtZWR5YSB2ZSB0ZXNsaW1hdCBwbGF0Zm9ybWxhclx1MDEzMW5hIHV5Z3VuIFx1MDBlN1x1MDEzMWt0XHUwMTMxbGFyIl0sICJkaXNjb3ZlcnlfcXVlc3Rpb25zIjogWyJLYVx1MDBlNyBcdTAwZmNyXHUwMGZjbiBcdTAwZTdla2lsZWNlayB2ZSBcdTAwZmNyXHUwMGZjbmxlciBoYW5naSBrYW5hbGxhcmRhIGt1bGxhblx1MDEzMWxhY2FrPyIsICJNZWthbiBcdTAwZTdla2ltZSBuZSB6YW1hbiBoYXpcdTAxMzFybGFuYWJpbGlyOyBzdW51bS9zdHlsaW5nIGRlc3RlXHUwMTFmaSB2YXIgbVx1MDEzMT8iLCAiQmFza1x1MDEzMSBtZW5cdTAwZmNzXHUwMGZjLCBkaWppdGFsIG1lblx1MDBmYyB2ZXlhIHNvc3lhbCBtZWR5YSBpXHUwMGU3aW4gaGFuZ2kgZm9ybWF0bGFyIGdlcmVraXlvcj8iXSwgImV4Y2x1c2lvbnMiOiBbIkZvb2Qgc3R5bGluZyBtYWx6ZW1lbGVyaSB2ZSBcdTAwZjZ6ZWwgZGVrb3IiLCAiQmFza1x1MDEzMSB2ZSBtZW5cdTAwZmMgdGFzYXJcdTAxMzFtXHUwMTMxIiwgIk1la2FuL3VsYVx1MDE1Zlx1MDEzMW0gZ2lkZXJsZXJpIl0sICJzZWN0b3JzIjogWyJyZXN0YXVyYW50Il0sICJvd25lciI6ICJQcm9kdWN0aW9uIiwgIm9mZmVyIjogIk1lblx1MDBmYyBcdTAwYzdla2ltaSIsICJzYWxlc19hbmdsZSI6ICJSZXN0b3JhbiB2ZSBrYWZlbGVyIGlcdTAwZTdpbiBcdTAwZmNyXHUwMGZjbmxlcmkgaVx1MDE1ZnRhaCBhXHUwMGU3XHUwMTMxY1x1MDEzMSB2ZSBtYXJrYSBkaWxpbmUgdXlndW4gZ1x1MDBmNnN0ZXJlbiBtZW5cdTAwZmMgZm90b1x1MDExZnJhZi92aWRlbyBcdTAwZTdla2ltaS4iLCAiZGV0ZWN0cyI6ICIiLCAicHJpY2VfbWluIjogMCwgInByaWNlX21heCI6IDAsICJwcmljaW5nX3N0YXR1cyI6ICJhcHByb3ZhbF9yZXF1aXJlZCIsICJtb250aGx5IjogZmFsc2V9LCB7InNsdWciOiAicmVlbHNfcHJvZHVjdGlvbiIsICJuYW1lIjogIlJlZWxzIFx1MDBjN2VraW0gdmUgRWRpdCIsICJjYXRlZ29yeSI6ICJQcm9kXHUwMGZja3NpeW9uIiwgImRlc2MiOiAiU29zeWFsIG1lZHlhIGlcdTAwZTdpbiBrXHUwMTMxc2EsIGRpbmFtaWsgdmUgbWFya2F5YSB1eWd1biBSZWVscyB2aWRlb2xhclx1MDEzMW5cdTAxMzFuIFx1MDBlN2VraW1pIHZlIGt1cmd1c3UuIiwgInNlcnZpY2VfdHlwZSI6ICJwcm9qZWN0X29yX21vbnRobHkiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJjb25kaXRpb25hbCIsICJ0cmlnZ2VycyI6IFsibG93X2VuZ2FnZW1lbnQiXSwgImRlbGl2ZXJhYmxlcyI6IFsiS29udSwgc2VuYXJ5byBha1x1MDEzMVx1MDE1Zlx1MDEzMSB2ZSBcdTAwZTdla2ltIHBsYW5cdTAxMzEiLCAiRGlrZXkgZm9ybWF0IFJlZWxzIFx1MDBlN2VraW1pIiwgIkRpbmFtaWsga3VyZ3UsIGFsdHlhelx1MDEzMSwgbVx1MDBmY3ppayB2ZSB0ZW1lbCBlZmVrdGxlciIsICJZYXlcdTAxMzFuYSBoYXpcdTAxMzFyIHZpZGVvIHRlc2xpbWkiXSwgImRpc2NvdmVyeV9xdWVzdGlvbnMiOiBbIkF5ZGEga2FcdTAwZTcgUmVlbHMgZ2VyZWtpeW9yIHZlIGFuYSBpXHUwMGU3ZXJpayBiYVx1MDE1ZmxcdTAxMzFrbGFyXHUwMTMxIG5lbGVyPyIsICJLYW1lcmEga2FyXHUwMTVmXHUwMTMxc1x1MDEzMW5hIGtpbSBcdTAwZTdcdTAxMzFrYWNhazsgbWVrYW4gdmUgXHUwMGZjclx1MDBmY25sZXIgaGF6XHUwMTMxciBtXHUwMTMxPyIsICJSZWZlcmFucyBhbFx1MDEzMW5hY2FrIHZpZGVvIHRhcnpcdTAxMzEgdmV5YSBtYXJrYSBkaWxpIHZhciBtXHUwMTMxPyJdLCAiZXhjbHVzaW9ucyI6IFsiT3l1bmN1L2luZmx1ZW5jZXIgZ2lkZXJsZXJpIiwgIlx1MDEzMGxlcmkgc2V2aXllIFZGWCB2ZSAzRCIsICJTb3N5YWwgbWVkeWEgeWF5XHUwMTMxbiB5XHUwMGY2bmV0aW1pIl0sICJzZWN0b3JzIjogbnVsbCwgIm93bmVyIjogIlByb2R1Y3Rpb24iLCAib2ZmZXIiOiAiUmVlbHMgXHUwMGM3ZWtpbSB2ZSBFZGl0IiwgInNhbGVzX2FuZ2xlIjogIlNvc3lhbCBtZWR5YSBpXHUwMGU3aW4ga1x1MDEzMXNhLCBkaW5hbWlrIHZlIG1hcmtheWEgdXlndW4gUmVlbHMgdmlkZW9sYXJcdTAxMzFuXHUwMTMxbiBcdTAwZTdla2ltaSB2ZSBrdXJndXN1LiIsICJkZXRlY3RzIjogIiIsICJwcmljZV9taW4iOiAwLCAicHJpY2VfbWF4IjogMCwgInByaWNpbmdfc3RhdHVzIjogImFwcHJvdmFsX3JlcXVpcmVkIiwgIm1vbnRobHkiOiBmYWxzZX0sIHsic2x1ZyI6ICJjaGF0Ym90X3ZvaWNlYm90IiwgIm5hbWUiOiAiQ2hhdGJvdCB2ZSBTZXNsaWJvdCBLdXJ1bHVtdSIsICJjYXRlZ29yeSI6ICJZYXBheSBaZWthIHZlIE90b21hc3lvbiIsICJkZXNjIjogIk1cdTAwZmNcdTAxNWZ0ZXJpIHNvcnVsYXJcdTAxMzFuXHUwMTMxIGthclx1MDE1Zlx1MDEzMWxheWFuLCBiaWxnaSB0b3BsYXlhbiB2ZSB1eWd1biBha1x1MDEzMVx1MDE1ZmEgeVx1MDBmNm5sZW5kaXJlbiBjaGF0Ym90IHZleWEgc2VzbGlib3Qga3VydWx1bXUuIiwgInNlcnZpY2VfdHlwZSI6ICJwcm9qZWN0X29yX21vbnRobHkiLCAicmVjb21tZW5kYXRpb25fbW9kZSI6ICJkaXNjb3Zlcnlfb25seSIsICJ0cmlnZ2VycyI6IFtdLCAiZGVsaXZlcmFibGVzIjogWyJcdTAxMzBodGl5YVx1MDBlNyBhbmFsaXppIHZlIGtvbnVcdTAxNWZtYSBha1x1MDEzMVx1MDE1Zmxhclx1MDEzMW5cdTAxMzFuIGhhelx1MDEzMXJsYW5tYXNcdTAxMzEiLCAiQ2hhdGJvdCB2ZXlhIHNlc2xpYm90IGt1cnVsdW11IHZlIGJpbGdpIHRhYmFuXHUwMTMxIiwgIlV5Z3VuIGthbmFsbGFyYSB2ZSBzaXN0ZW1sZXJlIGJhXHUwMTFmbGFudFx1MDEzMSIsICJUZXN0LCB5YXlcdTAxMzFuYSBhbG1hLCBlXHUwMTFmaXRpbSB2ZSBpemxlbWUiXSwgImRpc2NvdmVyeV9xdWVzdGlvbnMiOiBbIkJvdCBoYW5naSBrYW5hbGRhIFx1MDBlN2FsXHUwMTMxXHUwMTVmYWNhayB2ZSBoYW5naSBpXHUwMTVmbGVyaSB5YXBhY2FrPyIsICJFbiBzXHUwMTMxayBnZWxlbiBzb3J1bGFyLCByYW5kZXZ1IHZleWEgc2F0XHUwMTMxXHUwMTVmIGFrXHUwMTMxXHUwMTVmbGFyXHUwMTMxIG5lbGVyPyIsICJNZXZjdXQgd2Vic2l0ZSwgdGVsZWZvbiwgQ1JNIHZleWEgdGFrdmltIGVudGVncmFzeW9udSB2YXIgbVx1MDEzMT8iXSwgImV4Y2x1c2lvbnMiOiBbIlx1MDBkY1x1MDBlN1x1MDBmY25jXHUwMGZjIHRhcmFmIHBsYXRmb3JtLCB0ZWxlZm9uIHZlIGt1bGxhblx1MDEzMW0gXHUwMGZjY3JldGxlcmkiLCAiS2Fwc2FtIGRcdTAxMzFcdTAxNWZcdTAxMzEgXHUwMGY2emVsIHlhelx1MDEzMWxcdTAxMzFtIGVudGVncmFzeW9ubGFyXHUwMTMxIiwgIlx1MDEzMG5zYW4gb3BlcmF0XHUwMGY2ciBoaXptZXRpIl0sICJzZWN0b3JzIjogbnVsbCwgIm93bmVyIjogIkFJIiwgIm9mZmVyIjogIkNoYXRib3QgdmUgU2VzbGlib3QgS3VydWx1bXUiLCAic2FsZXNfYW5nbGUiOiAiTVx1MDBmY1x1MDE1ZnRlcmkgc29ydWxhclx1MDEzMW5cdTAxMzEga2FyXHUwMTVmXHUwMTMxbGF5YW4sIGJpbGdpIHRvcGxheWFuIHZlIHV5Z3VuIGFrXHUwMTMxXHUwMTVmYSB5XHUwMGY2bmxlbmRpcmVuIGNoYXRib3QgdmV5YSBzZXNsaWJvdCBrdXJ1bHVtdS4iLCAiZGV0ZWN0cyI6ICIiLCAicHJpY2VfbWluIjogMCwgInByaWNlX21heCI6IDAsICJwcmljaW5nX3N0YXR1cyI6ICJhcHByb3ZhbF9yZXF1aXJlZCIsICJtb250aGx5IjogZmFsc2V9LCB7InNsdWciOiAiYWlfYWRfdmlkZW9zIiwgIm5hbWUiOiAiUmVrbGFtbGFyIFx1MDEzMFx1MDBlN2luIEdlbGlcdTAxNWZtaVx1MDE1ZiBZYXBheSBaZWthIFZpZGVvbGFyXHUwMTMxIiwgImNhdGVnb3J5IjogIllhcGF5IFpla2EgdmUgS3JlYXRpZiIsICJkZXNjIjogIlJla2xhbSBrYW1wYW55YWxhclx1MDEzMSBpXHUwMGU3aW4geWFwYXkgemVrYSBkZXN0ZWtsaSBrb25zZXB0LCBnXHUwMGY2cnNlbCwgc2FobmUsIHNlcyB2ZSBrdXJndSBcdTAwZmNyZXRpbWkuIiwgInNlcnZpY2VfdHlwZSI6ICJwcm9qZWN0IiwgInJlY29tbWVuZGF0aW9uX21vZGUiOiAiZGlzY292ZXJ5X29ubHkiLCAidHJpZ2dlcnMiOiBbXSwgImRlbGl2ZXJhYmxlcyI6IFsiUmVrbGFtIGhlZGVmaSwga29uc2VwdCB2ZSBzZW5hcnlvIGdlbGlcdTAxNWZ0aXJtZSIsICJZYXBheSB6ZWthIGlsZSBzYWhuZSB2ZSBnXHUwMGY2cnNlbCBcdTAwZmNyZXRpbWkiLCAiU2VzbGVuZGlybWUsIG1cdTAwZmN6aWssIGt1cmd1IHZlIHJla2xhbSBmb3JtYXRsYXJcdTAxMzEiLCAiRmFya2xcdTAxMzEgbWV0aW4gdmV5YSBhXHUwMGU3XHUwMTMxbFx1MDEzMVx1MDE1ZmxhcmxhIGtyZWF0aWYgdmFyeWFzeW9ubGFyXHUwMTMxIl0sICJkaXNjb3ZlcnlfcXVlc3Rpb25zIjogWyJSZWtsYW1cdTAxMzFuIGhlZGVmaSwgaGVkZWYga2l0bGVzaSB2ZSBrdWxsYW5cdTAxMzFsYWNhXHUwMTFmXHUwMTMxIHBsYXRmb3JtIG5lZGlyPyIsICJcdTAwZGNyXHUwMGZjbiBnXHUwMGY2cnNlbGxlcmksIG1hcmthIFx1MDBmNlx1MDExZmVsZXJpIHZlIHpvcnVubHUgbWVzYWpsYXIgaGF6XHUwMTMxciBtXHUwMTMxPyIsICJHZXJcdTAwZTdla1x1MDBlN2ksIHNpbmVtYXRpaywgc3VudWN1bHUgdmV5YSBcdTAwZmNyXHUwMGZjbiBvZGFrbFx1MDEzMSBoYW5naSBzdGlsIGlzdGVuaXlvcj8iXSwgImV4Y2x1c2lvbnMiOiBbIlJla2xhbSBiXHUwMGZjdFx1MDBlN2VzaSB2ZSBrYW1wYW55YSB5XHUwMGY2bmV0aW1pIiwgIkxpc2Fuc1x1MDEzMSBheXJcdTAxMzFjYSBnZXJla2VuIHN0b2svb3l1bmN1IGt1bGxhblx1MDEzMW1cdTAxMzEiLCAiU1x1MDEzMW5cdTAxMzFyc1x1MDEzMXoga3JlYXRpZiB2YXJ5YXN5b24iXSwgInNlY3RvcnMiOiBudWxsLCAib3duZXIiOiAiQUkgQ3JlYXRpdmUiLCAib2ZmZXIiOiAiUmVrbGFtbGFyIFx1MDEzMFx1MDBlN2luIEdlbGlcdTAxNWZtaVx1MDE1ZiBZYXBheSBaZWthIFZpZGVvbGFyXHUwMTMxIiwgInNhbGVzX2FuZ2xlIjogIlJla2xhbSBrYW1wYW55YWxhclx1MDEzMSBpXHUwMGU3aW4geWFwYXkgemVrYSBkZXN0ZWtsaSBrb25zZXB0LCBnXHUwMGY2cnNlbCwgc2FobmUsIHNlcyB2ZSBrdXJndSBcdTAwZmNyZXRpbWkuIiwgImRldGVjdHMiOiAiIiwgInByaWNlX21pbiI6IDAsICJwcmljZV9tYXgiOiAwLCAicHJpY2luZ19zdGF0dXMiOiAiYXBwcm92YWxfcmVxdWlyZWQiLCAibW9udGhseSI6IGZhbHNlfV0='));
-    var STATUS_KEY   = 'zeplin_lead_statuses_v4';
-    var OUTREACH_KEY = 'zeplin_outreach_v2';
+    // CRM data lives only in memory for the current session; only UI
+    // preferences (theme) are kept in localStorage. Purge older CRM caches.
     try {
       [
         'zeplin_lead_statuses_v1',
         'zeplin_lead_statuses_v2',
         'zeplin_lead_statuses_v3',
+        'zeplin_lead_statuses_v4',
         'zeplin_outreach_v1',
+        'zeplin_outreach_v2',
       ].forEach(key => localStorage.removeItem(key));
     } catch(e) {}
     var remoteStatuses = {};
     var outreachEvents = [];
     var apiReady = false;
+    // Bumped whenever the signed-in user changes so late responses from the
+    // previous session are dropped instead of written into the new one.
+    var crmSession = 0;
+    function clearCrmState() {
+      crmSession += 1;
+      leads = [];
+      remoteStatuses = {};
+      outreachEvents = [];
+      apiReady = false;
+    }
   </script>
 
   <script type="text/babel">
@@ -149,14 +165,8 @@
     } catch(e) { return str; }
   }
 
-  function readLocalStatuses() {
-    try { return JSON.parse(localStorage.getItem(STATUS_KEY) || '{}'); } catch(e) { return {}; }
-  }
-  function writeLocalStatuses(obj) {
-    localStorage.setItem(STATUS_KEY, JSON.stringify(obj || {}));
-  }
   function getStatuses() {
-    return Object.assign({}, readLocalStatuses(), remoteStatuses);
+    return Object.assign({}, remoteStatuses);
   }
   function persistStatus(name, s) {
     if (!apiReady) return Promise.reject(new Error('api_not_ready'));
@@ -165,6 +175,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, status: s }),
     }).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) throw new Error('status_save_failed');
       return res.json();
     });
@@ -179,9 +190,6 @@
     });
   }
 
-  function readLocalOutreach() {
-    try { return JSON.parse(localStorage.getItem(OUTREACH_KEY) || '[]'); } catch(e) { return []; }
-  }
   function normalizeOutreachEvent(item) {
     if (!item) return null;
     return {
@@ -204,11 +212,10 @@
     };
   }
   function getOutreach() {
-    return outreachEvents.length ? outreachEvents : readLocalOutreach().map(normalizeOutreachEvent).filter(Boolean);
+    return outreachEvents;
   }
   function saveOutreach(arr) {
     outreachEvents = (arr || []).map(normalizeOutreachEvent).filter(Boolean);
-    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
   }
   function getLeadEvents(name) {
     return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
@@ -237,6 +244,7 @@
         idempotency_key: `dashboard-${evt.ts}`,
       }),
     }).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) throw new Error('outreach_save_failed');
       return res.json();
     });
@@ -286,6 +294,7 @@
         status: 'active',
       }),
     }).then(async response => {
+      notifyIfSessionExpired(response);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Atama kaydedilemedi.');
       return data;
@@ -336,18 +345,25 @@
     leads = rows.slice();
     remoteStatuses = {};
     leads.forEach(l => { remoteStatuses[l.name] = l.status || 'yeni'; });
-    writeLocalStatuses(getStatuses());
   }
 
   function applyRemoteOutreach(rows) {
     if (!Array.isArray(rows)) return;
     outreachEvents = rows.map(normalizeOutreachEvent).filter(Boolean);
-    localStorage.setItem(OUTREACH_KEY, JSON.stringify(outreachEvents));
+  }
+
+  // A 401 from any CRM endpoint means the session is gone: App clears the CRM
+  // state and returns to login. 403 only means "not allowed" and keeps the session.
+  function notifyIfSessionExpired(res) {
+    if (res.status === 401 && !String(res.url || '').includes('/api/auth')) {
+      window.dispatchEvent(new Event('zeplin:session-expired'));
+    }
   }
 
   function fetchJSON(url, options) {
     const opts = { credentials: 'same-origin', ...(options || {}) };
     return fetch(url, opts).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) {
         return res.json().catch(() => ({})).then(data => {
           throw new Error(data.error || `request_failed_${res.status}`);
@@ -361,6 +377,7 @@
     const opts = { credentials: 'same-origin', ...(options || {}) };
     opts.headers = { 'Content-Type': 'application/json', ...((options || {}).headers || {}) };
     return fetch(url, opts).then(res => {
+      notifyIfSessionExpired(res);
       if (!res.ok) {
         return res.json().catch(() => ({})).then(data => {
           throw new Error(data.error || `request_failed_${res.status}`);
@@ -968,7 +985,7 @@
     brandSub:     { fontSize: 11, color: 'var(--muted)', marginTop: 1 },
     nav:          { display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5, overflowX: 'auto', flexShrink: 1 },
     item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'transparent', color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
-    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: '#000', color: 'var(--tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
+    itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'var(--selected-bg)', color: 'var(--selected-tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
     badge:        { fontSize: 10.5, background: 'var(--raised)', color: 'var(--sub)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
     search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
@@ -1756,7 +1773,7 @@
     const dateStr = React.useMemo(() => new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), []);
 
     const kpis = [
-      { label: user?.role === 'admin' ? 'Atanan Lead' : 'Bana Atanan', value: String(assignedCount || leads.length), delta: `${leads.length} aktif kayıt`, dot: 'var(--accent)' },
+      { label: user?.role === 'admin' ? 'Atanan Lead' : 'Bana Atanan', value: String(assignedCount), delta: `${leads.length} görünür kayıt`, dot: 'var(--accent)' },
       { label: 'Bugünkü Arama', value: String(todayCalls),    delta: 'gerçek aktivite',  dot: '#ffcf4a' },
       { label: 'Takip Bekleyen',value: String(followUps),     delta: 'yeniden temas',    dot: '#7cc5ff' },
       { label: 'Kazanılan',     value: String(converted),     delta: 'müşteri oldu',     dot: '#b6f24a' },
@@ -1994,6 +2011,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lead_name: lead.name }),
       }).then(async response => {
+        notifyIfSessionExpired(response);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || 'Google verisi yenilenemedi.');
         if (data.place?.status !== 'verified') throw new Error('Google’da güvenilir işletme eşleşmesi bulunamadı; manuel kontrol et.');
@@ -2262,13 +2280,13 @@
       if (!value) return;
       setBusy(true);
       addOutreach(lead.name, 'note_added', new Date().toISOString(), value).then(() => {
+        setNote('');
         setFeedback('Not kaydedildi.');
+        if (onDataChange) onDataChange();
       }).catch(() => {
-        setFeedback('Not kaydedilemedi. Bağlantıyı kontrol et.');
+        setFeedback('Not kaydedilemedi; metnin duruyor. Bağlantıyı kontrol edip tekrar kaydet.');
       }).finally(() => {
         setBusy(false);
-        setNote('');
-        if (onDataChange) onDataChange();
       });
     }
 
@@ -3340,7 +3358,7 @@
           </div>
           <div style={{ display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5 }}>
             {[7, 30, 90, 'all'].map(days => (
-              <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? '#000' : 'transparent', color: periodDays === days ? 'var(--tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
+              <button key={days} onClick={() => setPeriodDays(days)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', background: periodDays === days ? 'var(--selected-bg)' : 'transparent', color: periodDays === days ? 'var(--selected-tx)' : 'var(--sub)', fontSize: 12.5, fontWeight: periodDays === days ? 600 : 500 }}>
                 {days === 'all' ? 'Tümü' : days === 90 ? 'Çeyrek' : `${days}g`}
               </button>
             ))}
@@ -3598,16 +3616,12 @@
 
   // ── Login ──────────────────────────────────────────────────────────────────
 
-  function LoginView({ onSubmit }) {
+  function LoginView({ onSubmit, notice }) {
     const [role, setRole]         = React.useState('admin');
     const [email, setEmail]       = React.useState('');
     const [password, setPassword] = React.useState('');
     const [error, setError]       = React.useState(false);
     const [busy, setBusy]         = React.useState(false);
-
-    const totalLeads = leads.length;
-    const converted   = leads.filter(l => (getStatuses()[l.name] || 'yeni') === 'converted').length;
-    const pipelineVal = leads.reduce((s, l) => s + (l.estimated_value_tl || 0), 0);
 
     function submit(e) {
       e.preventDefault();
@@ -3632,11 +3646,6 @@
             <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Bugün kimi arayacağını bilerek başla.</div>
             <div style={{ marginTop: 14, fontSize: 14.5, color: '#a6a28f', lineHeight: 1.5 }}>Yapay zekâ her lead için sıradaki en iyi aksiyonu, gerekçesini ve hazır mesajını hazırlar. Sen sadece ara.</div>
           </div>
-          <div style={{ position: 'relative', display: 'flex', gap: 26, flexWrap: 'wrap' }}>
-            <div><div style={lv.statVal}>{totalLeads}</div><div style={lv.statLbl}>Aktif lead</div></div>
-            <div><div style={{ ...lv.statVal, color: '#fff' }}>{converted}</div><div style={lv.statLbl}>Kazanıldı</div></div>
-            <div><div style={{ ...lv.statVal, color: '#fff' }}>~{fmt(pipelineVal)} ₺</div><div style={lv.statLbl}>Pipeline değeri</div></div>
-          </div>
         </div>
 
         <div style={lv.formPane}>
@@ -3658,6 +3667,7 @@
               </label>
             </div>
 
+            {notice && !error && <div style={lv.notice} role="status">{notice}</div>}
             {error && <div style={lv.error}>E-posta veya şifre hatalı. Tekrar dene.</div>}
 
             <button style={{ ...lv.submitBtn, opacity: busy ? 0.75 : 1 }} disabled={busy}>
@@ -3688,6 +3698,7 @@
     error:        { marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
     submitBtn:    { marginTop: 18, width: '100%', height: 46, border: 'none', borderRadius: 12, background: 'var(--accent)', color: 'var(--accent-ink)', fontFamily: "'Instrument Sans'", fontSize: 14.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 },
     spinner:      { width: 15, height: 15, border: '2px solid rgba(18,20,10,0.35)', borderTopColor: '#12140a', borderRadius: 999, display: 'inline-block', animation: 'zspin .7s linear infinite' },
+    notice:       { marginTop: 12, padding: '10px 12px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
     hint:         { marginTop: 14, fontSize: 11.5, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 },
   };
 
@@ -3806,24 +3817,27 @@
     }
 
     function refreshWorkspace() {
+      const session = crmSession;
       return fetchJSON('/api/workspace')
         .then(data => {
+          if (session !== crmSession) return;
           hydrateWorkspace(data);
           setDataError('');
         })
         .catch(err => {
-          apiReady = false;
+          if (session !== crmSession) return;
           setDataError(err.message);
-          leads = [];
-          outreachEvents = [];
-          syncSharedState({ summary: null, assignments: [] });
         });
     }
 
     function refreshTeamUsers() {
+      const session = crmSession;
       return fetchJSON('/api/users')
-        .then(data => setTeamUsers(Array.isArray(data.users) ? data.users : []))
+        .then(data => {
+          if (session === crmSession) setTeamUsers(Array.isArray(data.users) ? data.users : []);
+        })
         .catch(err => {
+          if (session !== crmSession) return;
           console.warn('Users API fallback:', err);
           setTeamUsers(user ? [user] : []);
         });
@@ -3925,6 +3939,12 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
         <Topbar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick} onOpenSearch={openSearch} theme={theme} onToggleTheme={onToggleTheme} user={user} onLogout={onLogout}/>
+        {dataError && sorted.length > 0 && (
+          <div role="status" style={staleBanner.root}>
+            <span>Veriler güncellenemedi; son alınan veriler gösteriliyor. ({dataError})</span>
+            <button type="button" style={staleBanner.btn} onClick={() => refreshWorkspace()}>Tekrar dene</button>
+          </div>
+        )}
         <div style={{ display: 'flex', flex: 1, minWidth: 0 }}>
           {renderContent()}
         </div>
@@ -3947,6 +3967,11 @@
     );
   }
 
+  const staleBanner = {
+    root: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 16px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderBottom: '1px solid var(--line)', fontSize: 13, fontWeight: 600 },
+    btn: { height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid currentColor', background: 'transparent', color: 'inherit', font: '700 12.5px Instrument Sans', cursor: 'pointer' },
+  };
+
   // ── Root: theme + auth gate ─────────────────────────────────────────────────
 
   function App() {
@@ -3954,6 +3979,21 @@
     const [auth, setAuth]   = React.useState({ loading: true, configured: false, authenticated: false, user: null });
     const [logoutOpen, setLogoutOpen] = React.useState(false);
     const [logoutBusy, setLogoutBusy] = React.useState(false);
+    const [logoutError, setLogoutError] = React.useState('');
+    const [loginNotice, setLoginNotice] = React.useState('');
+
+    function endSession(notice) {
+      clearCrmState();
+      setLogoutOpen(false);
+      setLoginNotice(notice || '');
+      setAuth({ loading: false, configured: true, authenticated: false, user: null });
+    }
+
+    React.useEffect(() => {
+      function onExpired() { endSession('Oturumun sona erdi. Devam etmek için tekrar giriş yap.'); }
+      window.addEventListener('zeplin:session-expired', onExpired);
+      return () => window.removeEventListener('zeplin:session-expired', onExpired);
+    }, []);
 
     React.useEffect(() => {
       document.documentElement.dataset.theme = theme;
@@ -3976,17 +4016,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
       }).then(data => {
+        clearCrmState();
+        setLoginNotice('');
         setAuth({ loading: false, configured: true, authenticated: true, user: data.user || null });
       });
     }
 
     function logout() {
       setLogoutBusy(true);
+      setLogoutError('');
       fetchJSON('/api/auth', { method: 'DELETE' })
-        .then(() => {
-          setLogoutOpen(false);
-          setAuth({ loading: false, configured: true, authenticated: false, user: null });
-        })
+        .then(() => endSession(''))
+        .catch(() => setLogoutError('Çıkış yapılamadı. Bağlantını kontrol edip tekrar dene.'))
         .finally(() => setLogoutBusy(false));
     }
 
@@ -3995,19 +4036,19 @@
     }
 
     if (!auth.authenticated) {
-      return <LoginView onSubmit={login}/>;
+      return <LoginView onSubmit={login} notice={loginNotice}/>;
     }
 
     return (
       <React.Fragment>
-        <Dashboard user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
+        <Dashboard key={auth.user?.email || 'session'} user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
         {logoutOpen && (
           <ConfirmDialog
             title="Oturumu kapat"
-            text="Bu cihazdaki Zeplin oturumun kapatılacak."
+            text={logoutError || 'Bu cihazdaki Zeplin oturumun kapatılacak.'}
             confirmLabel="Çıkış yap"
             busy={logoutBusy}
-            onCancel={() => setLogoutOpen(false)}
+            onCancel={() => { setLogoutOpen(false); setLogoutError(''); }}
             onConfirm={logout}
           />
         )}

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import re
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 _FOOD_TERMS = {
@@ -19,6 +20,8 @@ _FOOD_TERMS = {
     "kahvaltı",
     "kahvalti",
 }
+
+BUSINESS_TIMEZONE = ZoneInfo("Europe/Istanbul")
 
 _CHECK_LABELS = {
     "google": "Google Maps",
@@ -38,6 +41,11 @@ def _parse_datetime(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def _business_date(value: Any) -> date | None:
+    parsed = _parse_datetime(value)
+    return parsed.astimezone(BUSINESS_TIMEZONE).date() if parsed else None
 
 
 def requires_menu_check(lead: dict[str, Any]) -> bool:
@@ -148,7 +156,7 @@ def build_lead_workflow(
         "latest_outcome": (latest_contact or {}).get("outcome"),
         "latest_outcome_label": (latest_contact or {}).get("outcome_label"),
         "follow_up_at": follow_up_at.isoformat() if follow_up_at else None,
-        "follow_up_due": bool(follow_up_at and follow_up_at <= now),
+        "follow_up_due": stage != "closed" and bool(follow_up_at and follow_up_at <= now),
     }
 
 
@@ -159,7 +167,7 @@ def build_team_performance(
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    today = now.date()
+    today = now.astimezone(BUSINESS_TIMEZONE).date()
     emails = {
         str(item.get("user_email") or "").strip().lower()
         for item in assignments
@@ -178,7 +186,7 @@ def build_team_performance(
         ]
         today_events = [
             event for event in actor_events
-            if (_parse_datetime(event.get("happened_at") or event.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)).date() == today
+            if _business_date(event.get("happened_at") or event.get("created_at")) == today
         ]
         active_assignments = [
             item for item in assignments

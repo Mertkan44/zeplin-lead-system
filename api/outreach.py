@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import normalize_email, require_auth, require_lead_access
+from src.auth import lead_read_scope, normalize_email, require_auth, require_lead_access
 from src.activity import (
     assignment_status_for_outcome,
     build_contact_result,
@@ -51,12 +51,10 @@ class handler(BaseHTTPRequestHandler):
             limit = 500
         try:
             events = [enrich_outreach_event(event) for event in fetch_outreach_events(limit=limit)]
-            if user.get("role") != "admin":
-                assignments = fetch_lead_assignments(
-                    user_email=normalize_email(user.get("sub")), status="active", limit=1000
-                )
-                assigned = {item.get("lead_name") for item in assignments}
-                events = [event for event in events if event.get("lead_name") in assigned]
+            scope = lead_read_scope(user)
+            if scope is not None:
+                readable_names, _ = scope
+                events = [event for event in events if event.get("lead_name") in readable_names]
             if lead_name:
                 events = [event for event in events if event.get("lead_name") == lead_name]
             send_json(self, 200, events)

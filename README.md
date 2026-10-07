@@ -19,11 +19,21 @@ The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODE
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 `.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
 
-For a fresh Supabase project, run `supabase/schema.sql` in the SQL editor. For an
-existing project, apply migrations in order through
-`supabase/migrations/006_security_crm_hardening.sql`. The last migration adds stable
-lead identities, atomic queue claims, assignment integrity, audit events, and
-persistent AI generations.
+For a fresh Supabase project, run these in the SQL editor, in order:
+
+1. `supabase/schema.sql` (tables, indexes, grants)
+2. `supabase/migrations/006_security_crm_hardening.sql`
+3. `supabase/migrations/007_sales_workspace.sql`
+
+`schema.sql` alone is not enough: the RPCs the API calls (`assign_lead_owner`,
+`claim_admin_search_jobs`, `create_admin_search_job`, `check_login_rate_limit`,
+`record_login_attempt`) and the one-active-owner index only exist in migration 006.
+Migrations 006 and 007 are idempotent, so re-running them is safe.
+
+For an existing project, apply migrations in order through
+`supabase/migrations/007_sales_workspace.sql`. Migration 006 adds stable lead
+identities, atomic queue claims, assignment integrity, audit events, and persistent
+AI generations; 007 adds native columns for structured contact results.
 
 Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `SESSION_SECRET` in Vercel. Team members log in with their individual Supabase
@@ -156,7 +166,13 @@ data is intentionally available only through the API.
 
 `src/dashboard/template.html` is the source template. `public/index.html` is
 generated without embedding CRM lead records. After authentication, the dashboard
-reads role-filtered live data from Vercel API routes backed by Supabase.
+reads role-filtered live data from Vercel API routes backed by Supabase. CRM data is
+kept in memory only; logout, a 401 response, or a user switch clears it.
+
+Lead access follows one server-side policy (`src/auth.py`): admins see every lead; a
+sales user reads and writes leads with an active assignment, and keeps read-only
+access to leads they closed or paused only while no one else owns them. An archived
+assignment (the lead was handed over) grants nothing.
 
 Admin search runs as a queue-backed workflow. The Vercel API creates `admin_search_jobs`
 and reserves estimated DeepSeek token usage in `ai_token_ledger`; a worker then runs
