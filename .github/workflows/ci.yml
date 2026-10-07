@@ -25,8 +25,8 @@ jobs:
           python -m pip_audit -r requirements.txt
       - name: Compile Python
         run: python -m compileall -q api scripts src besiktas.py main.py
-      - name: Validate lead dataset
-        run: python scripts/validate_data.py
+      - name: Validate the synthetic lead sample
+        run: python scripts/validate_data.py tests/fixtures/leads_sample.json
       - name: Scan working tree for secrets
         run: python scripts/security_check.py
       - name: Run unit tests

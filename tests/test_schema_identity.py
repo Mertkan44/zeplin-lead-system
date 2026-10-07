@@ -13,6 +13,7 @@ from src.lead_identity import find_identity_conflicts, google_place_id, lead_ext
 from src.storage.supabase import REQUIRED_SCHEMA_VERSION, _in_list, _lead_row, evaluate_schema_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
+SAMPLE = ROOT / "tests" / "fixtures" / "leads_sample.json"
 ALL_CHECKS = {
     "assign_lead_owner": True,
     "idempotency_constraint": True,
@@ -107,12 +108,13 @@ class LeadIdentityTests(unittest.TestCase):
 
     def test_report_script_runs_offline_without_writing(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/lead_identity_report.py"), "--file", str(ROOT / "leads_final.json"), "--json"],
+            [sys.executable, str(ROOT / "scripts/lead_identity_report.py"), "--file", str(SAMPLE), "--json"],
             capture_output=True, text=True, check=True, cwd=ROOT,
         )
         report = json.loads(result.stdout)
-        self.assertEqual(report["lead_count"], len(json.loads((ROOT / "leads_final.json").read_text(encoding="utf-8"))))
-        self.assertEqual(report["shared_place_id"], [])
+        self.assertEqual(report["lead_count"], len(json.loads(SAMPLE.read_text(encoding="utf-8"))))
+        # The sample stores one invented clinic twice on purpose.
+        self.assertEqual([group["key"] for group in report["shared_place_id"]], ["ChIJsynthetic000002"])
         self.assertIn("shared_place_id", report)
 
 

@@ -10,7 +10,12 @@ from src.lead_schema import format_issues, load_json, validate_leads
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate Zeplin lead JSON schema.")
-    parser.add_argument("path", nargs="?", default="leads_final.json")
+    parser.add_argument(
+        "path",
+        nargs="?",
+        default="leads_final.json",
+        help="lead JSON to check; CI uses the synthetic tests/fixtures/leads_sample.json",
+    )
     args = parser.parse_args()
 
     path = ROOT / args.path

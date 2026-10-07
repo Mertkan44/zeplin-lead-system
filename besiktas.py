@@ -59,7 +59,8 @@ def update_dashboard(data):
 
 def git_push(msg):
     try:
-        subprocess.run(['git','add','public/index.html','leads_final.json'], check=True)
+        # Lead data stays out of Git (the repository is public); only the built shell is committed.
+        subprocess.run(['git','add','public/index.html'], check=True)
         subprocess.run(['git','commit','-m', msg], check=True)
         subprocess.run(['git','push'], check=True)
         print("🚀 Push tamamlandı!")

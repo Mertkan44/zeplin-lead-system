@@ -7,25 +7,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.lead_schema import format_issues, validate_leads
 from src.activity import FOLLOW_UP_DELAYS
 from src.services import ZEPLIN_SERVICES
 
-DEFAULT_DATA = ROOT / "leads_final.json"
 DEFAULT_TEMPLATE = ROOT / "src" / "dashboard" / "template.html"
 DEFAULT_OUTPUT = ROOT / "public" / "index.html"
 
 
 def build_dashboard(
-    data_path: Path = DEFAULT_DATA,
     template_path: Path = DEFAULT_TEMPLATE,
     output_path: Path = DEFAULT_OUTPUT,
 ) -> None:
-    data = json.loads(data_path.read_text(encoding="utf-8"))
-    issues = validate_leads(data)
-    if issues:
-        raise ValueError("Invalid lead data:\n" + format_issues(issues, limit=50))
-    # Lead data is loaded only through authenticated APIs. Never publish CRM data in static HTML.
+    # The build reads no lead data at all: leads reach the browser only through
+    # authenticated APIs, never as part of the static HTML.
     payload = base64.b64encode(b"[]").decode("ascii")
     services_payload = base64.b64encode(
         json.dumps(ZEPLIN_SERVICES, ensure_ascii=True).encode("utf-8")
