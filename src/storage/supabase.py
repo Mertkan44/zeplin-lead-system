@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -10,6 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from src.config import env
+from src.lead_identity import lead_external_id
 
 
 @dataclass(frozen=True)
@@ -56,12 +56,8 @@ def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
     data_quality = lead.get("data_quality") or {}
     now = datetime.now(timezone.utc).isoformat()
     maps_url = str(lead.get("maps_url") or "").strip()
-    identity = (
-        f"{str(lead.get('name') or '').strip().casefold()}|"
-        f"{str(lead.get('city') or '').strip().casefold()}"
-    )
     return {
-        "external_id": f"name-city:{hashlib.sha256(identity.encode('utf-8')).hexdigest()}",
+        "external_id": lead_external_id(lead),
         "name": lead.get("name"),
         "sector": lead.get("sector"),
         "city": lead.get("city"),
@@ -386,6 +382,87 @@ def set_app_user_active(email: str, active: bool) -> None:
 
 
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
+
+
+REQUIRED_SCHEMA_VERSION = "008"
+
+
+def fetch_schema_readiness() -> dict[str, Any]:
+    """Raw `schema_readiness()` result; a database older than 008 has no such RPC."""
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    with httpx.Client(timeout=10) as client:
+        response = client.post(f"{config.url}/rest/v1/rpc/schema_readiness", headers=_headers(config), json={})
+        if response.status_code == 404:
+            return {"version": None, "checks": {"schema_readiness": False}}
+        response.raise_for_status()
+        return response.json() or {}
+
+
+def evaluate_schema_readiness(raw: dict[str, Any]) -> dict[str, Any]:
+    version = raw.get("version")
+    failed = sorted(name for name, passed in (raw.get("checks") or {}).items() if passed is not True)
+    version_ok = bool(version) and str(version) >= REQUIRED_SCHEMA_VERSION
+    return {
+        "ready": version_ok and not failed,
+        "version": version,
+        "required_version": REQUIRED_SCHEMA_VERSION,
+        "failed_checks": failed,
+    }
+
+
+def schema_status() -> dict[str, Any]:
+    return evaluate_schema_readiness(fetch_schema_readiness())
+
+
+def _count(client: httpx.Client, config: SupabaseConfig, table: str, query: str) -> int:
+    response = client.get(
+        _postgrest_url(config, table, f"select=id&{query}&limit=1"),
+        headers=_headers(config, prefer="count=exact"),
+    )
+    response.raise_for_status()
+    total = (response.headers.get("content-range") or "*/0").rsplit("/", 1)[-1]
+    return int(total) if total.isdigit() else 0
+
+
+def fetch_identity_snapshot() -> dict[str, Any]:
+    """Read-only data for scripts/lead_identity_report.py."""
+    config = supabase_config()
+    if not config:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
+    with httpx.Client(timeout=60) as client:
+        leads: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = client.get(
+                _postgrest_url(
+                    config,
+                    "leads",
+                    "select=id,name,city,phone,maps_url,website_url,external_id,"
+                    "research:raw->research"
+                    f"&order=id.asc&limit=1000&offset={offset}",
+                ),
+                headers=_headers(config),
+            )
+            response.raise_for_status()
+            page = response.json()
+            leads.extend(page)
+            if len(page) < 1000:
+                break
+            offset += 1000
+        sources_response = client.get(
+            _postgrest_url(config, "lead_sources", "select=lead_id,provider,provider_id&limit=10000"),
+            headers=_headers(config),
+        )
+        sources = sources_response.json() if sources_response.status_code == 200 else None
+        lead_id_gaps = None
+        if sources is not None:
+            lead_id_gaps = {
+                "outreach_events": _count(client, config, "outreach_events", "lead_id=is.null"),
+                "lead_assignments": _count(client, config, "lead_assignments", "lead_id=is.null"),
+            }
+    return {"leads": leads, "sources": sources, "lead_id_gaps": lead_id_gaps}
 
 
 def fetch_lead_assignments(

@@ -74,6 +74,7 @@ class FakeStore:
 class AccessPolicyTests(unittest.TestCase):
     def setUp(self):
         self.store = FakeStore()
+        self.schema = {"ready": False, "version": "007", "required_version": "008", "failed_checks": ["lead_sources"]}
 
     def _call(self, module, method, user, *, path="/api/x", body=None):
         handler = module.handler.__new__(module.handler)
@@ -113,6 +114,8 @@ class AccessPolicyTests(unittest.TestCase):
                 stack.enter_context(patch.object(module, "update_lead_assignment", store.update_lead_assignment))
             if hasattr(module, "insert_audit_event"):
                 stack.enter_context(patch.object(module, "insert_audit_event", lambda **_kwargs: None))
+            if hasattr(module, "schema_status"):
+                stack.enter_context(patch.object(module, "schema_status", lambda: dict(self.schema)))
             if module is workspace_api:
                 stack.enter_context(patch.object(module, "build_research_brief", lambda lead: {}))
                 stack.enter_context(patch.object(module, "build_sales_playbook", lambda lead, sender_name=None: {}))
@@ -149,6 +152,12 @@ class AccessPolicyTests(unittest.TestCase):
         self.assertEqual({lead["name"] for lead in payload["leads"]}, {"Handed Over", "Closed Then Reassigned"})
         _, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace")
         self.assertEqual(len(payload["leads"]), 4)
+
+    def test_only_admins_see_schema_readiness_in_workspace(self):
+        _, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace")
+        self.assertEqual(payload["schema"]["failed_checks"], ["lead_sources"])
+        _, payload = self._call(workspace_api, "GET", ALI, path="/api/workspace")
+        self.assertIsNone(payload["schema"])
 
     def test_lead_and_outreach_lists_use_the_same_scope(self):
         _, leads = self._call(leads_api, "GET", ALI, path="/api/leads")

@@ -19,21 +19,40 @@ The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODE
 and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
 `.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
 
-For a fresh Supabase project, run these in the SQL editor, in order:
+Database schema lives in `supabase/migrations/` (001 … latest), the only
+hand-edited source. Every migration is idempotent.
 
-1. `supabase/schema.sql` (tables, indexes, grants)
-2. `supabase/migrations/006_security_crm_hardening.sql`
-3. `supabase/migrations/007_sales_workspace.sql`
+- **Fresh project:** run `supabase/schema.sql` once in the Supabase SQL editor. It is
+  generated from the migrations (`python scripts/build_schema.py`); do not edit it.
+- **Existing project:** run each migration you have not applied yet, in order.
+  Re-running one that is already applied is safe. Older projects bootstrapped with
+  the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-`schema.sql` alone is not enough: the RPCs the API calls (`assign_lead_owner`,
-`claim_admin_search_jobs`, `create_admin_search_job`, `check_login_rate_limit`,
-`record_login_attempt`) and the one-active-owner index only exist in migration 006.
-Migrations 006 and 007 are idempotent, so re-running them is safe.
+Migration 008 is required by the current code. It repairs idempotent outreach
+writes (databases built from migrations rejected every `on_conflict=idempotency_key`
+insert), adds stable `lead_id` columns and `lead_sources` (Google place ids) next to
+the name-based keys, and records the schema version. Check a deployment with
+`GET /api/health`: it answers 200 when the schema is ready and 503 otherwise; admins
+also see the version and any failed checks, and the admin workspace shows a banner.
 
-For an existing project, apply migrations in order through
-`supabase/migrations/007_sales_workspace.sql`. Migration 006 adds stable lead
-identities, atomic queue claims, assignment integrity, audit events, and persistent
-AI generations; 007 adds native columns for structured contact results.
+Before relying on lead ids, review the identity dry run (read-only):
+
+```bash
+venv/bin/python scripts/lead_identity_report.py                 # live Supabase
+venv/bin/python scripts/lead_identity_report.py --file leads_final.json
+```
+
+It lists leads that share a Google place id, phone or website, place ids already
+recorded for another lead, and rows still missing `lead_id`. Nothing is merged
+automatically.
+
+CI proves that a fresh install and an upgrade from every historical `schema.sql`
+end in the same schema, then runs `tests/sql/` behaviour checks. Locally, with any
+throwaway PostgreSQL server:
+
+```bash
+python scripts/schema_parity.py --dsn postgresql://postgres@localhost:5432/postgres
+```
 
 Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `SESSION_SECRET` in Vercel. Team members log in with their individual Supabase

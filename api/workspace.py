@@ -22,6 +22,7 @@ from src.storage.supabase import (
     fetch_leads_full,
     fetch_outreach_events,
     is_enabled as supabase_enabled,
+    schema_status,
 )
 
 
@@ -197,11 +198,19 @@ class handler(BaseHTTPRequestHandler):
                 {**lead, "workflow": build_lead_workflow(lead, events)}
                 for lead in leads
             ]
+            schema = None
+            if scope is None:
+                try:
+                    schema = schema_status()
+                except Exception as exc:
+                    self.log_error("schema readiness check failed: %s", exc)
+                    schema = {"ready": False, "version": None, "failed_checks": ["readiness_check_failed"]}
             send_json(
                 self,
                 200,
                 {
                     "ok": True,
+                    "schema": schema,
                     "user": {
                         "email": user_email,
                         "name": user.get("name"),

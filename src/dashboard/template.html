@@ -3783,6 +3783,7 @@
     const [teamUsers,   setTeamUsers]   = React.useState([]);
     const [teamPerformance, setTeamPerformance] = React.useState([]);
     const [integrations, setIntegrations] = React.useState({});
+    const [schemaStatus, setSchemaStatus] = React.useState(null);
     const [loading,     setLoading]     = React.useState(true);
     const [dataError,   setDataError]   = React.useState('');
     const [searchOpen,  setSearchOpen]  = React.useState(false);
@@ -3814,6 +3815,7 @@
       });
       setTeamPerformance(Array.isArray(data.team_performance) ? data.team_performance : []);
       setIntegrations(data.integrations || {});
+      setSchemaStatus(data.schema || null);
     }
 
     function refreshWorkspace() {
@@ -3939,6 +3941,14 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
         <Topbar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick} onOpenSearch={openSearch} theme={theme} onToggleTheme={onToggleTheme} user={user} onLogout={onLogout}/>
+        {schemaStatus && !schemaStatus.ready && (
+          <div role="alert" style={staleBanner.root}>
+            <span>
+              Veritabanı şeması bu sürümle uyumlu değil (kurulu: {schemaStatus.version || 'bilinmiyor'}, gereken: {schemaStatus.required_version}).
+              {schemaStatus.failed_checks?.length ? ` Eksik: ${schemaStatus.failed_checks.join(', ')}.` : ''} Eksik migration'ları README'deki sırayla uygula.
+            </span>
+          </div>
+        )}
         {dataError && sorted.length > 0 && (
           <div role="status" style={staleBanner.root}>
             <span>Veriler güncellenemedi; son alınan veriler gösteriliyor. ({dataError})</span>
