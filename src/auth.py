@@ -193,50 +193,18 @@ def require_admin(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
     return require_role(handler, "admin")
 
 
-# A sales user keeps read-only sight of leads they closed or paused themselves,
-# but only while nobody else owns the lead. An archived assignment means the
-# lead was handed over and never grants access.
-_OWN_HISTORY_ASSIGNMENT_STATUSES = {"done", "snoozed"}
-
-
-def readable_lead_names(user_email: str, assignments: list[dict[str, Any]]) -> set[str]:
-    """Lead names a sales user may read.
-
-    `assignments` holds the user's own rows plus the active rows of the same
-    leads, whoever owns them.
-    """
-    email = normalize_email(user_email)
-    active_owner: dict[str, str] = {}
-    for item in assignments:
-        if item.get("status") == "active":
-            active_owner[item.get("lead_name") or ""] = normalize_email(item.get("user_email"))
-    names: set[str] = set()
-    for item in assignments:
-        name = item.get("lead_name")
-        if not name or normalize_email(item.get("user_email")) != email:
-            continue
-        status = item.get("status")
-        if status == "active":
-            names.add(name)
-        elif status in _OWN_HISTORY_ASSIGNMENT_STATUSES and active_owner.get(name, email) == email:
-            names.add(name)
-    return names
-
-
 def lead_read_scope(user: dict[str, Any]) -> tuple[set[str], list[dict[str, Any]]] | None:
-    """Return (readable lead names, the user's visible assignments); None means every lead."""
+    """Return (readable lead names, the user's visible assignments); None means every lead.
+
+    The rule lives in public.readable_leads (migration 010): an active assignment,
+    or a done/snoozed one while nobody else owns the lead. Archived (handed-over)
+    assignments grant nothing.
+    """
     if user.get("role") == "admin":
         return None
     email = normalize_email(user.get("sub"))
+    names = {row["lead_name"] for row in supabase.fetch_readable_leads(email) if row.get("lead_name")}
     own = supabase.fetch_lead_assignments(user_email=email, limit=1000)
-    history_names = [
-        item.get("lead_name") for item in own
-        if item.get("status") in _OWN_HISTORY_ASSIGNMENT_STATUSES
-    ]
-    others_active = (
-        supabase.fetch_active_assignments_for_leads(history_names) if history_names else []
-    )
-    names = readable_lead_names(email, own + others_active)
     visible = [
         item for item in own
         if item.get("lead_name") in names and item.get("status") != "archived"

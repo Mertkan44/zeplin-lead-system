@@ -24,7 +24,7 @@ from src.activity import (
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     CommandRejected,
-    fetch_outreach_events,
+    fetch_event_page,
     insert_outreach_event,
     is_enabled as supabase_enabled,
     record_contact_result,
@@ -38,6 +38,9 @@ class handler(BaseHTTPRequestHandler):
         send_options(self, allow_methods="GET, POST, OPTIONS")
 
     def do_GET(self):
+        """Timeline, newest first: ?lead=<name>&before=<event id>&limit=<1-200>.
+
+        Returns {items, next_before}. Without lead, all events in the caller's scope."""
         try:
             user = require_auth(self)
         except PermissionError:
@@ -47,20 +50,28 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 503, {"ok": False, "error": "supabase is not configured"})
             return
         query = parse_qs(urlparse(self.path).query)
-        lead_name = query.get("lead", [None])[0]
+        lead_name = (query.get("lead", [None])[0] or "").strip() or None
         try:
-            limit = min(max(int(query.get("limit", ["500"])[0]), 1), 1000)
+            limit = min(max(int(query.get("limit", ["50"])[0]), 1), 200)
+            before_raw = query.get("before", [None])[0]
+            before_id = int(before_raw) if before_raw else None
         except ValueError:
-            limit = 500
+            send_json(self, 400, {"ok": False, "error": "limit and before must be integers"})
+            return
         try:
-            events = [enrich_outreach_event(event) for event in fetch_outreach_events(limit=limit)]
             scope = lead_read_scope(user)
-            if scope is not None:
+            if scope is None:
+                names = {lead_name} if lead_name else None
+            else:
                 readable_names, _ = scope
-                events = [event for event in events if event.get("lead_name") in readable_names]
-            if lead_name:
-                events = [event for event in events if event.get("lead_name") == lead_name]
-            send_json(self, 200, events)
+                names = ({lead_name} & readable_names) if lead_name else readable_names
+                if not names:
+                    send_json(self, 200, {"ok": True, "items": [], "next_before": None})
+                    return
+            rows = fetch_event_page(lead_names=names, before_id=before_id, limit=limit)
+            items = [enrich_outreach_event(event) for event in rows]
+            next_before = items[-1].get("id") if len(items) == limit else None
+            send_json(self, 200, {"ok": True, "items": items, "next_before": next_before})
         except Exception as exc:
             send_internal_error(self, exc, error="outreach fetch failed")
 

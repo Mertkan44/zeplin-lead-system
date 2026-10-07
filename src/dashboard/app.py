@@ -8,8 +8,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.storage.supabase import (
-    fetch_leads_full,
-    fetch_outreach_events,
+    fetch_all_leads,
+    fetch_event_page,
+    fetch_leads_by_names,
     insert_outreach_event,
     is_enabled as supabase_enabled,
     set_lead_status,
@@ -39,14 +40,10 @@ def get_leads():
     user = _user()
     if not user:
         return _json_error("login required", 401)
-    limit = min(int(request.args.get("limit", 500)), 1000)
     if supabase_enabled():
         try:
-            leads = fetch_leads_full(limit=limit)
             scope = lead_read_scope(user)
-            if scope is not None:
-                readable_names, _ = scope
-                leads = [lead for lead in leads if lead.get("name") in readable_names]
+            leads = fetch_all_leads() if scope is None else fetch_leads_by_names(scope[0])
             return jsonify(leads)
         except Exception as exc:
             app.logger.exception("Supabase lead fetch failed")
@@ -85,15 +82,13 @@ def get_outreach():
     if not supabase_enabled():
         return _json_error("supabase is not configured", 503)
     try:
-        limit = min(int(request.args.get("limit", 500)), 1000)
+        limit = min(int(request.args.get("limit", 500)), 200)
         lead_name = request.args.get("lead")
-        events = fetch_outreach_events(limit=limit)
         scope = lead_read_scope(user)
-        if scope is not None:
-            readable_names, _ = scope
-            events = [event for event in events if event.get("lead_name") in readable_names]
-        if lead_name:
-            events = [event for event in events if event.get("lead_name") == lead_name]
+        names = ({lead_name} if lead_name else None) if scope is None else (
+            ({lead_name} & scope[0]) if lead_name else scope[0]
+        )
+        events = fetch_event_page(lead_names=names, before_id=None, limit=limit) if names is None or names else []
         return jsonify(events)
     except Exception as exc:
         app.logger.exception("Supabase outreach fetch failed")

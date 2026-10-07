@@ -168,7 +168,10 @@ def build_team_performance(
     events: list[dict[str, Any]],
     *,
     now: datetime | None = None,
+    won_totals: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
+    """Per-person activity. won_totals, when given, counts distinct won leads per
+    person from lead_activity_state; otherwise won results in `events` are counted."""
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     today = now.astimezone(BUSINESS_TIMEZONE).date()
     emails = {
@@ -181,6 +184,7 @@ def build_team_performance(
         for event in events
         if event.get("actor_email")
     )
+    emails.update(str(email).strip().lower() for email in (won_totals or {}) if email)
     rows = []
     for email in sorted(emails):
         actor_events = [
@@ -213,9 +217,11 @@ def build_team_performance(
                     1 for event in today_events
                     if event.get("action") == "contact_result_recorded" and event.get("channel") == "phone"
                 ),
-                "won_total": sum(
-                    1 for event in actor_events
-                    if event.get("action") == "contact_result_recorded" and event.get("outcome") == "won"
+                "won_total": (
+                    won_totals.get(email, 0) if won_totals is not None else sum(
+                        1 for event in actor_events
+                        if event.get("action") == "contact_result_recorded" and event.get("outcome") == "won"
+                    )
                 ),
                 "interested_today": sum(
                     1 for event in contact_events
