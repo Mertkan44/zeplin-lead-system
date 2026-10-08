@@ -7,14 +7,20 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields, has_email_evidence
+from src.activity import manual_verification_from_event
 from src.auth import require_auth, require_lead_access
 from src.http_api import read_json, send_internal_error, send_json, send_options
+from src.lead_facts import apply_effective_facts
 from src.storage.supabase import (
+    fetch_activity_states,
     fetch_lead_by_name,
     insert_audit_event,
     is_enabled as supabase_enabled,
     upsert_leads,
 )
+
+# What enrich_ai_fields adds; the rest of the effective lead is never stored.
+AI_FIELDS = ("research_brief", "ai_report", "ai_email", "ai_tier", "ai_prompt_version")
 
 
 class handler(BaseHTTPRequestHandler):
@@ -48,10 +54,16 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             require_lead_access(user, name)
-            lead = fetch_lead_by_name(name)
-            if not lead:
+            stored = fetch_lead_by_name(name)
+            if not stored:
                 send_json(self, 404, {"ok": False, "error": "lead not found"}, allow_methods="POST, OPTIONS")
                 return
+            # Generate from the same effective values the team sees (manual
+            # corrections included), but store only the AI fields.
+            state = fetch_activity_states([stored["lead_id"]]).get(stored["lead_id"]) or {}
+            lead = apply_effective_facts(
+                {**stored, "manual_verification": manual_verification_from_event(state.get("latest_manual_verification"))}
+            )
             if not lead.get("matched_services"):
                 send_json(
                     self,
@@ -72,7 +84,7 @@ class handler(BaseHTTPRequestHandler):
                 enriched = enrich_ai_fields(lead)
                 if not enriched.get("ai_report"):
                     raise RuntimeError("AI provider returned an empty report")
-                upsert_leads([enriched])
+                upsert_leads([{**stored, **{key: enriched.get(key) for key in AI_FIELDS}}])
                 cached = False
 
             insert_audit_event(

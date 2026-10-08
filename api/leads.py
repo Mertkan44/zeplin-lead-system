@@ -10,8 +10,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import lead_read_scope, normalize_email, require_auth
-from src.activity import enrich_outreach_event
+from src.activity import enrich_outreach_event, manual_verification_from_event
 from src.http_api import send_internal_error, send_json, send_options
+from src.lead_facts import apply_effective_facts
+from src.workflow import build_lead_workflow
 from src.storage.supabase import (
     LEAD_STATUSES,
     attach_assignments_to_leads,
@@ -137,12 +139,18 @@ class handler(BaseHTTPRequestHandler):
         )
         lead = attach_assignments_to_leads([lead], assignments)[0]
         state = fetch_activity_states([lead["lead_id"]]).get(lead["lead_id"]) or {}
+        latest_contact = enrich_outreach_event(dict(state["latest_contact"])) if state.get("latest_contact") else None
         activity = {
-            "latest_contact": enrich_outreach_event(dict(state["latest_contact"])) if state.get("latest_contact") else None,
+            "latest_contact": latest_contact,
             "latest_manual_verification": (
                 enrich_outreach_event(dict(state["latest_manual_verification"]))
                 if state.get("latest_manual_verification") else None
             ),
             "contact_result_count": state.get("contact_result_count", 0),
         }
+        # The same effective values and stage the workspace shows.
+        lead = apply_effective_facts(
+            {**lead, "manual_verification": manual_verification_from_event(state.get("latest_manual_verification"))}
+        )
+        lead["workflow"] = build_lead_workflow(lead, [latest_contact] if latest_contact else [])
         send_json(self, 200, {"ok": True, "lead": lead, "activity": activity}, allow_methods=_METHODS)

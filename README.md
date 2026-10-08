@@ -183,6 +183,28 @@ be refreshed through Places API (New). Configure `GOOGLE_PLACES_API_KEY`,
 Hobby-plan cron refreshes only stale records in a small batch; Instagram and menu
 checks remain manual because there is no equivalent reliable public data source.
 
+Places matching (`src/integrations/google_places.py`) never lets a matching name
+outweigh the location. A lead that already has a place id is refreshed by that id.
+Otherwise every text-search candidate must pass a location gate (district and
+province from the lead's Maps address, falling back to the scanned area): a
+candidate in another province is rejected, a same-name candidate in another
+district or two close branches become `ambiguous`, and a phone or website match is
+extra evidence. Results are `verified`, `ambiguous` (the panel lists the candidates
+and a person picks one), `not_matched` or `provider_error`. A failed or ambiguous
+lookup never erases earlier verified data, and a place id already recorded for
+another lead is reported as a likely duplicate instead of being copied.
+
+Every reader uses one effective snapshot of a lead (`src/lead_facts.py`): the
+workspace, the lead detail, the workflow stage, service matching and AI generation.
+Each field (website, Instagram, phone, rating, reviews, Maps link, address, menu)
+carries its value, source (`manual`, `google_places`, `scrape`), observation time,
+who verified it, whether it is stale and what other sources say. A fresh manual
+check wins and is never overwritten by a later scrape; audit findings about a
+website or profile that is no longer the effective one stop counting as evidence,
+and a manual "not found" is evidence of its own. Stale limits (`STALE_AFTER_DAYS`):
+manual checks 90 days, Places 30 days, scrape 90 days. An expired manual check has
+to be done again before the lead is ready to contact.
+
 In production, `.github/workflows/process-search-jobs.yml` checks Supabase every
 15 minutes and atomically claims up to three queued admin search jobs. Add these GitHub Actions
 secrets before relying on the automatic worker:
