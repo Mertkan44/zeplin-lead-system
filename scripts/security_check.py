@@ -12,6 +12,10 @@ SECRET_PATTERNS = [
     ("OpenAI API key", re.compile(r"sk-[A-Za-z0-9_-]{20,}")),
     ("Generic token assignment", re.compile(r"(?i)(api[_-]?key|secret|token)\s*=\s*['\"]?[A-Za-z0-9_./+=:-]{24,}")),
 ]
+# Operational CRM data (real businesses, contacts, research) never goes into Git;
+# it lives in Supabase. Tests use the synthetic tests/fixtures/leads_sample.json.
+OPERATIONAL_DATA = re.compile(r"(^|/)(leads_[^/]*\.json|outreach_log[^/]*\.json)$")
+ALLOWED_DATA_FILES = {"tests/fixtures/leads_sample.json"}
 SKIP_DIRS = {".git", "venv", "node_modules", "__pycache__"}
 SKIP_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".ttf", ".pdf"}
 
@@ -62,6 +66,10 @@ def main() -> int:
     for filename in BLOCKED_FILES:
         if filename in tracked:
             problems.append(f"tracked secret file: {filename}")
+
+    for filename in sorted(tracked):
+        if OPERATIONAL_DATA.search(filename) and filename not in ALLOWED_DATA_FILES:
+            problems.append(f"tracked operational lead data: {filename} (keep it in Supabase, not Git)")
 
     for path in iter_text_files(tracked):
         rel = path.relative_to(ROOT).as_posix()

@@ -80,6 +80,20 @@ Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `app_users` account. The old shared admin password is disabled unless
 `ALLOW_LEGACY_ADMIN_LOGIN=1` is deliberately set during a short migration window.
 
+## Lead data stays out of Git
+
+This repository is public. Real lead data (businesses, contact details, research,
+CRM state) lives only in Supabase. `leads_*.json` and `outreach_log.json` are
+ignored, and `scripts/security_check.py` (run in CI) fails if one gets tracked.
+Tests, CI and demos use the synthetic `tests/fixtures/leads_sample.json`
+(regenerate with `python scripts/make_sample_leads.py`).
+
+For the local CLI tools, export a working copy first:
+
+```bash
+venv/bin/python scripts/export_leads.py      # Supabase -> leads_final.json (local only)
+```
+
 ## Common Commands
 
 Normalize existing leads and rebuild the dashboard:
@@ -88,10 +102,11 @@ Normalize existing leads and rebuild the dashboard:
 venv/bin/python scripts/migrate_leads.py --write --build
 ```
 
-Validate lead data before publishing:
+Validate lead data (your local export, or the synthetic sample as CI does):
 
 ```bash
 venv/bin/python scripts/validate_data.py
+venv/bin/python scripts/validate_data.py tests/fixtures/leads_sample.json
 ```
 
 Run the local security guard before committing:
@@ -118,7 +133,7 @@ Scan and sync the merged lead set to Supabase:
 venv/bin/python besiktas.py --query restoran --city "Istanbul Besiktas" --max 5 --resume --deep-research --sync-supabase
 ```
 
-Sync the current local `leads_final.json` to Supabase:
+Sync the current local `leads_final.json` (never committed) to Supabase:
 
 ```bash
 venv/bin/python scripts/sync_supabase.py
@@ -231,10 +246,10 @@ Only approved, evidence-backed services can be recommended automatically; the
 system does not invent marketing package names or revenue estimates.
 `scripts/migrate_leads.py` writes matched services and the primary service
 recommendation into the local operational dataset. `src/dashboard/build.py`
-embeds only the non-secret service catalog into the static shell.
+reads no lead data; it embeds only the non-secret service catalog into the static
+shell.
 
 ## Security Reminder
 
-Any API key that appeared in Git history must be rotated. Purging shared history
-requires a coordinated force push and should be handled as a separate maintenance
-window. See `SECURITY.md`.
+See `SECURITY.md` for the secret and data history of this repository and the
+remaining owner actions.

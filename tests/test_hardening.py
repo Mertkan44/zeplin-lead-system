@@ -780,42 +780,17 @@ class HardeningTests(unittest.TestCase):
     def test_dashboard_build_contains_no_lead_payload(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            data_path = root / "leads.json"
             template_path = root / "template.html"
             output_path = root / "index.html"
-            data_path.write_text(
-                json.dumps(
-                    [
-                        {
-                            "name": "SECRET CUSTOMER",
-                            "city": "Istanbul",
-                            "maps_url": "https://maps.example/customer",
-                            "phone": None,
-                            "address": None,
-                            "rating": None,
-                            "review_count": None,
-                            "website": {},
-                            "social": {},
-                            "scoring": {},
-                            "matched_services": [],
-                            "recommended_package": {},
-                            "estimated_value_tl": 0,
-                            "sales_priority_score": 0,
-                            "next_action": "Araştır",
-                            "data_quality": {},
-                            "schema_version": 2,
-                            "status": "yeni",
-                        }
-                    ]
-                ),
-                encoding="utf-8",
-            )
-            template_path.write_text("__DATA__ __SERVICES__", encoding="utf-8")
-            with patch("src.dashboard.build.validate_leads", return_value=[]):
-                build_dashboard(data_path, template_path, output_path)
+            template_path.write_text("__DATA__ __SERVICES__ __FOLLOW_UP_DELAYS__", encoding="utf-8")
+            # A real dataset next to the repo must not matter: the build reads none.
+            original_read_text = Path.read_text
+            with patch.object(Path, "read_text", autospec=True, side_effect=original_read_text) as reads:
+                build_dashboard(template_path, output_path)
+            self.assertEqual([call.args[0] for call in reads.call_args_list], [template_path])
             built = output_path.read_text(encoding="utf-8")
-            self.assertNotIn("SECRET CUSTOMER", built)
             self.assertIn(base64.b64encode(b"[]").decode(), built)
+            self.assertNotIn("__", built)
 
 
 if __name__ == "__main__":
