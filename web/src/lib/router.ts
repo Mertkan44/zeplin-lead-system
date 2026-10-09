@@ -4,7 +4,7 @@
 //   /                 the role's home screen
 //   /today /cockpit /pipeline /hizmetler /raporlar /analytics /profile /admin
 //   /leads/:leadId    one lead (database id, not a list position)
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, type MouseEvent } from 'react';
 
 export const VIEWS = ['today', 'cockpit', 'pipeline', 'hizmetler', 'raporlar', 'analytics', 'profile', 'admin'] as const;
 export type View = (typeof VIEWS)[number];
@@ -55,4 +55,11 @@ function subscribe(listener: () => void): () => void {
 export function useRoute(): Route {
   const pathname = useSyncExternalStore(subscribe, () => window.location.pathname);
   return parseRoute(pathname);
+}
+
+/** For <a href> links: plain clicks navigate in place; modified or middle clicks open a new tab. */
+export function followLink(event: MouseEvent<HTMLAnchorElement>, path: string): void {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  navigate(path);
 }

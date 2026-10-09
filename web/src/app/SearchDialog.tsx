@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 
 import type { Lead, LeadStatus } from '../data/types';
 import { searchLeads } from '../domain/lead';
-import { routeFor } from '../lib/router';
+import { followLink, routeFor } from '../lib/router';
 import { Dialog, Input, StatusBadge } from '../ui';
-import { followLink } from './Topbar';
 import styles from './SearchDialog.module.css';
 
 export interface SearchDialogProps {
