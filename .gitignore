@@ -13,3 +13,4 @@ outreach_log.local.json
 .env*
 outreach_log.json
 !tests/fixtures/leads_sample.json
+node_modules/

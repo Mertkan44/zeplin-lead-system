@@ -8,7 +8,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.dashboard.build import build_dashboard
 from src.ai.generator import AI_PROMPT_VERSION, has_email_evidence
 from src.audit.findings import analyze_lead
 from src.services import discovery_services, estimate_value, match_services, recommended_package
@@ -442,7 +441,7 @@ def main() -> None:
     parser.add_argument("--input", default="leads_final.json")
     parser.add_argument("--output", default="leads_final.json")
     parser.add_argument("--write", action="store_true")
-    parser.add_argument("--build", action="store_true")
+    parser.add_argument("--build", action="store_true", help="obsolete; kept so old commands still run")
     args = parser.parse_args()
 
     output = ROOT / args.output
@@ -453,8 +452,7 @@ def main() -> None:
     else:
         print(json.dumps(migrated, ensure_ascii=False, indent=2))
     if args.build:
-        build_dashboard(output)
-        print("rebuilt public/index.html")
+        print("--build: The dashboard reads leads from the API; there is nothing to rebuild (see README).")
 
 
 if __name__ == "__main__":

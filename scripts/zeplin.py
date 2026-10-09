@@ -48,8 +48,9 @@ def cmd_validate(args) -> int:
 
 
 def cmd_build(args) -> int:
-    build_dashboard(ROOT / args.path)
-    print("dashboard built")
+    """Regenerate the dashboard's catalog config; build the app with `npm --prefix web run build`."""
+    build_dashboard()
+    print("dashboard config written; build the app with: npm --prefix web run build")
     return 0
 
 
@@ -136,7 +137,6 @@ def main() -> int:
     p.set_defaults(func=cmd_validate)
 
     p = sub.add_parser("build")
-    p.add_argument("path", nargs="?", default="leads_final.json")
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("sync")

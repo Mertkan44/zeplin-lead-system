@@ -18,7 +18,6 @@ sys.path.insert(0, str(ROOT))
 from scripts.migrate_leads import SOCIAL_DEFAULTS, deep_merge, normalize_lead
 from src.audit.finder import find_from_google_maps, get_instagram_stats
 from src.audit.website import audit_website
-from src.dashboard.build import build_dashboard
 from src.storage.supabase import fetch_all_leads, upsert_leads
 
 
@@ -332,8 +331,7 @@ async def run(args: argparse.Namespace) -> list[dict]:
     )
     print(f"yazıldı: {output} ({len(merged)} lead)")
     if args.build:
-        build_dashboard(output)
-        print("dashboard build tamam")
+        print("--build: The dashboard reads leads from the API; there is nothing to rebuild (see README).")
     if args.sync:
         print(f"Supabase eşitlendi: {upsert_leads(merged)} lead")
     return merged

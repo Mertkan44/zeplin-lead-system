@@ -310,7 +310,7 @@ class AdminEstimateTests(unittest.TestCase):
         self.assertEqual(self._get("/api/admin_search?estimate=1&ai_mode=turbo")["status"], 400)
 
     def test_frontend_no_longer_prices_tokens_itself(self):
-        template = Path("src/dashboard/template.html").read_text(encoding="utf-8")
+        template = Path("web/src/legacy/App.jsx").read_text(encoding="utf-8")
         self.assertNotIn("/ 1000000 *", template)
         self.assertIn("/api/admin_search?${params}", template)
 
