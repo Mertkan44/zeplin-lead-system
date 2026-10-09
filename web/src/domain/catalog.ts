@@ -10,20 +10,17 @@ export const FOLLOW_UP_DELAYS = appConfig.followUpDelays;
 
 export interface StatusMeta {
   label: string;
-  /** Legacy inline-style colors; StatusBadge uses CSS per status instead. */
-  fg: string;
-  bg: string;
-  bd: string;
 }
 
+/** Colors per status live in ui/Badge.module.css (one readable pair per theme). */
 export const STATUS_META: Record<LeadStatus, StatusMeta> = {
-  yeni:         { label: 'Yeni',       fg: '#c5f24a', bg: 'rgba(197,242,74,0.1)',  bd: 'rgba(197,242,74,0.28)' },
-  missing_info: { label: 'Veri Eksik', fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)',  bd: 'rgba(255,159,67,0.28)' },
-  ready:        { label: 'Hazır',      fg: '#76a6ff', bg: 'rgba(118,166,255,0.1)', bd: 'rgba(118,166,255,0.28)' },
-  contacted:    { label: 'Görüşüldü',  fg: '#ffcf4a', bg: 'rgba(255,207,74,0.1)',  bd: 'rgba(255,207,74,0.28)' },
-  follow_up:    { label: 'Takipte',    fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)',  bd: 'rgba(255,159,67,0.28)' },
-  converted:    { label: 'Müşteri',    fg: '#b6f24a', bg: 'rgba(182,242,74,0.14)', bd: 'rgba(182,242,74,0.32)' },
-  lost:         { label: 'Kaybedildi', fg: '#ff6770', bg: 'rgba(255,103,112,0.1)', bd: 'rgba(255,103,112,0.28)' },
+  yeni: { label: 'Yeni' },
+  missing_info: { label: 'Veri Eksik' },
+  ready: { label: 'Hazır' },
+  contacted: { label: 'Görüşüldü' },
+  follow_up: { label: 'Takipte' },
+  converted: { label: 'Müşteri' },
+  lost: { label: 'Kaybedildi' },
 };
 
 export function normalizeStatus(status: string | null | undefined): LeadStatus {

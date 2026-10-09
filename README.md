@@ -308,9 +308,9 @@ browser tests. If you change the inline script in `web/index.html`, update its
   `EmptyState`/`ErrorState`/`Banner`. Colors and fonts are tokens in
   `web/src/styles/tokens.css` (dark and light); components use CSS modules.
 - `web/src/app/` is the shell (login, top bar, search, routing); `web/src/screens/`
-  holds the typed screens (Today, Workspace, lead list, lead detail, contact
-  dialog) with their CSS modules. `web/src/legacy/screens.jsx` holds the screens not yet
-  moved; they move one at a time.
+  holds one folder per screen (today, workspace, leads, lead, contact, pipeline,
+  services, analytics, admin, profile), each a typed component with its CSS
+  module. All dashboard code is TypeScript (a unit test keeps it that way).
 
 After authentication the dashboard reads role-filtered live data from the API. CRM
 data is kept in memory only; logout, a 401 response, or a user switch clears the

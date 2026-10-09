@@ -7,10 +7,14 @@ import { buildCrm, CrmContext, useSession, useTeamUsers, useWorkspaceQuery } fro
 import type { Lead, LeadStatus } from '../data/types';
 import { navigate, routeFor, useRoute, type View } from '../lib/router';
 import { Banner, Button, EmptyState, ErrorState, LoadingState } from '../ui';
-import { AdminView, AnalyticsView, HizmetlerView, PipelineView, ProfileView } from '../legacy/screens.jsx';
+import { AdminView } from '../screens/admin/AdminView';
+import { AnalyticsView } from '../screens/analytics/AnalyticsView';
 import { ContactResultDialog } from '../screens/contact/ContactResultDialog';
 import { LeadDetailView } from '../screens/lead/LeadDetailView';
 import { LeadListView } from '../screens/leads/LeadListView';
+import { PipelineView } from '../screens/pipeline/PipelineView';
+import { ProfileView } from '../screens/profile/ProfileView';
+import { ServicesView } from '../screens/services/ServicesView';
 import { TodayView } from '../screens/today/TodayView';
 import { WorkspaceView } from '../screens/workspace/WorkspaceView';
 import { SearchDialog } from './SearchDialog';
@@ -51,11 +55,6 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
 
   function openLead(lead: Lead | undefined, options?: { replace?: boolean }) {
     if (lead && lead.lead_id != null) navigate(routeFor({ leadId: lead.lead_id }), options);
-  }
-
-  // Legacy screens select by position in the score-sorted list.
-  function selectLead(index: number) {
-    openLead(leads[index]);
   }
 
   function changeStatus(name: string, status: LeadStatus) {
@@ -124,13 +123,13 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
         );
       }
       case 'pipeline':
-        return <PipelineView leads={leads} onSelect={selectLead} onDataChange={refreshWorkspace} />;
+        return <PipelineView leads={leads} />;
       case 'hizmetler':
-        return <HizmetlerView leads={crm.rows} />;
+        return <ServicesView leads={crm.rows} />;
       case 'raporlar':
         return <LeadListView leads={leads} />;
       case 'analytics':
-        return <AnalyticsView leads={leads} statuses={crm.statuses} />;
+        return <AnalyticsView leads={leads} />;
       default:
         return (
           <WorkspaceView

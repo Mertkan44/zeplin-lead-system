@@ -49,19 +49,3 @@ export async function apiRequest<T = Record<string, unknown>>(url: string, optio
   if (!response.ok) throw new ApiError(response.status, data);
   return data as T;
 }
-
-interface LegacyInit {
-  method?: string;
-  body?: string;
-  headers?: Record<string, string>;
-}
-
-/** Older call style used by the dashboard screens: fetch-like options, JSON body as a string. */
-export function fetchJSON<T = any>(url: string, init: LegacyInit = {}): Promise<T> {
-  return apiRequest<T>(url, {
-    method: (init.method as ApiRequestOptions['method']) || 'GET',
-    body: init.body === undefined ? undefined : JSON.parse(init.body),
-  });
-}
-
-export const fetchAdminJSON = fetchJSON;
