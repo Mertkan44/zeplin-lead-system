@@ -53,6 +53,16 @@ class DashboardBuildTests(unittest.TestCase):
             self.assertTrue(src.startswith("/assets/"), src)
             self.assertTrue((ROOT / "public" / src.lstrip("/")).exists(), f"{src} is not in public/")
 
+    def test_unknown_paths_fall_back_to_the_built_page(self):
+        # Vercel serves public/ as the site root, so deep links such as
+        # /leads/57 must be rewritten to /index.html (not /public/index.html).
+        routes = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))["routes"]
+        fallback = routes[-1]
+        self.assertEqual(fallback["src"], "/(.*)")
+        self.assertTrue((ROOT / "public" / fallback["dest"].lstrip("/")).is_file(), fallback["dest"])
+        handled = [route.get("handle") for route in routes]
+        self.assertLess(handled.index("filesystem"), len(routes) - 1, "files and the API must win over the fallback")
+
     def test_csp_allows_exactly_the_inline_scripts_of_the_built_page(self):
         csp = _csp()
         script_src = csp["script-src"]
