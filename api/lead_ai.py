@@ -6,9 +6,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields, has_email_evidence
+from src.ai.cache import GenerationBusy
+from src.ai.generator import AI_PROMPT_VERSION, enrich_ai_fields
+from src.ai.usage import BudgetExceeded, usage_context
 from src.activity import manual_verification_from_event
-from src.auth import require_auth, require_lead_access
+from src.auth import normalize_email, require_auth, require_lead_access
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.lead_facts import apply_effective_facts
 from src.storage.supabase import (
@@ -20,7 +22,9 @@ from src.storage.supabase import (
 )
 
 # What enrich_ai_fields adds; the rest of the effective lead is never stored.
-AI_FIELDS = ("research_brief", "ai_report", "ai_email", "ai_tier", "ai_prompt_version")
+AI_FIELDS = (
+    "research_brief", "ai_report", "ai_email", "ai_tier", "ai_prompt_version", "ai_input_hash", "ai_generated_at",
+)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -73,26 +77,28 @@ class handler(BaseHTTPRequestHandler):
                 )
                 return
 
-            if (
-                lead.get("ai_prompt_version") == AI_PROMPT_VERSION
-                and lead.get("ai_report")
-                and (lead.get("ai_email") or not has_email_evidence(lead))
-            ):
-                enriched = lead
-                cached = True
-            else:
+            # Every task goes through the generation cache: an unchanged input is
+            # a free cache hit, any change to the data the model sees is new work.
+            with usage_context(actor_email=normalize_email(user.get("sub")), lead_id=stored.get("lead_id")) as counters:
                 enriched = enrich_ai_fields(lead)
-                if not enriched.get("ai_report"):
-                    raise RuntimeError("AI provider returned an empty report")
+            if not enriched.get("ai_report"):
+                raise RuntimeError("AI provider returned an empty report")
+            cached = counters["provider_calls"] == 0
+            if not cached or stored.get("ai_input_hash") != enriched.get("ai_input_hash"):
                 upsert_leads([{**stored, **{key: enriched.get(key) for key in AI_FIELDS}}])
-                cached = False
 
             insert_audit_event(
                 actor_email=user.get("sub"),
                 event_type="lead_ai_generated",
                 target_type="lead",
                 target_key=name,
-                meta={"prompt_version": AI_PROMPT_VERSION, "cached": cached},
+                meta={
+                    "prompt_version": AI_PROMPT_VERSION,
+                    "cached": cached,
+                    "provider_calls": counters["provider_calls"],
+                    "cache_hits": counters["cache_hits"],
+                    "cost_usd": round(counters["cost_usd"], 6),
+                },
             )
             send_json(
                 self,
@@ -105,8 +111,25 @@ class handler(BaseHTTPRequestHandler):
                         "ai_prompt_version": enriched.get("ai_prompt_version"),
                         "ai_report": enriched.get("ai_report"),
                         "ai_email": enriched.get("ai_email"),
+                        "ai_generated_at": enriched.get("ai_generated_at"),
+                        "ai_state": "current",
                     },
                 },
+                allow_methods="POST, OPTIONS",
+            )
+        except GenerationBusy:
+            send_json(
+                self,
+                409,
+                {"ok": False, "error": "Bu rapor şu anda başka bir istekte hazırlanıyor; birkaç saniye sonra yenile."},
+                allow_methods="POST, OPTIONS",
+            )
+        except BudgetExceeded as exc:
+            self.log_error("AI budget: %s", exc)
+            send_json(
+                self,
+                429,
+                {"ok": False, "error": "Günlük AI bütçesi doldu. Yönetici bütçeyi kontrol etmeli."},
                 allow_methods="POST, OPTIONS",
             )
         except PermissionError as exc:

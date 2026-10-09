@@ -655,7 +655,7 @@ def set_app_user_active(email: str, active: bool) -> None:
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
 
 
-REQUIRED_SCHEMA_VERSION = "010"
+REQUIRED_SCHEMA_VERSION = "011"
 
 
 def fetch_schema_readiness() -> dict[str, Any]:
@@ -998,16 +998,10 @@ def record_login_attempt(key_hash: str, *, success: bool) -> bool:
 
 
 def estimate_search_tokens(*, max_results: int, deep_research: bool = True, ai_mode: str = "smart") -> dict[str, Any]:
-    per_lead = 9000 if deep_research else 5200
-    model_mix = "flash+pro" if ai_mode == "smart" else ai_mode
-    estimated_tokens = max(1, int(max_results)) * per_lead
-    blended_rate = float(env("DEEPSEEK_ESTIMATED_USD_PER_M_TOKENS", "1.25") or 1.25)
-    estimated_cost_usd = round(estimated_tokens / 1_000_000 * blended_rate, 4)
-    return {
-        "estimated_tokens": estimated_tokens,
-        "estimated_cost_usd": estimated_cost_usd,
-        "model_mix": model_mix,
-    }
+    """See src/ai/pricing.estimate_search: the panel and the reservation use the same estimate."""
+    from src.ai.pricing import estimate_search
+
+    return estimate_search(max_results=max_results, deep_research=deep_research, ai_mode=ai_mode)
 
 
 def create_search_job(
@@ -1151,113 +1145,103 @@ def claim_search_jobs(limit: int = 1) -> list[dict[str, Any]]:
         return claimed
 
 
-def record_token_usage(*, job_id: int, model: str, usage: dict[str, Any]) -> dict[str, Any]:
-    config = supabase_config()
-    if not config:
-        raise RuntimeError("Supabase is not configured.")
-    prompt_tokens = int(usage.get("prompt_tokens") or 0)
-    cached_tokens = int(
-        usage.get("prompt_cache_hit_tokens")
-        or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
-        or 0
-    )
-    completion_tokens = int(usage.get("completion_tokens") or 0)
-    total_tokens = int(usage.get("total_tokens") or prompt_tokens + completion_tokens)
-    input_rate = float(env("DEEPSEEK_INPUT_USD_PER_M_TOKENS", "0.28") or 0.28)
-    cached_rate = float(env("DEEPSEEK_CACHED_INPUT_USD_PER_M_TOKENS", "0.028") or 0.028)
-    output_rate = float(env("DEEPSEEK_OUTPUT_USD_PER_M_TOKENS", "0.42") or 0.42)
-    uncached_tokens = max(prompt_tokens - cached_tokens, 0)
-    cost = (
-        uncached_tokens * input_rate
-        + cached_tokens * cached_rate
-        + completion_tokens * output_rate
-    ) / 1_000_000
-    row = {
-        "job_id": job_id,
-        "kind": "usage",
-        "provider": "deepseek",
-        "model": model,
-        "estimated_tokens": 0,
-        "actual_tokens": total_tokens,
-        "estimated_cost_usd": 0,
-        "actual_cost_usd": round(cost, 6),
-        "meta": {
-            "prompt_tokens": prompt_tokens,
-            "cached_tokens": cached_tokens,
-            "completion_tokens": completion_tokens,
-        },
-    }
-    with httpx.Client(timeout=20) as client:
-        response = client.post(
-            _postgrest_url(config, "ai_token_ledger"),
-            headers=_headers(config, prefer="return=representation"),
-            json=row,
-        )
+def _rpc(name: str, payload: dict[str, Any], *, timeout: float = 20) -> Any:
+    config = _require_config()
+    with httpx.Client(timeout=timeout) as client:
+        response = client.post(f"{config.url}/rest/v1/rpc/{name}", headers=_headers(config), json=payload)
         response.raise_for_status()
-        body = response.json()
-        return body[0] if isinstance(body, list) and body else body
+        return response.json() if response.content else None
 
 
-def fetch_ai_generation(cache_key: str) -> dict[str, Any] | None:
-    config = supabase_config()
-    if not config:
-        return None
-    query = (
-        "select=cache_key,task,provider,model,content,usage,created_at,updated_at"
-        f"&cache_key=eq.{_eq(cache_key)}&limit=1"
-    )
-    with httpx.Client(timeout=20) as client:
-        response = client.get(_postgrest_url(config, "ai_generations", query), headers=_headers(config))
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        rows = response.json()
-        return rows[0] if rows else None
-
-
-def upsert_ai_generation(
+def claim_ai_generation(
     *,
     cache_key: str,
     task: str,
+    owner: str,
+    lease_seconds: int,
     provider: str,
-    model: str,
-    content: str,
-    usage: dict[str, Any],
-) -> None:
-    config = supabase_config()
-    if not config:
-        return
-    row = {
-        "cache_key": cache_key,
-        "task": task,
-        "provider": provider,
-        "model": model,
-        "content": content,
-        "usage": usage,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
+    requested_model: str,
+    lead_id: int | None = None,
+    input_hash: str | None = None,
+    prompt_version: str | None = None,
+    catalog_version: str | None = None,
+) -> dict[str, Any]:
+    """{"status": ready|claimed|busy, ...} (migration 011)."""
+    return _rpc("claim_ai_generation", {
+        "p_cache_key": cache_key, "p_task": task, "p_owner": owner, "p_lease_seconds": lease_seconds,
+        "p_provider": provider, "p_requested_model": requested_model, "p_lead_id": lead_id,
+        "p_input_hash": input_hash, "p_prompt_version": prompt_version, "p_catalog_version": catalog_version,
+    }) or {}
+
+
+def complete_ai_generation(*, cache_key: str, content: str, provider: str, model: str, usage: dict[str, Any]) -> bool:
+    return bool(_rpc("complete_ai_generation", {
+        "p_cache_key": cache_key, "p_content": content, "p_provider": provider, "p_model": model, "p_usage": usage,
+    }))
+
+
+def replace_ai_generation(*, cache_key: str, content: str, provider: str, model: str, usage: dict[str, Any]) -> None:
+    """Overwrite a finished text (a forced regeneration)."""
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.patch(
+            _postgrest_url(config, "ai_generations", f"cache_key=eq.{_eq(cache_key)}"),
+            headers=_headers(config, prefer="return=minimal"),
+            json={"status": "ready", "content": content, "provider": provider, "model": model, "usage": usage},
+        )
+        response.raise_for_status()
+
+
+def fail_ai_generation(*, cache_key: str, owner: str, error: str) -> None:
+    _rpc("fail_ai_generation", {"p_cache_key": cache_key, "p_owner": owner, "p_error": error[:500]})
+
+
+def insert_usage_event(row: dict[str, Any]) -> None:
+    """One ai_token_ledger row (src/ai/usage.py builds it)."""
+    config = _require_config()
     with httpx.Client(timeout=20) as client:
         response = client.post(
-            _postgrest_url(config, "ai_generations", "on_conflict=cache_key"),
-            headers=_headers(config, prefer="resolution=merge-duplicates,return=minimal"),
+            _postgrest_url(config, "ai_token_ledger"),
+            headers=_headers(config, prefer="return=minimal"),
             json=row,
         )
         response.raise_for_status()
 
 
-def fetch_token_summary() -> dict[str, Any]:
-    config = supabase_config()
-    if not config:
-        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    query = "select=estimated_tokens,actual_tokens,estimated_cost_usd,actual_cost_usd,kind,created_at&order=created_at.desc&limit=5000"
+def record_reservation_release(job_id: int, *, status: str) -> None:
+    """Close a search job's reservation, once: its estimate stops counting as reserved."""
+    config = _require_config()
     with httpx.Client(timeout=20) as client:
-        response = client.get(_postgrest_url(config, "ai_token_ledger", query), headers=_headers(config))
+        existing = client.get(
+            _postgrest_url(config, "ai_token_ledger", f"select=id&job_id=eq.{int(job_id)}&kind=eq.release&limit=1"),
+            headers=_headers(config),
+        )
+        existing.raise_for_status()
+        if existing.json():
+            return
+        response = client.post(
+            _postgrest_url(config, "ai_token_ledger"),
+            headers=_headers(config, prefer="return=minimal"),
+            json={"job_id": int(job_id), "kind": "release", "estimated_tokens": 0, "estimated_cost_usd": 0,
+                  "meta": {"job_status": status}},
+        )
         response.raise_for_status()
-        rows = response.json()
-    return {
-        "estimated_tokens": sum(int(row.get("estimated_tokens") or 0) for row in rows),
-        "actual_tokens": sum(int(row.get("actual_tokens") or 0) for row in rows),
-        "estimated_cost_usd": round(sum(float(row.get("estimated_cost_usd") or 0) for row in rows), 4),
-        "actual_cost_usd": round(sum(float(row.get("actual_cost_usd") or 0) for row in rows), 4),
-        "entries": len(rows),
-    }
+
+
+def fetch_model_rates() -> list[dict[str, Any]]:
+    config = _require_config()
+    with httpx.Client(timeout=10) as client:
+        response = client.get(
+            _postgrest_url(
+                config, "ai_model_rates",
+                "select=provider,model,effective_from,input_usd_per_m,cached_input_usd_per_m,output_usd_per_m",
+            ),
+            headers=_headers(config),
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+def fetch_spend_summary(*, today_start: datetime | None = None) -> dict[str, Any]:
+    """Whole-ledger AI totals from the database (ai_spend_summary, migration 011)."""
+    return _rpc("ai_spend_summary", {"p_today_start": today_start.isoformat() if today_start else None}) or {}

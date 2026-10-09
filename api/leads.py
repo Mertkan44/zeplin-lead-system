@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 from src.auth import lead_read_scope, normalize_email, require_auth
 from src.activity import enrich_outreach_event, manual_verification_from_event
 from src.http_api import send_internal_error, send_json, send_options
+from src.ai.generator import ai_state
 from src.lead_facts import apply_effective_facts
 from src.workflow import build_lead_workflow
 from src.storage.supabase import (
@@ -153,4 +154,5 @@ class handler(BaseHTTPRequestHandler):
             {**lead, "manual_verification": manual_verification_from_event(state.get("latest_manual_verification"))}
         )
         lead["workflow"] = build_lead_workflow(lead, [latest_contact] if latest_contact else [])
+        lead["ai_state"] = ai_state(lead)
         send_json(self, 200, {"ok": True, "lead": lead, "activity": activity}, allow_methods=_METHODS)

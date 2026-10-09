@@ -16,8 +16,8 @@ provider is `AI_PROVIDER=deepseek`; Groq remains an optional alternative.
 DeepSeek defaults to `deepseek-v4-pro`, with thinking disabled for short sales
 reports so the response budget is reserved for the final text.
 The pipeline uses an AI cost mode: lower-priority leads use `DEEPSEEK_FLASH_MODEL`
-and high-priority leads use `DEEPSEEK_PRO_MODEL`. AI generations are cached in
-`.cache/ai_generations.json` so unchanged leads do not burn tokens repeatedly.
+and high-priority leads use `DEEPSEEK_PRO_MODEL`. Unchanged input never pays twice:
+see "AI generations and costs" below.
 
 Database schema lives in `supabase/migrations/` (001 … latest), the only
 hand-edited source. Every migration is idempotent.
@@ -28,9 +28,13 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-The current code requires migration 010. Always apply new migrations before
+The current code requires migration 011. Always apply new migrations before
 deploying the code that needs them; every migration also works with the previous
 code version.
+
+Migration 011 ties AI generations to their input and records every provider call;
+see "AI generations and costs". It removes nothing, so it can be applied through the
+Supabase connector.
 
 Migration 010 moves reads into the database: `readable_leads` holds the access rule,
 `lead_activity_state` keeps each lead's latest contact result and manual verification
@@ -79,6 +83,38 @@ Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
 `SESSION_SECRET` in Vercel. Team members log in with their individual Supabase
 `app_users` account. The old shared admin password is disabled unless
 `ALLOW_LEGACY_ADMIN_LOGIN=1` is deliberately set during a short migration window.
+
+## AI generations and costs
+
+- **Key:** a generation is identified by task, provider, requested model, a hash of
+  the exact system + user prompt (so any change to the data the model sees), the
+  prompt version and the service-catalog version. Places lookup bookkeeping (refresh
+  times, attempts) is left out, so a refresh that finds the same data is free.
+- **One paid call per input:** `ai_generations` is the cache and the lock
+  (`claim_ai_generation`). A second request for an input being generated waits for
+  the first one's text; past ~25 s the API answers 409 ("being prepared"). A failed
+  or expired generation is taken over by the next request. The local
+  `.cache/ai_generations.json` is only an extra copy for the worker and CLI (off on
+  Vercel or with `AI_LOCAL_CACHE=0`); failing to write it never blocks the remote record.
+- **Report state:** leads store `ai_input_hash`; the workspace and detail mark a
+  report `current`, `stale` (the data changed since) or `unknown` (generated before
+  hashes were stored). A stale report stays readable but is never shown as current,
+  and the next action becomes "Raporu yenile". `/api/lead_ai` no longer trusts the
+  prompt version alone; unchanged input is answered from the cache for free.
+- **Ledger:** every provider request writes one `ai_token_ledger` row (`kind=usage`)
+  with task, requested and actual model, outcome (`success`, `empty`, `error`,
+  `cache_hit`), prompt / cached / completion tokens, cost and the rates applied, plus
+  the job, actor and lead it was for. Empty answers, failures and fallbacks are
+  recorded too. A search job's `reservation` is closed by a `release` row when the job
+  ends, so open reservations and historical estimates are reported apart.
+  `ai_spend_summary()` totals the whole ledger in the database.
+- **Prices:** `ai_model_rates` (provider, model, start date, input / cached input /
+  output USD per million tokens). Enter rows from the provider's official price list;
+  without a row DeepSeek falls back to `DEEPSEEK_*_USD_PER_M_TOKENS`, other providers
+  stay unpriced (counted as `unpriced_calls`, never guessed). The panel's job estimate
+  comes from the API and is the same figure the job reserves.
+- **Budget (optional):** set `AI_DAILY_BUDGET_USD` to refuse new paid calls once
+  today's spend (Istanbul day) reaches it; cache hits still work. Unset means no cap.
 
 ## Lead data stays out of Git
 

@@ -17,6 +17,7 @@ from src.research_brief import build_research_brief
 from src.workflow import build_lead_workflow, build_team_performance
 from src.integrations.google_places import is_configured as places_configured
 from src.lead_facts import apply_effective_facts
+from src.ai.generator import ai_state
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_activity_states,
@@ -211,6 +212,7 @@ class handler(BaseHTTPRequestHandler):
                 apply_effective_facts({**lead, "manual_verification": latest_manual.get(lead.get("name"))})
                 for lead in leads
             ]
+            leads = [{**lead, "ai_state": ai_state(lead)} for lead in leads]
             leads = [
                 {
                     **lead,
