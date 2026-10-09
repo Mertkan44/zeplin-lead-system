@@ -7,37 +7,39 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from besiktas import run as run_scan
-from src.ai.cache import usage_totals
-from src.storage.supabase import claim_search_jobs, record_token_usage, update_search_job
+from src.ai.usage import usage_context
+from src.storage.supabase import claim_search_jobs, record_reservation_release, update_search_job
 
 
 async def process_job(job: dict) -> None:
+    """Run one search job. Every AI call inside records its own usage row with
+    this job's id; the job's reservation is released when it ends either way."""
     job_id = int(job["id"])
-    usage_before = usage_totals()
+    status = "failed"
     try:
-        result = await run_scan(
-            query=job["query"],
-            city=job["city"],
-            max_results=int(job["max_results"]),
-            push=False,
-            sync_supabase=True,
-            resume=False,
-            deep_research=bool(job.get("deep_research")),
-            force_ai=False,
-            ai_mode=job.get("ai_mode") or "smart",
-        )
-    except Exception as exc:
-        update_search_job(job_id, status="failed", result={"error": str(exc)})
-        raise
-    usage_after = usage_totals()
-    usage = {key: max(usage_after.get(key, 0) - usage_before.get(key, 0), 0) for key in usage_after}
-    if usage.get("total_tokens"):
-        record_token_usage(job_id=job_id, model=job.get("ai_mode") or "smart", usage=usage)
-    update_search_job(
-        job_id,
-        status="success",
-        result=result,
-    )
+        with usage_context(job_id=job_id, actor_email=job.get("created_by")) as counters:
+            try:
+                result = await run_scan(
+                    query=job["query"],
+                    city=job["city"],
+                    max_results=int(job["max_results"]),
+                    push=False,
+                    sync_supabase=True,
+                    resume=False,
+                    deep_research=bool(job.get("deep_research")),
+                    force_ai=False,
+                    ai_mode=job.get("ai_mode") or "smart",
+                )
+            except Exception as exc:
+                update_search_job(job_id, status="failed", result={"error": str(exc), "ai_usage": dict(counters)})
+                raise
+        update_search_job(job_id, status="success", result={**(result or {}), "ai_usage": dict(counters)})
+        status = "success"
+    finally:
+        try:
+            record_reservation_release(job_id, status=status)
+        except Exception as exc:
+            print(f"job #{job_id}: reservation not released: {exc}")
 
 
 async def main() -> None:

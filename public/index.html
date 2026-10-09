@@ -648,6 +648,13 @@
         intent: 'generate_ai',
       };
     }
+    if (lead.ai_state === 'stale') {
+      return {
+        label: 'Raporu yenile',
+        helper: 'İşletme verisi rapordan sonra değişti; rapor güncel veriyle yeniden üretilir.',
+        intent: 'generate_ai',
+      };
+    }
     if (lead.ai_email) {
       return {
         label: 'Taslağı kopyala',
@@ -1154,7 +1161,7 @@
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconStar/> AI Raporu</span>
               <span style={{ fontSize: 18, color: 'var(--sub)' }}>{reportOpen ? '−' : '+'}</span>
             </button>
-            {reportOpen && <div style={wp.togglePanel}>{lead.ai_report}</div>}
+            {reportOpen && <div style={wp.togglePanel}>{AI_STATE_NOTES[lead.ai_state] ? `${AI_STATE_NOTES[lead.ai_state]}\n\n` : ''}{lead.ai_report}</div>}
           </div>
         )}
 
@@ -2035,6 +2042,12 @@
     };
   }
 
+  // A report that is not known to match the current data is readable, never "current".
+  const AI_STATE_NOTES = {
+    stale: 'Bu rapor işletme verisi değişmeden önce üretildi; güncel değil. Yenilemek için “Raporu yenile”.',
+    unknown: 'Bu raporun hangi veriyle üretildiği kayıtlı değil; güncelliği doğrulanamıyor.',
+  };
+
   const PLACE_REASONS = {
     close_candidates: 'Google’da birden fazla benzer işletme var; doğru şubeyi seç.',
     other_district: 'Aynı isimli işletme başka bir ilçede görünüyor; doğruysa seç.',
@@ -2724,6 +2737,7 @@
                 <div style={{ ...ld.findHeader, cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowReport(r => !r)}>
                   <div><div style={ld.eyebrow}>GÖRÜŞME HAZIRLIĞI</div><div style={ld.cardTitle}>AI ihtiyaç özeti {showReport ? '▲' : '▼'}</div></div>
                 </div>
+                {showReport && AI_STATE_NOTES[lead.ai_state] && <div style={ld.draftWarning}>{AI_STATE_NOTES[lead.ai_state]}</div>}
                 {showReport && <div style={{ padding: '16px 24px', fontSize: 13.5, color: 'var(--sub)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{lead.ai_report}</div>}
               </div>
             )}
@@ -3268,8 +3282,21 @@
     const [busy, setBusy] = React.useState(false);
     const isAdmin = user?.role === 'admin';
 
-    const estimatedTokens = maxResults * (deepResearch ? 9000 : 5200);
-    const estimatedCost = (estimatedTokens / 1000000 * 0.9).toFixed(4);
+    const [estimate, setEstimate] = React.useState(null);
+
+    // The estimate comes from the API: the same figure the job will reserve.
+    React.useEffect(() => {
+      if (!isAdmin) return undefined;
+      let cancelled = false;
+      const params = new URLSearchParams({ estimate: '1', max_results: String(maxResults || 1), deep_research: deepResearch ? '1' : '0', ai_mode: aiMode });
+      const timer = setTimeout(() => {
+        fetchAdminJSON(`/api/admin_search?${params}`)
+          .then(data => { if (!cancelled) setEstimate(data.estimate || null); })
+          .catch(() => { if (!cancelled) setEstimate(null); });
+      }, 250);
+      return () => { cancelled = true; clearTimeout(timer); };
+    }, [isAdmin, maxResults, deepResearch, aiMode]);
+    const usd = value => `$${Number(value || 0).toFixed(4)}`;
 
     function refreshAdmin() {
       return fetchAdminJSON('/api/admin_search')
@@ -3356,8 +3383,8 @@
               <span>Deep research açık</span>
             </label>
             <div style={av.estimate}>
-              <div><strong>{estimatedTokens.toLocaleString('tr-TR')}</strong><span> tahmini token</span></div>
-              <div><strong>${estimatedCost}</strong><span> tahmini maliyet</span></div>
+              <div><strong>{estimate ? Number(estimate.estimated_tokens).toLocaleString('tr-TR') : '—'}</strong><span> tahmini token</span></div>
+              <div><strong>{estimate ? (estimate.priced ? usd(estimate.estimated_cost_usd) : 'Fiyat yok') : '—'}</strong><span> tahmini maliyet</span></div>
             </div>
             {feedback && <div style={av.feedback}>{feedback}</div>}
             <button style={av.primaryBtn} disabled={busy || !query.trim() || !city.trim()}>{busy ? 'Kuyruğa alınıyor…' : 'Search job oluştur'}</button>
@@ -3366,10 +3393,15 @@
           <div style={av.sideStack}>
             <div style={av.panel}>
               <div style={ld.eyebrow}>TOKEN</div>
-              <div style={ld.cardTitle}>DeepSeek kullanımı</div>
-              <div style={av.metricRow}><span>Reserve</span><strong>{(tokens?.estimated_tokens || 0).toLocaleString('tr-TR')}</strong></div>
-              <div style={av.metricRow}><span>Gerçek</span><strong>{(tokens?.actual_tokens || 0).toLocaleString('tr-TR')}</strong></div>
-              <div style={av.metricRow}><span>Tahmini maliyet</span><strong>${Number(tokens?.estimated_cost_usd || 0).toFixed(4)}</strong></div>
+              <div style={ld.cardTitle}>AI kullanımı</div>
+              <div style={av.metricRow}><span>Gerçek harcama (tüm zamanlar)</span><strong>{usd(tokens?.actual_cost_usd)}</strong></div>
+              <div style={av.metricRow}><span>Bugün</span><strong>{usd(tokens?.today_cost_usd)}</strong></div>
+              <div style={av.metricRow}><span>Gerçek token</span><strong>{Number(tokens?.actual_tokens || 0).toLocaleString('tr-TR')}</strong></div>
+              <div style={av.metricRow}><span>Açık rezervasyon</span><strong>{usd(tokens?.active_reserved_usd)}</strong></div>
+              <div style={av.metricRow}><span>Sağlayıcı çağrısı · önbellekten</span><strong>{Number(tokens?.provider_calls || 0)} · {Number(tokens?.cache_hits || 0)}</strong></div>
+              {(Number(tokens?.failed_calls || 0) > 0 || Number(tokens?.unpriced_calls || 0) > 0) && (
+                <div style={av.metricRow}><span>Başarısız · fiyatsız çağrı</span><strong>{Number(tokens?.failed_calls || 0)} · {Number(tokens?.unpriced_calls || 0)}</strong></div>
+              )}
             </div>
 
             <div style={av.panel}>

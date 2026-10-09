@@ -412,7 +412,8 @@ class SnapshotConsumersTests(unittest.TestCase):
 
         def fake_enrich(lead):
             seen["website"] = lead["website"]["website_url"]
-            return {**lead, "ai_report": "rapor", "ai_email": None, "ai_tier": "flash", "ai_prompt_version": "test", "research_brief": "brief"}
+            return {**lead, "ai_report": "rapor", "ai_email": None, "ai_tier": "flash", "ai_prompt_version": "test",
+                    "research_brief": "brief", "ai_input_hash": "new-input"}
 
         with patch.object(lead_ai_api, "require_lead_access", lambda user, name: None), \
                 patch.object(lead_ai_api, "enrich_ai_fields", fake_enrich), \

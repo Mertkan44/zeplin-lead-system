@@ -7,9 +7,9 @@ import json
 import os
 import subprocess
 from playwright.async_api import async_playwright
-from datetime import datetime
+from datetime import datetime, timezone
 
-from src.ai.generator import AI_PROMPT_VERSION, generate_email, generate_report, generate_research_brief
+from src.ai.generator import AI_PROMPT_VERSION, ai_input_fingerprint, generate_email, generate_report, generate_research_brief
 from src.audit.finder import (
     find_from_google_maps, check_website, detect_sector,
     find_instagram, get_instagram_stats,
@@ -170,10 +170,13 @@ async def run(
             lead["_ai_mode"] = ai_mode
             if deep_research:
                 lead = enrich_research(lead)
+            ai_input_hash = ai_input_fingerprint(lead)  # what the model sees
             lead["research_brief"] = generate_research_brief(lead, force=force_ai)
             lead["ai_report"] = generate_report(lead, force=force_ai)
             lead["ai_email"] = generate_email(lead, force=force_ai)
             lead["ai_prompt_version"] = AI_PROMPT_VERSION
+            lead["ai_input_hash"] = ai_input_hash
+            lead["ai_generated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
             lead["last_analyzed"] = datetime.now().strftime("%Y-%m-%d %H:%M")
             lead.pop("_ai_mode", None)
             lead = normalize_lead(lead)

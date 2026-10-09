@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from typing import Any
 
-from src.ai import cache
+from src.ai import cache, usage
 from src.ai.llm import active_provider, complete_chat
 from src.config import env
-from src.services import lead_triggers, recommended_package
+from src.services import ZEPLIN_SERVICES, lead_triggers, recommended_package
 
 
 SECTOR_VOICE = {
@@ -41,6 +42,8 @@ SECTOR_VOICE = {
 }
 
 AI_PROMPT_VERSION = 7
+# Changes whenever the service catalog the prompts quote changes.
+CATALOG_VERSION = cache.fingerprint(ZEPLIN_SERVICES)[:16]
 
 
 def has_email_evidence(lead: dict[str, Any]) -> bool:
@@ -164,9 +167,45 @@ def _lead_context(lead: dict[str, Any]) -> str:
         "service_recommendation": service_recommendation,
         "next_action": lead.get("next_action"),
         "priority_reason": lead.get("priority_reason"),
-        "research": lead.get("research"),
+        "research": _stable_research(lead.get("research")),
     }
     return json.dumps(context, ensure_ascii=False, indent=2)
+
+
+def _stable_research(research: Any) -> Any:
+    """Research without lookup bookkeeping: a Places refresh that finds the
+    same data must not count as new input (and a new paid generation)."""
+    if not isinstance(research, dict) or not isinstance(research.get("google_places"), dict):
+        return research
+    places = {
+        key: value for key, value in research["google_places"].items()
+        if key not in {"last_attempt", "attempted_at", "refreshed_at", "query", "previous_place_id"}
+    }
+    return {**research, "google_places": places}
+
+
+def ai_state(lead: dict[str, Any]) -> str:
+    """none | current | stale | unknown (generated before input hashes were stored).
+    A stale or unknown report stays readable but is never shown as current."""
+    if not lead.get("ai_report"):
+        return "none"
+    stored = lead.get("ai_input_hash")
+    if not stored:
+        return "unknown"
+    return "current" if stored == ai_input_fingerprint(lead) else "stale"
+
+
+def ai_input_fingerprint(lead: dict[str, Any]) -> str:
+    """What the AI fields were generated from. A stored `ai_input_hash` that
+    differs from this means the report is out of date."""
+    return cache.fingerprint(
+        {
+            "context": _lead_context(lead),
+            "prompt_version": AI_PROMPT_VERSION,
+            "catalog_version": CATALOG_VERSION,
+            "email_evidence": has_email_evidence(lead),
+        }
+    )
 
 
 def lead_ai_tier(lead: dict[str, Any]) -> str:
@@ -198,28 +237,6 @@ def model_for_task(task: str, lead: dict[str, Any]) -> tuple[str | None, str | N
     return flash_model, "high", 1600
 
 
-def _cache_payload(lead: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "name": lead.get("name"),
-        "city": lead.get("city"),
-        "category": lead.get("category"),
-        "phone": lead.get("phone"),
-        "address": lead.get("address"),
-        "rating": lead.get("rating"),
-        "review_count": lead.get("review_count"),
-        "sector": lead.get("sector"),
-        "website": lead.get("website"),
-        "social": lead.get("social"),
-        "delivery": lead.get("delivery"),
-        "scoring": lead.get("scoring"),
-        "matched_services": lead.get("matched_services"),
-        "service_recommendation": lead.get("recommended_package"),
-        "sales_priority_score": lead.get("sales_priority_score"),
-        "research": lead.get("research"),
-        "prompt_version": AI_PROMPT_VERSION,
-    }
-
-
 def _generate_cached(
     *,
     task: str,
@@ -232,30 +249,63 @@ def _generate_cached(
     model, reasoning_effort, tier_tokens = model_for_task(task, lead)
     max_tokens = max_tokens or tier_tokens
     provider = active_provider()
-    model_name = model or env("GROQ_MODEL", "llama-3.3-70b-versatile") or "llama-3.3-70b-versatile"
-    payload = _cache_payload(lead)
-    key = cache.cache_key(task=task, provider=provider, model=model_name, payload=payload)
-    if not force:
-        cached = cache.get(key)
-        if cached:
-            return cached
-    result = complete_chat(
-        _system(lead.get("sector", "default")),
-        prompt,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        model=model,
-        reasoning_effort=reasoning_effort,
+    requested_model = model or env("GROQ_MODEL", "llama-3.3-70b-versatile") or "llama-3.3-70b-versatile"
+    system = _system(lead.get("sector", "default"))
+    # The exact request: any change to the data, prompt or settings is a new input.
+    input_hash = cache.fingerprint(
+        {
+            "system": system,
+            "prompt": prompt,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "reasoning_effort": reasoning_effort,
+        }
     )
-    cache.put(
-        key,
+    key = cache.generation_key(
         task=task,
-        provider=result.provider,
-        model=result.model,
-        content=result.content,
-        usage=result.usage,
+        provider=provider,
+        requested_model=requested_model,
+        input_hash=input_hash,
+        prompt_version=str(AI_PROMPT_VERSION),
+        catalog_version=CATALOG_VERSION,
     )
-    return result.content
+
+    def on_attempt(**attempt: Any) -> None:
+        usage.record(task=task, requested_model=requested_model, cache_key=key, **attempt)
+
+    def on_hit(stored_model: str | None) -> None:
+        usage.record(
+            task=task, provider=provider, requested_model=requested_model,
+            model=stored_model or requested_model, outcome="cache_hit", cache_key=key,
+        )
+
+    def generate():
+        usage.check_budget()
+        return complete_chat(
+            system,
+            prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            on_attempt=on_attempt,
+        )
+
+    return cache.get_or_generate(
+        key=key,
+        task=task,
+        provider=provider,
+        requested_model=requested_model,
+        meta={
+            "lead_id": lead.get("lead_id"),
+            "input_hash": input_hash,
+            "prompt_version": str(AI_PROMPT_VERSION),
+            "catalog_version": CATALOG_VERSION,
+        },
+        generate=generate,
+        on_hit=on_hit,
+        force=force,
+    )
 
 
 def generate_research_brief(lead: dict[str, Any], *, force: bool = False) -> str:
@@ -325,6 +375,7 @@ def generate_email(lead: dict[str, Any], *, force: bool = False) -> str:
 
 def enrich_ai_fields(lead: dict[str, Any], *, force: bool = False) -> dict[str, Any]:
     enriched = dict(lead)
+    input_hash = ai_input_fingerprint(lead)
     enriched["research_brief"] = generate_research_brief(enriched, force=force)
     enriched["ai_report"] = generate_report(enriched, force=force)
     if has_email_evidence(enriched):
@@ -338,4 +389,6 @@ def enrich_ai_fields(lead: dict[str, Any], *, force: bool = False) -> dict[str, 
         enriched["ai_email"] = None
     enriched["ai_tier"] = lead_ai_tier(enriched)
     enriched["ai_prompt_version"] = AI_PROMPT_VERSION
+    enriched["ai_input_hash"] = input_hash
+    enriched["ai_generated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     return enriched
