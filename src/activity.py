@@ -271,6 +271,19 @@ def decode_manual_note(note: Any) -> dict[str, Any] | None:
     return data
 
 
+def manual_verification_from_event(event: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The lead's `manual_verification` from its latest manual_verification_saved
+    event (lead_activity_state), with who checked it and when."""
+    manual = decode_manual_note((event or {}).get("note"))
+    if not manual:
+        return None
+    return {
+        **manual,
+        "checked_at": event.get("happened_at") or event.get("created_at"),
+        "checked_by": event.get("actor_email"),
+    }
+
+
 def enrich_outreach_event(event: dict[str, Any]) -> dict[str, Any]:
     row = dict(event)
     manual = decode_manual_note(row.get("note"))

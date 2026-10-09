@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 import re
 from typing import Any
 from zoneinfo import ZoneInfo
+
+from src.lead_facts import is_stale
 
 
 _FOOD_TERMS = {
@@ -84,20 +86,22 @@ def build_lead_workflow(
     events = events or []
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     manual = lead.get("manual_verification") or {}
+    # An expired manual check must be done again (src/lead_facts.py STALE_AFTER_DAYS).
+    manual_stale = bool(manual) and is_stale("manual", manual.get("checked_at"), now)
     places = ((lead.get("research") or {}).get("google_places") or {})
-    places_refreshed_at = _parse_datetime(places.get("refreshed_at"))
     places_verified = bool(
         places.get("status") == "verified"
-        and places_refreshed_at
-        and places_refreshed_at >= now - timedelta(days=30)
+        and not is_stale("google_places", places.get("refreshed_at"), now)
     )
     required = required_manual_checks(lead)
     checks = []
     for key in required:
         value = manual.get(key) or {}
-        checked = bool(value.get("checked")) or (key == "google" and places_verified)
+        from_places = key == "google" and places_verified
+        checked_by_person = bool(value.get("checked"))
+        checked = (checked_by_person and not manual_stale) or from_places
         status = str(value.get("status") or "unknown")
-        if key == "google" and places_verified:
+        if from_places:
             status = "found"
         complete = checked and status != "unknown"
         checks.append(
@@ -106,8 +110,9 @@ def build_lead_workflow(
                 "label": _CHECK_LABELS[key],
                 "complete": complete,
                 "checked": checked,
+                "stale": checked_by_person and manual_stale and not from_places,
                 "status": status,
-                "source": "google_places" if key == "google" and places_verified else "manual",
+                "source": "google_places" if from_places else "manual",
             }
         )
 
@@ -140,7 +145,10 @@ def build_lead_workflow(
         stage_label = "Kontrol bekliyor"
 
     completed_count = sum(1 for item in checks if item["complete"])
-    missing = [item["label"] for item in checks if not item["complete"]]
+    missing = [
+        item["label"] + (" (süresi doldu)" if item["stale"] else "")
+        for item in checks if not item["complete"]
+    ]
     if not contact_available:
         missing.append("İletişim kanalı")
     return {

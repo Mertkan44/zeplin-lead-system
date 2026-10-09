@@ -482,13 +482,32 @@ def list_leads_page(
 
 
 def fetch_places_refresh_state() -> list[dict[str, Any]]:
-    """Name and last Places refresh time of every lead, for the daily cron."""
+    """Name, last verified refresh and last lookup attempt of every lead, for the daily cron."""
     config = _require_config()
     with httpx.Client(timeout=60) as client:
         return _get_all(
             client, config, "leads",
-            "select=id,name,refreshed_at:raw->research->google_places->>refreshed_at&order=id.asc",
+            "select=id,name,refreshed_at:raw->research->google_places->>refreshed_at,"
+            "attempted_at:raw->research->google_places->last_attempt->>attempted_at,"
+            "attempt_status:raw->research->google_places->last_attempt->>status&order=id.asc",
         )
+
+
+def fetch_place_owner(place_id: str) -> int | None:
+    """lead_id that a Google place id is recorded for in lead_sources, if any."""
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.get(
+            _postgrest_url(
+                config,
+                "lead_sources",
+                f"select=lead_id&provider=eq.google_places&provider_id=eq.{quote(place_id, safe='')}&limit=1",
+            ),
+            headers=_headers(config),
+        )
+        response.raise_for_status()
+        rows = response.json()
+    return int(rows[0]["lead_id"]) if rows else None
 
 
 def reset_sales_activity() -> dict[str, int | bool]:

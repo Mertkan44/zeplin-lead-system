@@ -1658,3 +1658,57 @@ def analyze_lead(lead: dict[str, Any]) -> dict[str, Any]:
             "opportunities": opportunities,
         },
     }
+
+
+def manual_absence_findings(manual: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Findings from a team member's check that found no website / no Instagram.
+
+    A person looking is stronger evidence than the scrape, so these stand in
+    for the automatic absence findings (see src/lead_facts.py).
+    """
+    manual = manual or {}
+    checked_at = manual.get("checked_at")
+    findings = []
+    website = manual.get("website") or {}
+    if website.get("checked") and website.get("status") == "not_found":
+        findings.append(
+            _finding(
+                code="website.absent",
+                title="Ekip kontrolünde işletmeye ait website bulunamadı",
+                category="website",
+                severity="high",
+                confidence=90,
+                evidence="Ekip üyesi işletmenin websitesini aradı ve bulamadı.",
+                impact="Müşteri; hizmet, güven ve iletişim bilgisini işletmenin kontrol ettiği tek bir sayfada göremeyebilir.",
+                source_url=None,
+                checked_at=checked_at,
+                observed="Website bulunamadı (manuel kontrol)",
+                expected="İşletmeye ait çalışan bir website",
+                service_slugs=["website_creation"],
+                recommendation_strength="direct",
+                verification="İşletmenin farklı bir alan adı kullanıp kullanmadığını görüşmede teyit et.",
+            )
+        )
+    instagram = manual.get("instagram") or {}
+    if instagram.get("checked") and instagram.get("status") == "not_found":
+        findings.append(
+            _finding(
+                code="social.instagram_absent",
+                title="Ekip kontrolünde Instagram hesabı bulunamadı",
+                category="social",
+                severity="medium",
+                confidence=85,
+                evidence="Ekip üyesi işletmenin Instagram hesabını aradı ve bulamadı.",
+                impact="İşletmenin sosyal kanaldaki güncel içerik ve mesajlaşma noktası müşteriler tarafından kolay bulunamayabilir.",
+                source_url=None,
+                checked_at=checked_at,
+                observed="Hesap bulunamadı (manuel kontrol)",
+                expected="İşletmeyle açıkça eşleşen resmi profil",
+                service_slugs=["social_media"],
+                recommendation_strength="conditional",
+                verification="Farklı kullanıcı adı veya gizli/yenilenmiş hesap olup olmadığını işletmeye sor.",
+            )
+        )
+    for finding in findings:
+        finding["source"] = "manual"
+    return findings

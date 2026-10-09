@@ -25,12 +25,17 @@ This repository is **public**. Code may live here; secrets and real lead data ma
 - CI fails if `leads_*.json` or `outreach_log*.json` is tracked again, except the
   synthetic `tests/fixtures/leads_sample.json` (invented businesses only).
 
-## Owner decisions still open
+## Owner decisions
 
-1. **Make the repository private** (GitHub → Settings → General → Danger Zone →
-   Change visibility). The quickest way to stop further exposure of the old commits.
-   It does not recall copies already downloaded.
-2. **Optionally purge the old data and history** with `git filter-repo`, followed by a
+- **Visibility (decided 2026-10-08): the repository stays public** while development
+  continues. Accepted consequence: the lead data in past commits stays readable.
+  Making it private later (GitHub → Settings → General → Danger Zone → Change
+  visibility) remains the quickest way to stop that; it does not recall copies
+  already downloaded.
+
+Still open:
+
+1. **Optionally purge the old data and history** with `git filter-repo`, followed by a
    coordinated force-push, after a backup and after telling every collaborator. Do
    this as a separate maintenance step; nothing here force-pushes automatically.
-3. **Rotate the old Groq key** as above.
+2. **Rotate the old Groq key** as above.

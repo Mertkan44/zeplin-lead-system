@@ -10,12 +10,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.auth import lead_read_scope, normalize_email, require_auth
-from src.activity import enrich_outreach_event
+from src.activity import enrich_outreach_event, manual_verification_from_event
 from src.http_api import send_internal_error, send_json, send_options
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.workflow import build_lead_workflow, build_team_performance
 from src.integrations.google_places import is_configured as places_configured
+from src.lead_facts import apply_effective_facts
 from src.storage.supabase import (
     attach_assignments_to_leads,
     fetch_activity_states,
@@ -197,20 +198,17 @@ class handler(BaseHTTPRequestHandler):
                         seen_event_ids.add(contact.get("id"))
                 manual_event = state.get("latest_manual_verification")
                 if manual_event:
+                    manual = manual_verification_from_event(manual_event)
+                    if manual:
+                        latest_manual[lead_name] = manual
                     manual_event = enrich_outreach_event(dict(manual_event))
-                    if manual_event.get("manual_verification"):
-                        latest_manual[lead_name] = {
-                            **manual_event["manual_verification"],
-                            "checked_at": manual_event.get("happened_at") or manual_event.get("created_at"),
-                            "checked_by": manual_event.get("actor_email"),
-                        }
                     if manual_event.get("id") not in seen_event_ids:
                         feed.append(manual_event)
                         seen_event_ids.add(manual_event.get("id"))
             feed.sort(key=lambda event: (event.get("happened_at") or "", event.get("id") or 0), reverse=True)
 
             leads = [
-                {**lead, "manual_verification": latest_manual.get(lead.get("name"))}
+                apply_effective_facts({**lead, "manual_verification": latest_manual.get(lead.get("name"))})
                 for lead in leads
             ]
             leads = [

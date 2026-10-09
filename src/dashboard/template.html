@@ -2035,11 +2035,34 @@
     };
   }
 
+  const PLACE_REASONS = {
+    close_candidates: 'Google’da birden fazla benzer işletme var; doğru şubeyi seç.',
+    other_district: 'Aynı isimli işletme başka bir ilçede görünüyor; doğruysa seç.',
+    location_unknown: 'Adayın konumu doğrulanamadı; doğruysa seç.',
+    name_differs: 'Telefon veya website eşleşiyor ama isim farklı; doğruysa seç.',
+    place_owned_by_other_lead: 'Bu Google kaydı başka bir lead’e bağlı; muhtemelen mükerrer kayıt. Yöneticiye bildir.',
+    location_conflict: 'Aynı isimli işletme başka şehirde bulundu; eşleştirilmedi.',
+    name_mismatch: 'Google’da bu isimle eşleşen işletme bulunamadı; manuel kontrol et.',
+    no_candidates: 'Google’da sonuç bulunamadı; manuel kontrol et.',
+    place_not_found: 'Seçilen Google kaydı artık yok; verileri yeniden yenile.',
+  };
+  const FACT_LABELS = { website_url: 'Website', instagram_url: 'Instagram', phone: 'Telefon', rating: 'Google puanı', review_count: 'Yorum sayısı', maps_url: 'Maps bağlantısı', address: 'Adres', menu_url: 'Menü' };
+  const FACT_SOURCES = { manual: 'Ekip kontrolü', google_places: 'Google Places', scrape: 'Tarama' };
+  const factValue = fact => fact.status === 'absent' ? 'yok' : String(fact.value ?? '—');
+
   function ManualVerificationCard({ lead, onDataChange, onFeedback, placesEnabled }) {
     const [values, setValues] = React.useState(() => manualVerificationDefaults(lead));
     const [busy, setBusy] = React.useState(false);
     const [placesBusy, setPlacesBusy] = React.useState(false);
+    const [placeChoice, setPlaceChoice] = React.useState(null);
     const current = lead.manual_verification || null;
+    const storedAttempt = lead.research?.google_places?.last_attempt;
+    const choice = placeChoice || (storedAttempt?.status === 'ambiguous' ? storedAttempt : null);
+    const candidates = placesEnabled ? (choice?.candidates || []) : [];
+    // Conflicts between sources, and team/Places data past its re-check date.
+    const factIssues = Object.entries(lead.facts || {}).filter(([, fact]) => (fact.conflicts || []).length || (fact.stale && fact.source !== 'scrape'));
+
+    React.useEffect(() => setPlaceChoice(null), [lead.name]);
 
     React.useEffect(() => setValues(manualVerificationDefaults(lead)), [lead.name, current?.checked_at]);
 
@@ -2063,18 +2086,29 @@
       }).catch(() => onFeedback('Manuel kontrol kaydedilemedi.')).finally(() => setBusy(false));
     }
 
-    function refreshGooglePlace() {
+    function refreshGooglePlace(placeId) {
       setPlacesBusy(true);
       fetch('/api/place_refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lead_name: lead.name }),
+        body: JSON.stringify(placeId ? { lead_name: lead.name, place_id: placeId } : { lead_name: lead.name }),
       }).then(async response => {
         notifyIfSessionExpired(response);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || 'Google verisi yenilenemedi.');
-        if (data.place?.status !== 'verified') throw new Error('Google’da güvenilir işletme eşleşmesi bulunamadı; manuel kontrol et.');
-        onFeedback(`Google verisi yenilendi · %${data.place.match_confidence || 0} eşleşme güveni.`);
+        const place = data.place || {};
+        if (place.status === 'verified') {
+          setPlaceChoice(null);
+          onFeedback(place.match_method === 'text_search'
+            ? `Google verisi yenilendi · %${place.match_confidence || 0} eşleşme güveni.`
+            : 'Google verisi kayıtlı işletme üzerinden yenilendi.');
+        } else if (place.status === 'ambiguous') {
+          setPlaceChoice(place);
+          onFeedback(PLACE_REASONS[place.reason] || 'Google sonucu belirsiz; doğru işletmeyi seç.');
+        } else {
+          setPlaceChoice(null);
+          throw new Error(PLACE_REASONS[place.reason] || 'Google’da güvenilir işletme eşleşmesi bulunamadı; manuel kontrol et.');
+        }
         if (onDataChange) return onDataChange();
       }).catch(error => onFeedback(error.message || 'Google verisi yenilenemedi.')).finally(() => setPlacesBusy(false));
     }
@@ -2098,6 +2132,36 @@
             ) : <span style={ld.countBadge}>Henüz yapılmadı</span>}
           </div>
         </div>
+        {candidates.length > 0 && (
+          <div style={ld.placeChoices}>
+            <div style={ld.placeChoiceHint}>{PLACE_REASONS[choice?.reason] || 'Google sonucu belirsiz; doğru işletmeyi seç.'}</div>
+            {candidates.map(candidate => (
+              <div key={candidate.place_id} style={ld.placeChoice}>
+                <div style={{ minWidth: 0 }}>
+                  <strong>{candidate.display_name || 'İsimsiz kayıt'}</strong>
+                  <div style={ld.placeChoiceMeta}>{[candidate.formatted_address, candidate.phone].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {sourceButton(candidate.maps_url, 'Maps')}
+                  <button type="button" disabled={placesBusy} style={ld.btnGhost} onClick={() => refreshGooglePlace(candidate.place_id)}>Bu işletme</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {factIssues.length > 0 && (
+          <div style={ld.factIssues}>
+            {factIssues.map(([key, fact]) => (
+              <div key={key}>
+                <strong>{FACT_LABELS[key] || key}:</strong> {factValue(fact)}{' '}
+                <span style={{ opacity: .8 }}>({FACT_SOURCES[fact.source] || fact.source}{fact.observed_at ? `, ${fmtDate(fact.observed_at)}` : ''}{fact.stale ? ', yeniden kontrol et' : ''})</span>
+                {(fact.conflicts || []).map((other, index) => (
+                  <span key={index}> · {FACT_SOURCES[other.source] || other.source} farklı diyor: {factValue(other)}</span>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="manual-verification-grid" style={ld.manualGrid}>
           <section style={sectionStyle(values.google.checked)}>
             <div style={ld.manualSectionHead}>
@@ -2812,6 +2876,11 @@
     manualFields:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
     manualInput:{ width: '100%', minWidth: 0, padding: '9px 10px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 7, color: 'var(--tx)', outline: 'none', fontSize: 11.5 },
     manualFooter:{ display: 'flex', alignItems: 'flex-end', gap: 10, padding: '0 24px 20px' },
+    placeChoices:{ display: 'grid', gap: 8, margin: '16px 24px 0', padding: 12, borderRadius: 7, background: 'var(--warn-bg)', border: '1px solid var(--line)' },
+    placeChoiceHint:{ color: 'var(--warn-tx)', fontSize: 11.5, fontWeight: 600 },
+    placeChoice:{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '8px 10px', borderRadius: 6, background: 'var(--panel)', fontSize: 12 },
+    placeChoiceMeta:{ color: 'var(--sub)', fontSize: 11, marginTop: 2, overflowWrap: 'anywhere' },
+    factIssues:{ display: 'grid', gap: 4, margin: '16px 24px 0', padding: '10px 12px', borderRadius: 7, background: 'var(--warn-bg)', color: 'var(--warn-tx)', fontSize: 11.5, overflowWrap: 'anywhere' },
     manualNote:{ flex: 1, minHeight: 62, resize: 'vertical', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, color: 'var(--tx)', outline: 'none', fontSize: 11.5 },
     manualFactStrip:{ display: 'flex', flexDirection: 'column', gap: 5, margin: '16px 24px 0', padding: '11px 12px', borderRadius: 8, background: 'rgba(197,242,74,0.07)', border: '1px solid rgba(197,242,74,0.15)', color: 'var(--sub)', fontSize: 11.5, lineHeight: 1.45 },
     researchStats:{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', borderBottom: '1px solid var(--line)' },

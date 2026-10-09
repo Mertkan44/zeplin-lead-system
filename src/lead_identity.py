@@ -37,7 +37,7 @@ def google_place_id(lead: dict[str, Any]) -> str | None:
     return match.group(1) if match else None
 
 
-def _phone_key(value: Any) -> str | None:
+def phone_key(value: Any) -> str | None:
     digits = re.sub(r"\D", "", str(value or ""))
     if len(digits) < 7:
         return None
@@ -45,7 +45,7 @@ def _phone_key(value: Any) -> str | None:
     return digits[-10:]
 
 
-def _domain_key(value: Any) -> str | None:
+def domain_key(value: Any) -> str | None:
     raw = str(value or "").strip()
     if not raw:
         return None
@@ -86,10 +86,10 @@ def find_identity_conflicts(
             by_place[place_id].append(_label(lead))
         else:
             without_place_id.append(_label(lead))
-        phone = _phone_key(lead.get("phone"))
+        phone = phone_key(lead.get("phone"))
         if phone:
             by_phone[phone].append(_label(lead))
-        domain = _domain_key(_website(lead))
+        domain = domain_key(_website(lead))
         if domain:
             by_domain[domain].append(_label(lead))
 

@@ -33,7 +33,7 @@ from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.storage.supabase import _lead_row
 from src.workflow import build_lead_workflow, build_team_performance, required_manual_checks
-from src.integrations.google_places import merge_place_result, select_best_candidate
+from src.integrations.google_places import merge_place_result, select_candidate
 from scripts.migrate_leads import normalize_lead
 from scripts.reaudit_leads import _official_instagram_matches
 
@@ -59,20 +59,22 @@ class HardeningTests(unittest.TestCase):
 
     def test_google_places_candidate_requires_name_and_location_confidence(self):
         lead = {"name": "Kalamış Diş Kliniği", "city": "İstanbul Kadıköy"}
-        selected = select_best_candidate(
+        decision = select_candidate(
             lead,
             [
                 {"id": "wrong", "displayName": {"text": "Başka Bir Market"}, "formattedAddress": "Kadıköy İstanbul"},
                 {"id": "right", "displayName": {"text": "Kalamış Diş Kliniği"}, "formattedAddress": "Kadıköy, İstanbul"},
             ],
         )
-        self.assertEqual(selected["id"], "right")
-        self.assertGreaterEqual(selected["matchConfidence"], 90)
-        self.assertIsNone(
-            select_best_candidate(
+        self.assertEqual(decision["status"], "verified")
+        self.assertEqual(decision["match"]["candidate"]["id"], "right")
+        self.assertGreaterEqual(decision["match"]["confidence"], 85)
+        self.assertEqual(
+            select_candidate(
                 lead,
                 [{"id": "wrong", "displayName": {"text": "Başka Bir Market"}, "formattedAddress": "Kadıköy İstanbul"}],
-            )
+            )["status"],
+            "not_matched",
         )
 
     def test_google_places_merge_preserves_existing_contact_and_updates_public_data(self):
