@@ -1,11 +1,13 @@
 // The dashboard's one data cache. Server data (workspace, timelines, team)
 // lives here, keyed by the signed-in user's email, never in module variables
 // or localStorage. Login, logout and an expired session call resetSession(),
-// which cancels in-flight requests and drops every cached row, so nothing
-// from the previous session can show up or be written into the next one.
+// which cancels in-flight requests and drops every cached row and unsaved
+// draft (lib/drafts.ts), so nothing from the previous session can show up or
+// be written into the next one.
 import { QueryClient } from '@tanstack/react-query';
 
 import { ApiError } from './api';
+import { clearDrafts } from './drafts';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,4 +26,5 @@ export const queryClient = new QueryClient({
 export function resetSession(): void {
   void queryClient.cancelQueries();
   queryClient.clear();
+  clearDrafts();
 }
