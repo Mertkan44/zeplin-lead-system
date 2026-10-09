@@ -1,8 +1,7 @@
-import json, subprocess
+import json
 from datetime import datetime
 
 from src.config import groq_client
-from src.dashboard.build import build_dashboard
 
 client = None
 
@@ -37,17 +36,7 @@ def generate_report(lead):
 def update_dashboard(data):
     with open('leads_final.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    build_dashboard()
-    print('Dashboard guncellendi!')
-
-def git_push():
-    try:
-        subprocess.run(['git', 'add', 'public/index.html'], check=True)
-        subprocess.run(['git', 'commit', '-m', 'dashboard update ' + datetime.now().strftime("%Y-%m-%d %H:%M")], check=True)
-        subprocess.run(['git', 'push'], check=True)
-        print('GitHub push tamamlandi!')
-    except Exception as e:
-        print('Push hatasi:', e)
+    print('leads_final.json guncellendi (yalnizca yerel kopya).')
 
 # ANA AKIS
 with open('leads_audited.json', encoding='utf-8') as f:
@@ -69,5 +58,4 @@ for lead in leads[1:]:
     results.append(lead)
 
 update_dashboard(results)
-git_push()
 print("\nHer sey tamamlandi!")

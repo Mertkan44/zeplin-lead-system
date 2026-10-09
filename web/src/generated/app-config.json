@@ -1,0 +1,366 @@
+{
+  "followUpDelays": {
+    "no_answer": 1,
+    "proposal_requested": 1,
+    "reached_interested": 2,
+    "reached_later": 1
+  },
+  "services": [
+    {
+      "category": "Web",
+      "deliverables": [
+        "İhtiyaç analizi, sayfa planı ve içerik mimarisi",
+        "Mobil uyumlu arayüz tasarımı ve geliştirme",
+        "Form, telefon, WhatsApp, harita ve sosyal medya bağlantıları",
+        "Yayınlama, temel teknik kontroller ve kullanım teslimi"
+      ],
+      "desc": "İşletmenin hedeflerine göre mobil uyumlu, güven veren ve iletişim odaklı website oluşturma.",
+      "detects": "",
+      "discovery_questions": [
+        "Website hangi ana hedefe hizmet edecek: tanıtım, rezervasyon, satış veya lead toplama?",
+        "Hangi hizmetler, ürünler ve lokasyonlar öne çıkarılacak?",
+        "Alan adı, hosting, metinler ve görseller hazır mı?"
+      ],
+      "exclusions": [
+        "Alan adı ve hosting bedeli",
+        "Fotoğraf/video çekimi",
+        "Sürekli içerik ve bakım"
+      ],
+      "monthly": false,
+      "name": "Website Oluşturma",
+      "offer": "Website Oluşturma",
+      "owner": "Web",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "direct",
+      "sales_angle": "İşletmenin hedeflerine göre mobil uyumlu, güven veren ve iletişim odaklı website oluşturma.",
+      "sectors": null,
+      "service_type": "project",
+      "slug": "website_creation",
+      "triggers": [
+        "no_website"
+      ]
+    },
+    {
+      "category": "SEO",
+      "deliverables": [
+        "Teknik SEO denetimi ve öncelikli aksiyon planı",
+        "Anahtar kelime, rakip ve arama niyeti araştırması",
+        "Sayfa, içerik ve yerel görünürlük optimizasyonu",
+        "Search Console takibi ve aylık çalışma raporu"
+      ],
+      "desc": "İşletmenin arama motorlarında doğru sorgularda görünmesini ve organik talep kazanmasını geliştiren SEO çalışması.",
+      "detects": "",
+      "discovery_questions": [
+        "Hangi hizmetler ve bölgeler için Google'da görünmek istiyorsunuz?",
+        "Mevcut website, Search Console ve trafik verilerine erişim var mı?",
+        "İçerik üretimini ve website değişikliklerini kim onaylayacak?"
+      ],
+      "exclusions": [
+        "Sıralama garantisi",
+        "Reklam yönetimi ve bütçesi",
+        "Ücretli backlink satın alımı"
+      ],
+      "monthly": true,
+      "name": "SEO ve Organik Görünürlük",
+      "offer": "SEO ve Organik Görünürlük",
+      "owner": "SEO",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "conditional",
+      "sales_angle": "İşletmenin arama motorlarında doğru sorgularda görünmesini ve organik talep kazanmasını geliştiren SEO çalışması.",
+      "sectors": null,
+      "service_type": "monthly",
+      "slug": "seo_organic",
+      "triggers": [
+        "no_ssl",
+        "not_mobile",
+        "slow_site",
+        "no_schema",
+        "no_og"
+      ]
+    },
+    {
+      "category": "Sosyal Medya",
+      "deliverables": [
+        "Aylık sosyal medya stratejisi ve içerik takvimi",
+        "Paylaşım metinleri, yayın planı ve hesap düzeni",
+        "Kapsam dahilinde yorum ve mesaj takibi",
+        "Aylık performans değerlendirmesi"
+      ],
+      "desc": "Markanın sosyal medya hesaplarının strateji, içerik planı, yayın ve takip süreçleriyle düzenli yönetimi.",
+      "detects": "",
+      "discovery_questions": [
+        "Hangi sosyal medya kanalları yönetilecek ve hedef kitle kim?",
+        "Aylık paylaşım sıklığı ve içerik onayını verecek kişi kim?",
+        "Mevcut fotoğraf/video arşivi var mı, düzenli çekim gerekiyor mu?"
+      ],
+      "exclusions": [
+        "Fotoğraf/video çekimi",
+        "Reklam bütçesi ve yönetimi",
+        "Influencer giderleri"
+      ],
+      "monthly": true,
+      "name": "Sosyal Medya Yönetimi",
+      "offer": "Sosyal Medya Yönetimi",
+      "owner": "Social",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "conditional",
+      "sales_angle": "Markanın sosyal medya hesaplarının strateji, içerik planı, yayın ve takip süreçleriyle düzenli yönetimi.",
+      "sectors": null,
+      "service_type": "monthly",
+      "slug": "social_media",
+      "triggers": [
+        "no_instagram",
+        "low_engagement",
+        "low_followers"
+      ]
+    },
+    {
+      "category": "Sosyal Medya",
+      "deliverables": [
+        "Görsel dil ve tasarım yönünün belirlenmesi",
+        "Feed postu, carousel ve story uyarlamaları",
+        "Kapsam dahilinde metin yerleşimi ve revizyon",
+        "Yayına hazır platform formatlarında teslim"
+      ],
+      "desc": "Marka kimliğine uygun, sosyal medya formatlarında tekil veya seri post tasarımları.",
+      "detects": "",
+      "discovery_questions": [
+        "Aylık veya proje bazlı kaç tasarım gerekiyor?",
+        "Marka kılavuzu, logo ve kurumsal renkler hazır mı?",
+        "Metinleri ve kampanya bilgilerini kim sağlayacak?"
+      ],
+      "exclusions": [
+        "Fotoğraf/video üretimi",
+        "Sosyal medya hesap yönetimi",
+        "Sınırsız revizyon"
+      ],
+      "monthly": false,
+      "name": "Post Tasarımları",
+      "offer": "Post Tasarımları",
+      "owner": "Design",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "Marka kimliğine uygun, sosyal medya formatlarında tekil veya seri post tasarımları.",
+      "sectors": null,
+      "service_type": "project_or_monthly",
+      "slug": "post_design",
+      "triggers": []
+    },
+    {
+      "category": "Reklam",
+      "deliverables": [
+        "Reklam hesabı ve mevcut kampanyaların kontrolü",
+        "Hedef kitle, bütçe ve kampanya planı",
+        "Kampanya kurulumu, optimizasyonu ve takibi",
+        "Performans ve harcama raporu"
+      ],
+      "desc": "Meta Ads ve Google Ads kampanyalarının hedef, bütçe, kreatif ve performans takibiyle yönetimi.",
+      "detects": "",
+      "discovery_questions": [
+        "Hangi platformlarda reklam verilecek ve ana hedef nedir?",
+        "Aylık reklam bütçesi ne kadar?",
+        "Kullanılacak kreatifler ve yönlendirilecek sayfa hazır mı?"
+      ],
+      "exclusions": [
+        "Reklam platformu bütçesi",
+        "Website oluşturma",
+        "Çekim ve kapsam dışı kreatif üretimi"
+      ],
+      "monthly": true,
+      "name": "Reklam Yönetimi",
+      "offer": "Reklam Yönetimi",
+      "owner": "Performance",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "Meta Ads ve Google Ads kampanyalarının hedef, bütçe, kreatif ve performans takibiyle yönetimi.",
+      "sectors": null,
+      "service_type": "monthly",
+      "slug": "ad_management",
+      "triggers": []
+    },
+    {
+      "category": "Prodüksiyon",
+      "deliverables": [
+        "Çekim öncesi brief, konsept ve çekim planı",
+        "Kapsam dahilinde fotoğraf ve video çekimi",
+        "Seçim, temel kurgu ve renk düzenleme",
+        "Belirlenen formatlarda dijital teslim"
+      ],
+      "desc": "İşletme, mekan, ekip, ürün veya hizmet için profesyonel fotoğraf ve video içerik üretimi.",
+      "detects": "",
+      "discovery_questions": [
+        "Neler çekilecek ve içerikler nerelerde kullanılacak?",
+        "Çekim mekanı, süresi, ekip ve model ihtiyacı nedir?",
+        "Kaç fotoğraf ve kaç video teslimi bekleniyor?"
+      ],
+      "exclusions": [
+        "Mekan, model, oyuncu ve ulaşım giderleri",
+        "Kapsam dışı ileri post-prodüksiyon",
+        "Sınırsız revizyon"
+      ],
+      "monthly": false,
+      "name": "Video ve Fotoğraf Çekimi",
+      "offer": "Video ve Fotoğraf Çekimi",
+      "owner": "Production",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "İşletme, mekan, ekip, ürün veya hizmet için profesyonel fotoğraf ve video içerik üretimi.",
+      "sectors": null,
+      "service_type": "project",
+      "slug": "photo_video_shoot",
+      "triggers": []
+    },
+    {
+      "category": "Prodüksiyon",
+      "deliverables": [
+        "Ürün listesi, çekim sırası ve görsel stil planı",
+        "Yemek ve içecek fotoğraf/video çekimi",
+        "Renk, ışık ve temel retouch düzenlemeleri",
+        "Menü, sosyal medya ve teslimat platformlarına uygun çıktılar"
+      ],
+      "desc": "Restoran ve kafeler için ürünleri iştah açıcı ve marka diline uygun gösteren menü fotoğraf/video çekimi.",
+      "detects": "",
+      "discovery_questions": [
+        "Kaç ürün çekilecek ve ürünler hangi kanallarda kullanılacak?",
+        "Mekan çekime ne zaman hazırlanabilir; sunum/styling desteği var mı?",
+        "Baskı menüsü, dijital menü veya sosyal medya için hangi formatlar gerekiyor?"
+      ],
+      "exclusions": [
+        "Food styling malzemeleri ve özel dekor",
+        "Baskı ve menü tasarımı",
+        "Mekan/ulaşım giderleri"
+      ],
+      "monthly": false,
+      "name": "Menü Çekimi",
+      "offer": "Menü Çekimi",
+      "owner": "Production",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "Restoran ve kafeler için ürünleri iştah açıcı ve marka diline uygun gösteren menü fotoğraf/video çekimi.",
+      "sectors": [
+        "restaurant"
+      ],
+      "service_type": "project",
+      "slug": "menu_shoot",
+      "triggers": []
+    },
+    {
+      "category": "Prodüksiyon",
+      "deliverables": [
+        "Konu, senaryo akışı ve çekim planı",
+        "Dikey format Reels çekimi",
+        "Dinamik kurgu, altyazı, müzik ve temel efektler",
+        "Yayına hazır video teslimi"
+      ],
+      "desc": "Sosyal medya için kısa, dinamik ve markaya uygun Reels videolarının çekimi ve kurgusu.",
+      "detects": "",
+      "discovery_questions": [
+        "Ayda kaç Reels gerekiyor ve ana içerik başlıkları neler?",
+        "Kamera karşısına kim çıkacak; mekan ve ürünler hazır mı?",
+        "Referans alınacak video tarzı veya marka dili var mı?"
+      ],
+      "exclusions": [
+        "Oyuncu/influencer giderleri",
+        "İleri seviye VFX ve 3D",
+        "Sosyal medya yayın yönetimi"
+      ],
+      "monthly": false,
+      "name": "Reels Çekim ve Edit",
+      "offer": "Reels Çekim ve Edit",
+      "owner": "Production",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "conditional",
+      "sales_angle": "Sosyal medya için kısa, dinamik ve markaya uygun Reels videolarının çekimi ve kurgusu.",
+      "sectors": null,
+      "service_type": "project_or_monthly",
+      "slug": "reels_production",
+      "triggers": [
+        "low_engagement"
+      ]
+    },
+    {
+      "category": "Yapay Zeka ve Otomasyon",
+      "deliverables": [
+        "İhtiyaç analizi ve konuşma akışlarının hazırlanması",
+        "Chatbot veya seslibot kurulumu ve bilgi tabanı",
+        "Uygun kanallara ve sistemlere bağlantı",
+        "Test, yayına alma, eğitim ve izleme"
+      ],
+      "desc": "Müşteri sorularını karşılayan, bilgi toplayan ve uygun akışa yönlendiren chatbot veya seslibot kurulumu.",
+      "detects": "",
+      "discovery_questions": [
+        "Bot hangi kanalda çalışacak ve hangi işleri yapacak?",
+        "En sık gelen sorular, randevu veya satış akışları neler?",
+        "Mevcut website, telefon, CRM veya takvim entegrasyonu var mı?"
+      ],
+      "exclusions": [
+        "Üçüncü taraf platform, telefon ve kullanım ücretleri",
+        "Kapsam dışı özel yazılım entegrasyonları",
+        "İnsan operatör hizmeti"
+      ],
+      "monthly": false,
+      "name": "Chatbot ve Seslibot Kurulumu",
+      "offer": "Chatbot ve Seslibot Kurulumu",
+      "owner": "AI",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "Müşteri sorularını karşılayan, bilgi toplayan ve uygun akışa yönlendiren chatbot veya seslibot kurulumu.",
+      "sectors": null,
+      "service_type": "project_or_monthly",
+      "slug": "chatbot_voicebot",
+      "triggers": []
+    },
+    {
+      "category": "Yapay Zeka ve Kreatif",
+      "deliverables": [
+        "Reklam hedefi, konsept ve senaryo geliştirme",
+        "Yapay zeka ile sahne ve görsel üretimi",
+        "Seslendirme, müzik, kurgu ve reklam formatları",
+        "Farklı metin veya açılışlarla kreatif varyasyonları"
+      ],
+      "desc": "Reklam kampanyaları için yapay zeka destekli konsept, görsel, sahne, ses ve kurgu üretimi.",
+      "detects": "",
+      "discovery_questions": [
+        "Reklamın hedefi, hedef kitlesi ve kullanılacağı platform nedir?",
+        "Ürün görselleri, marka öğeleri ve zorunlu mesajlar hazır mı?",
+        "Gerçekçi, sinematik, sunuculu veya ürün odaklı hangi stil isteniyor?"
+      ],
+      "exclusions": [
+        "Reklam bütçesi ve kampanya yönetimi",
+        "Lisansı ayrıca gereken stok/oyuncu kullanımı",
+        "Sınırsız kreatif varyasyon"
+      ],
+      "monthly": false,
+      "name": "Reklamlar İçin Gelişmiş Yapay Zeka Videoları",
+      "offer": "Reklamlar İçin Gelişmiş Yapay Zeka Videoları",
+      "owner": "AI Creative",
+      "price_max": 0,
+      "price_min": 0,
+      "pricing_status": "approval_required",
+      "recommendation_mode": "discovery_only",
+      "sales_angle": "Reklam kampanyaları için yapay zeka destekli konsept, görsel, sahne, ses ve kurgu üretimi.",
+      "sectors": null,
+      "service_type": "project",
+      "slug": "ai_ad_videos",
+      "triggers": []
+    }
+  ]
+}

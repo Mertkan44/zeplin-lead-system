@@ -1,11 +1,8 @@
-import base64
 import json
 import os
-import tempfile
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
-from pathlib import Path
 
 from src import auth
 from src.activity import (
@@ -26,7 +23,6 @@ from src.audit.findings import analyze_lead
 from src.audit.website import _robots_blocks_all
 from src.ai.generator import has_email_evidence
 from src.ai.llm import active_provider
-from src.dashboard.build import build_dashboard
 from src.net_security import assert_safe_public_url
 from src.services import ZEPLIN_SERVICES, discovery_services, estimate_value, match_services, recommended_package
 from src.sales_assistant import build_sales_playbook
@@ -778,21 +774,6 @@ class HardeningTests(unittest.TestCase):
 
             with patch("src.auth.time.time", return_value=now):
                 self.assertIsNone(auth.current_user(Request()))
-
-    def test_dashboard_build_contains_no_lead_payload(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            template_path = root / "template.html"
-            output_path = root / "index.html"
-            template_path.write_text("__DATA__ __SERVICES__ __FOLLOW_UP_DELAYS__", encoding="utf-8")
-            # A real dataset next to the repo must not matter: the build reads none.
-            original_read_text = Path.read_text
-            with patch.object(Path, "read_text", autospec=True, side_effect=original_read_text) as reads:
-                build_dashboard(template_path, output_path)
-            self.assertEqual([call.args[0] for call in reads.call_args_list], [template_path])
-            built = output_path.read_text(encoding="utf-8")
-            self.assertIn(base64.b64encode(b"[]").decode(), built)
-            self.assertNotIn("__", built)
 
 
 if __name__ == "__main__":

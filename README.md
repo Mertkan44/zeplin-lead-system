@@ -132,10 +132,10 @@ venv/bin/python scripts/export_leads.py      # Supabase -> leads_final.json (loc
 
 ## Common Commands
 
-Normalize existing leads and rebuild the dashboard:
+Normalize the local lead export:
 
 ```bash
-venv/bin/python scripts/migrate_leads.py --write --build
+venv/bin/python scripts/migrate_leads.py --write
 ```
 
 Validate lead data (your local export, or the synthetic sample as CI does):
@@ -155,12 +155,6 @@ Scan a new district without pushing:
 
 ```bash
 venv/bin/python besiktas.py --query restoran --city "Istanbul Besiktas" --max 5
-```
-
-Scan, rebuild, commit, and push:
-
-```bash
-venv/bin/python besiktas.py --query restoran --city "Istanbul Besiktas" --max 5 --push
 ```
 
 Scan and sync the merged lead set to Supabase:
@@ -279,12 +273,34 @@ vercel dev --listen 3000
 Opening `public/index.html` alone only renders the login shell; authenticated CRM
 data is intentionally available only through the API.
 
-## Production Shape
+## Dashboard (web/)
 
-`src/dashboard/template.html` is the source template. `public/index.html` is
-generated without embedding CRM lead records. After authentication, the dashboard
-reads role-filtered live data from Vercel API routes backed by Supabase. CRM data is
-kept in memory only; logout, a 401 response, or a user switch clears it.
+The dashboard is a Vite + React + TypeScript app in `web/`, compiled ahead of time
+into `public/` (committed; Vercel serves it next to the Python API). There is no
+runtime JSX compilation and no third-party script: the CSP allows only same-origin
+scripts plus the hash of the one inline theme snippet.
+
+```bash
+python src/dashboard/build.py      # catalog + follow-up rules -> web/src/generated/app-config.json
+npm ci --prefix web
+npm --prefix web run build         # typecheck, then build into public/ (commit the result)
+RUN_E2E=1 python -m unittest discover -s tests/e2e   # browser tests against public/
+```
+
+CI rebuilds `public/` and fails if it differs from what is committed, and runs the
+browser tests. If you change the inline script in `web/index.html`, update its
+`sha256` in the `script-src` of `vercel.json` (a unit test checks they match).
+
+- `web/src/lib/api.ts` is the one HTTP client: same-origin cookies, JSON, a 401 ends
+  the session, errors carry the API's status, `error` and `code`.
+- `web/src/lib/router.ts` keeps the screen and the open lead in the URL
+  (`/leads/<id>` by database id, `/pipeline`, `/profile`, ...), so deep links,
+  back/forward and refresh keep the same lead.
+- `web/src/legacy/App.jsx` holds the existing screens, moved unchanged; they move
+  into typed modules one at a time (WP10).
+
+After authentication the dashboard reads role-filtered live data from the API. CRM
+data is kept in memory only; logout, a 401 response, or a user switch clears it.
 
 Lead access follows one policy, `public.readable_leads` (migration 010), used by every
 read path through `src/auth.py`: admins see every lead; a sales user reads and writes
@@ -304,8 +320,9 @@ Only approved, evidence-backed services can be recommended automatically; the
 system does not invent marketing package names or revenue estimates.
 `scripts/migrate_leads.py` writes matched services and the primary service
 recommendation into the local operational dataset. `src/dashboard/build.py`
-reads no lead data; it embeds only the non-secret service catalog into the static
-shell.
+reads no lead data; it writes only the non-secret service catalog and follow-up
+rules for the dashboard build. Scans no longer rebuild or push anything: `--build`
+and `--push` are accepted but do nothing.
 
 ## Security Reminder
 

@@ -5,7 +5,6 @@ import argparse
 import asyncio
 import json
 import os
-import subprocess
 from playwright.async_api import async_playwright
 from datetime import datetime, timezone
 
@@ -15,7 +14,6 @@ from src.audit.finder import (
     find_instagram, get_instagram_stats,
     find_tiktok, check_delivery
 )
-from src.dashboard.build import build_dashboard
 from src.pipeline_state import get_stage, put_stage
 from src.research import enrich_research
 from src.storage.supabase import insert_run_log, is_enabled as supabase_enabled, upsert_leads
@@ -53,19 +51,10 @@ async def scrape(query, city, max_results):
 
 # ── Dashboard ──────────────────────────────────────────
 def update_dashboard(data):
+    # Local working copy only (ignored by Git). The dashboard reads leads from
+    # the API, so nothing is rebuilt or pushed after a scan.
     json.dump(data, open('leads_final.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-    build_dashboard()
-    print("✅ Dashboard güncellendi!")
-
-def git_push(msg):
-    try:
-        # Lead data stays out of Git (the repository is public); only the built shell is committed.
-        subprocess.run(['git','add','public/index.html'], check=True)
-        subprocess.run(['git','commit','-m', msg], check=True)
-        subprocess.run(['git','push'], check=True)
-        print("🚀 Push tamamlandı!")
-    except Exception as e:
-        print(f"Push hatası: {e}")
+    print("✅ leads_final.json güncellendi (yalnızca yerel kopya).")
 
 # ── ANA AKIŞ ───────────────────────────────────────────
 async def run(
@@ -231,7 +220,7 @@ async def run(
         else:
             print("⚠️ Supabase sync istendi ama SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY eksik.")
     if push:
-        git_push(f"add {new_count} {city} leads — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        print("ℹ️ --push artık gerekmiyor: panel leadleri API'den okur; Supabase için --sync-supabase kullan.")
     else:
         print("ℹ️ Push atlanıldı. Commit/push için --push kullan.")
     if failures:
@@ -252,7 +241,7 @@ def parse_args():
     parser.add_argument("--query", default=QUERY)
     parser.add_argument("--city", default=CITY)
     parser.add_argument("--max", type=int, default=MAX_RESULTS, dest="max_results")
-    parser.add_argument("--push", action="store_true", help="Commit and push generated files.")
+    parser.add_argument("--push", action="store_true", help="obsolete; the dashboard reads leads from the API")
     parser.add_argument("--sync-supabase", action="store_true", help="Sync merged leads to Supabase.")
     parser.add_argument("--resume", action="store_true", help="Reuse cached audit/AI stages from .cache.")
     parser.add_argument("--deep-research", action="store_true", help="Fetch extra website research before AI.")
