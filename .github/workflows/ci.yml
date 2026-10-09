@@ -71,7 +71,9 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:16
+        # Docker Hub rate-limits anonymous pulls from shared runners; the same
+        # official image from the public ECR mirror is not limited that way.
+        image: public.ecr.aws/docker/library/postgres:16
         env:
           POSTGRES_PASSWORD: postgres
         ports:
