@@ -7,8 +7,9 @@ import { buildCrm, CrmContext, useSession, useTeamUsers, useWorkspaceQuery } fro
 import type { Lead, LeadStatus } from '../data/types';
 import { navigate, routeFor, useRoute, type View } from '../lib/router';
 import { Banner, Button, EmptyState, ErrorState, LoadingState } from '../ui';
-import { AdminView, AnalyticsView, HizmetlerView, LeadDetail, PipelineView, ProfileView } from '../legacy/screens.jsx';
+import { AdminView, AnalyticsView, HizmetlerView, PipelineView, ProfileView } from '../legacy/screens.jsx';
 import { ContactResultDialog } from '../screens/contact/ContactResultDialog';
+import { LeadDetailView } from '../screens/lead/LeadDetailView';
 import { LeadListView } from '../screens/leads/LeadListView';
 import { TodayView } from '../screens/today/TodayView';
 import { WorkspaceView } from '../screens/workspace/WorkspaceView';
@@ -106,18 +107,17 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
           );
         }
         return (
-          // A new lead gets a fresh detail screen: no note or open panel carries over.
-          <LeadDetail
+          // A new lead gets a fresh detail screen: no open panel carries over.
+          <LeadDetailView
             key={lead.lead_id ?? lead.name}
             lead={lead}
-            idx={selectedIdx}
+            index={selectedIdx}
             total={leads.length}
             status={crm.statuses[lead.name] || 'yeni'}
-            onStatusChange={(status: LeadStatus) => changeStatus(lead.name, status)}
-            onDataChange={refreshWorkspace}
+            homePath="/"
+            placesEnabled={Boolean(crm.integrations.google_places)}
+            onStatusChange={status => changeStatus(lead.name, status)}
             onOpenResult={() => setResultLeadName(lead.name)}
-            integrations={crm.integrations}
-            onBack={() => setView(homeView)}
             onPrev={() => openLead(leads[Math.max(0, selectedIdx - 1)], { replace: true })}
             onNext={() => openLead(leads[Math.min(leads.length - 1, selectedIdx + 1)], { replace: true })}
           />

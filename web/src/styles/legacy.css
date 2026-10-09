@@ -6,7 +6,7 @@
 .hide-sb { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-sb::-webkit-scrollbar { display: none; }
 @media (max-width: 760px) {
-  .responsive-detail, .responsive-admin, .responsive-report {
+  .responsive-admin, .responsive-report {
     grid-template-columns: 1fr !important;
     padding-left: 14px !important;
     padding-right: 14px !important;
@@ -16,21 +16,4 @@
   .responsive-pipeline { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
   .responsive-pipeline > * { min-width: 270px; }
   .responsive-report > [style*="grid-column"] { grid-column: auto !important; }
-  .lead-detail-root { padding: 18px 16px 42px !important; }
-  .lead-detail-top { align-items: flex-start !important; gap: 12px !important; }
-  .lead-detail-top > div:last-child { display: none !important; }
-  .lead-detail-hero { display: block !important; }
-  .lead-detail-hero > div:last-child { margin-top: 20px !important; justify-content: flex-start !important; }
-  .responsive-detail > * { min-width: 0 !important; }
-  .lead-sales-evidence { grid-template-columns: 1fr !important; }
-  .lead-comms-head, .lead-draft-footer { align-items: flex-start !important; flex-direction: column !important; }
-  .lead-draft-footer > div { width: 100% !important; }
-  .lead-draft-footer button { flex: 1 !important; }
-  .lead-research-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  .lead-research-columns, .lead-script-grid { padding-left: 16px !important; padding-right: 16px !important; }
-  .lead-comms { padding-left: 16px !important; padding-right: 16px !important; }
-  .lead-channel-tabs { flex-wrap: wrap !important; overflow-x: visible !important; }
-  .manual-verification-grid { grid-template-columns: 1fr !important; }
-  .manual-field-grid { grid-template-columns: 1fr !important; }
-  .manual-verification-grid + div { align-items: stretch !important; flex-direction: column !important; }
 }

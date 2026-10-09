@@ -92,6 +92,7 @@ class DashboardE2E(unittest.TestCase):
         # The top lead has passed its checks, so the contact dialog can save.
         top = max(cls.payload["leads"], key=lambda lead: lead["scoring"]["score"])
         top["workflow"] = {**(top.get("workflow") or {}), "ready_to_contact": True, "stage": "ready_to_contact", "stage_label": "Aramaya hazır"}
+        cls.payload["integrations"] = {"google_places": True}
 
     @classmethod
     def tearDownClass(cls):
@@ -108,6 +109,7 @@ class DashboardE2E(unittest.TestCase):
         self.status_save_status = 200
         self.outreach_statuses = []  # status codes for the next POST /api/outreach calls
         self.outreach_posts = []
+        self.place_posts = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
         self.page.on("console", lambda msg: msg.type == "error" and self.errors.append(msg.text))
         self.page.route("**/*", self._route)
@@ -139,6 +141,9 @@ class DashboardE2E(unittest.TestCase):
             if status != 200:
                 return route.fulfill(status=status, json={"ok": False, "error": "temporary"})
             return route.fulfill(json={"ok": True})
+        if path == "/api/place_refresh" and request.method == "POST":
+            self.place_posts.append(json.loads(request.post_data or "{}"))
+            return route.fulfill(json={"ok": True, "place": {"status": "verified", "match_method": "place_id"}})
         if path == "/api/status" and self.status_save_status != 200:
             return route.fulfill(status=self.status_save_status, json={"ok": False, "error": "status save failed"})
         if path.startswith("/api/"):
@@ -243,7 +248,9 @@ class DashboardE2E(unittest.TestCase):
         self.heading(lead["name"])
         self.page.get_by_role("button", name="Kazanıldı", exact=True).click()
         self.page.get_by_role("alert").filter(has_text="Durum kaydedilemedi.").wait_for(timeout=10000)
-        self.page.get_by_text("● YENI").wait_for()
+        statuses = self.page.get_by_role("group", name="Pipeline durumu")
+        self.assertEqual(statuses.get_by_role("button", name="Kazanıldı").get_attribute("aria-pressed"), "false")
+        self.assertEqual(statuses.get_by_role("button", name="Yeni").get_attribute("aria-pressed"), "true")
 
     def test_theme_is_the_only_thing_kept_in_browser_storage(self):
         self.page.goto(f"{self.base}/leads/{self.lead(0)['lead_id']}")
@@ -316,6 +323,27 @@ class DashboardE2E(unittest.TestCase):
         path = queue_item.get_attribute("href")
         queue_item.click()
         self.page.wait_for_url(f"{self.base}{path}")
+        self.assertEqual(self.errors, [])
+
+    def test_unsaved_note_stays_with_its_lead(self):
+        first, second = self.lead(0), self.lead(1)
+        self.page.goto(f"{self.base}/leads/{first['lead_id']}")
+        self.heading(first["name"])
+        self.page.get_by_label("Hızlı not").fill("Sadece ilk lead için")
+        self.page.get_by_role("button", name="Sonraki").first.click()
+        self.heading(second["name"])
+        self.assertEqual(self.page.get_by_label("Hızlı not").input_value(), "")
+        self.page.get_by_role("button", name="Önceki").first.click()
+        self.heading(first["name"])
+        self.assertEqual(self.page.get_by_label("Hızlı not").input_value(), "Sadece ilk lead için")
+
+    def test_google_refresh_sends_only_the_lead_name(self):
+        lead = self.lead(0)
+        self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
+        self.heading(lead["name"])
+        self.page.get_by_role("button", name="Google verisini yenile").click()
+        self.page.get_by_text("Google verisi kayıtlı işletme üzerinden yenilendi.").first.wait_for()
+        self.assertEqual(self.place_posts, [{"lead_name": lead["name"]}])
         self.assertEqual(self.errors, [])
 
     def test_no_runtime_compiler_or_third_party_scripts(self):
