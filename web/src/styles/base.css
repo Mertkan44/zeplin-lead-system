@@ -1,0 +1,42 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
+body {
+  font-family: var(--font-body);
+  color: var(--tx);
+  -webkit-font-smoothing: antialiased;
+  background: var(--glow), var(--bg);
+  transition: background-color .2s, color .2s;
+}
+body.dialog-open { overflow: hidden; }
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+button, textarea, input, select { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* A visible focus ring for keyboard users everywhere. !important because
+   legacy inline styles still set outline: none on many inputs. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring) !important;
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 99px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes zspin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

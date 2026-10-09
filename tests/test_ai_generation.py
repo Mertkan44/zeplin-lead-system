@@ -310,9 +310,13 @@ class AdminEstimateTests(unittest.TestCase):
         self.assertEqual(self._get("/api/admin_search?estimate=1&ai_mode=turbo")["status"], 400)
 
     def test_frontend_no_longer_prices_tokens_itself(self):
-        template = Path("web/src/legacy/App.jsx").read_text(encoding="utf-8")
-        self.assertNotIn("/ 1000000 *", template)
-        self.assertIn("/api/admin_search?${params}", template)
+        sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(Path("web/src").rglob("*"))
+            if path.suffix in {".js", ".jsx", ".ts", ".tsx"}
+        )
+        self.assertNotIn("/ 1000000 *", sources)
+        self.assertIn("/api/admin_search?${params}", sources)
 
 
 class LeadAiEndpointTests(unittest.TestCase):

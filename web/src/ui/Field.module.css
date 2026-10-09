@@ -1,0 +1,22 @@
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.label { color: var(--sub); font-size: 12px; font-weight: 600; }
+.hint { color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+.error { color: var(--danger-tx); font-size: 12px; font-weight: 600; line-height: 1.45; }
+
+.control {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel2);
+  color: var(--tx);
+  font: 500 13px/1.4 var(--font-body);
+}
+.control::placeholder { color: var(--muted); }
+.control:hover:not(:disabled) { border-color: var(--line2); }
+.control:disabled { opacity: .6; cursor: not-allowed; }
+.control[aria-invalid="true"] { border-color: var(--danger-tx); }
+.textarea { min-height: 92px; resize: vertical; line-height: 1.55; }
+.large { min-height: 44px; font-size: 14px; border-radius: 11px; padding: 0 14px; }

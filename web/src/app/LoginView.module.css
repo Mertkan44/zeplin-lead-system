@@ -1,0 +1,72 @@
+.root { min-height: 100vh; display: flex; flex-wrap: wrap; }
+.brandPane {
+  flex: 1 1 420px;
+  min-height: 320px;
+  background: #0a0906;
+  color: #fbfaf4;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.glow {
+  position: absolute;
+  top: -120px; right: -80px;
+  width: 360px; height: 360px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(197,242,74,0.22), transparent 68%);
+}
+.brand { display: flex; align-items: center; gap: 10px; position: relative; line-height: 1.05; }
+.brandLogo {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.brandLogo img { width: 78%; height: 78%; object-fit: contain; }
+.brandName { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.brandSub { font-size: 11px; color: #a6a28f; }
+.pitch { position: relative; max-width: 400px; }
+.pitchTitle { font: 700 34px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.pitchText { margin-top: 14px; font-size: 14.5px; color: #a6a28f; line-height: 1.5; }
+
+.formPane { flex: 1 1 420px; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--bg); }
+.form { width: 100%; max-width: 380px; }
+.title { font: 700 23px var(--font-display); letter-spacing: -0.02em; color: var(--tx); }
+.subtitle { font-size: 13.5px; color: var(--sub); margin-top: 4px; }
+.roles {
+  margin-top: 22px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.role {
+  flex: 1;
+  height: 38px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font: 600 13px var(--font-body);
+  background: transparent;
+  color: var(--muted);
+}
+.role[aria-pressed="true"] { background: var(--panel); color: var(--tx); box-shadow: 0 1px 3px rgba(0,0,0,0.16); }
+.fields { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+.notice, .error { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+.notice { background: var(--warn-bg); color: var(--warn-tx); }
+.error { background: var(--danger-bg); color: var(--danger-tx); }
+.submit { margin-top: 18px; min-height: 46px; font-size: 14.5px; font-weight: 700; border-radius: 12px; }
+.hint { margin-top: 14px; font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .brandPane { padding: 28px 20px; min-height: 0; gap: 28px; }
+  .pitchTitle { font-size: 26px; }
+  .formPane { padding: 28px 16px 40px; }
+}

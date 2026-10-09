@@ -1,376 +1,65 @@
-// The dashboard screens, moved unchanged from the runtime-compiled template
-// (src/dashboard/template.html, removed). New code goes into typed modules;
-// screens move out of this file one at a time.
+// Dashboard screens still on legacy inline styles, moved unchanged from the
+// runtime-compiled template. Data comes from the query cache (data/), rules
+// from domain/; each screen moves to a typed module with CSS, then leaves
+// this file (WP09 stage 2).
 import * as React from 'react';
 
-import { apiRequest, ApiError, fetchJSON, fetchAdminJSON, SESSION_EXPIRED_EVENT } from '../lib/api';
-import { appConfig } from '../lib/config';
-import { navigate as navigateTo, routeFor, useRoute } from '../lib/router';
-
-// CRM data lives only in memory for the current session; only UI preferences
-// (theme) are kept in localStorage.
-let leads = [];
-const services = appConfig.services;
-// Default follow-up delays in days, from src/activity.py (one rule for UI and API).
-const FOLLOW_UP_DELAYS = appConfig.followUpDelays;
-let remoteStatuses = {};
-let outreachEvents = [];
-let apiReady = false;
-// Bumped whenever the signed-in user changes so late responses from the
-// previous session are dropped instead of written into the new one.
-let crmSession = 0;
-export function clearCrmState() {
-  crmSession += 1;
-  leads = [];
-  remoteStatuses = {};
-  outreachEvents = [];
-  apiReady = false;
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function fmt(n) {
-  if (n === null || n === undefined || n === '') return '—';
-  const value = Number(n);
-  if (!Number.isFinite(value)) return '—';
-  if (value === 0) return '0';
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
-  if (value >= 1000) return Math.round(value / 1000) + 'K';
-  return String(value);
-}
-
-function fmtDate(str) {
-  if (!str) return '';
-  try {
-    const d = new Date(str.replace(' ', 'T'));
-    if (isNaN(d)) return str;
-    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch(e) { return str; }
-}
-
-function getStatuses() {
-  return Object.assign({}, remoteStatuses);
-}
-function persistStatus(name, s) {
-  if (!apiReady) return Promise.reject(new Error('api_not_ready'));
-  return apiRequest('/api/status', { method: 'POST', body: { name, status: s } })
-    .catch(() => { throw new Error('status_save_failed'); });
-}
-function setStatusLS(name, s) {
-  const previous = remoteStatuses[name];
-  remoteStatuses[name] = s;
-  return persistStatus(name, s).catch(err => {
-    if (previous === undefined) delete remoteStatuses[name];
-    else remoteStatuses[name] = previous;
-    throw err;
-  });
-}
-
-function normalizeOutreachEvent(item) {
-  if (!item) return null;
-  return {
-    lead: item.lead || item.lead_name || '',
-    action: item.action || 'note_added',
-    date: item.date || item.happened_at || item.created_at || new Date().toISOString(),
-    note: item.note || '',
-    channel: item.channel || null,
-    channelLabel: item.channel_label || null,
-    outcome: item.outcome || null,
-    outcomeLabel: item.outcome_label || null,
-    followUpAt: item.follow_up_at || null,
-    serviceSlugs: item.service_slugs || [],
-    contactName: item.contact_name || null,
-    draftStatus: item.draft_status || null,
-    draftSubject: item.draft_subject || null,
-    draftBody: item.draft_body || null,
-    manualVerification: item.manual_verification || item.manualVerification || null,
-    ts: item.ts || item.id || Date.now(),
-  };
-}
-function getOutreach() {
-  return outreachEvents;
-}
-function saveOutreach(arr) {
-  outreachEvents = (arr || []).map(normalizeOutreachEvent).filter(Boolean);
-}
-// Adds server rows (e.g. a lead's full timeline) without duplicating known events.
-function mergeOutreach(rows) {
-  const byKey = new Map(outreachEvents.map(event => [event.ts, event]));
-  (rows || []).map(normalizeOutreachEvent).filter(Boolean).forEach(event => byKey.set(event.ts, event));
-  outreachEvents = [...byKey.values()];
-}
-function getLeadEvents(name) {
-  return getOutreach().filter(e => e.lead === name).sort((a, b) => b.date.localeCompare(a.date));
-}
-// One id per logical submission; a retry of the same submission reuses it.
-function newRequestId() {
-  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
-  const bytes = window.crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-const OUTREACH_ERRORS = {
-  LEAD_VERSION_CONFLICT: 'Bu lead sen formu doldururken başka bir işlemle güncellendi. Güncel veriyi alıp tekrar kaydet.',
-  LEAD_NOT_ASSIGNED: 'Bu lead artık sana atanmış değil; sonuç kaydedilmedi.',
-  LEAD_NOT_FOUND: 'Lead bulunamadı; silinmiş veya birleştirilmiş olabilir.',
-  IDEMPOTENCY_KEY_REUSED: 'Form değişti; tekrar kaydet.',
-};
-
-function outreachError(code) {
-  const err = new Error(OUTREACH_ERRORS[code] || 'Sonuç kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
-  err.code = code || 'outreach_save_failed';
-  return err;
-}
-
-function persistOutreachEvent(evt) {
-  if (!apiReady) return Promise.reject(new Error('api_not_ready'));
-  return apiRequest('/api/outreach', {
-    method: 'POST',
-    keepalive: true,
-    body: {
-      lead_name: evt.lead,
-      action: evt.action,
-      happened_at: evt.date,
-      note: evt.note,
-      channel: evt.channel,
-      outcome: evt.outcome,
-      follow_up_at: evt.followUpAt,
-      service_slugs: evt.serviceSlugs,
-      contact_name: evt.contactName,
-      draft_status: evt.draftStatus,
-      subject: evt.draftSubject,
-      body: evt.draftBody,
-      manual_verification: evt.manualVerification,
-      expected_revision: evt.expectedRevision ?? null,
-      source: 'dashboard',
-      idempotency_key: evt.requestId || newRequestId(),
-    },
-  }).catch(err => { throw outreachError(err instanceof ApiError ? err.code : undefined); });
-}
-function addOutreach(name, action, date, note, requestId) {
-  const evt = { lead: name, action, date, note, requestId, ts: Date.now() };
-  return persistOutreachEvent(evt).then(() => {
-    const arr = getOutreach();
-    arr.push(evt);
-    saveOutreach(arr);
-    const act = ACTIONS[action];
-    if (act && act.status) return setStatusLS(name, act.status);
-  });
-}
-
-// values.followUpAt is sent only when the user picked a date; otherwise the
-// server applies the default rule. requestId stays the same across retries.
-function saveContactResult(lead, values, requestId) {
-  const evt = {
-    lead: lead.name,
-    action: 'contact_result_recorded',
-    note: values.note || '',
-    channel: values.channel,
-    outcome: values.outcome,
-    followUpAt: values.followUpAt || null,
-    serviceSlugs: values.serviceSlugs || [],
-    contactName: values.contactName || null,
-    expectedRevision: Number.isInteger(lead.revision) ? lead.revision : null,
-    requestId,
-    ts: Date.now(),
-  };
-  return persistOutreachEvent(evt).then(data => {
-    const saved = normalizeOutreachEvent(data.event || evt);
-    const arr = getOutreach().filter(item => item.ts !== saved.ts);
-    arr.push(saved);
-    saveOutreach(arr);
-    if (data.status) remoteStatuses[lead.name] = data.status;
-    return data;
-  });
-}
-
-function saveLeadAssignment(leadName, userEmail, dueAt) {
-  return apiRequest('/api/assignments', {
-    method: 'POST',
-    body: {
-      lead_name: leadName,
-      user_email: userEmail,
-      due_at: dueAt ? new Date(dueAt).toISOString() : null,
-      status: 'active',
-    },
-  }).catch(err => { throw new Error((err instanceof ApiError && err.data.error) || 'Atama kaydedilemedi.'); });
-}
-
-function saveDraftReview(lead, draft) {
-  const evt = {
-    lead: lead.name,
-    action: 'draft_reviewed',
-    date: new Date().toISOString(),
-    note: '',
-    channel: draft.channel,
-    draftStatus: 'approved',
-    draftSubject: draft.subject || '',
-    draftBody: draft.body || '',
-    ts: Date.now(),
-  };
-  return persistOutreachEvent(evt).then(data => {
-    const saved = normalizeOutreachEvent((data && data.event) || evt);
-    const arr = getOutreach();
-    arr.push(saved);
-    saveOutreach(arr);
-    return data;
-  });
-}
-
-function saveManualVerification(lead, values) {
-  const evt = {
-    lead: lead.name,
-    action: 'manual_verification_saved',
-    date: new Date().toISOString(),
-    note: '',
-    manualVerification: values,
-    ts: Date.now(),
-  };
-  return persistOutreachEvent(evt).then(data => {
-    const saved = normalizeOutreachEvent((data && data.event) || evt);
-    const arr = getOutreach();
-    arr.push(saved);
-    saveOutreach(arr);
-    return data;
-  });
-}
-
-function applyRemoteLeads(rows) {
-  if (!Array.isArray(rows)) return;
-  leads = rows.slice();
-  remoteStatuses = {};
-  leads.forEach(l => { remoteStatuses[l.name] = l.status || 'yeni'; });
-}
-
-function applyRemoteOutreach(rows) {
-  if (!Array.isArray(rows)) return;
-  outreachEvents = rows.map(normalizeOutreachEvent).filter(Boolean);
-}
-
-function openExternal(url) {
-  if (!url) return;
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
-
-function startLeadAction(lead) {
-  const nextAction = lead.next_action || 'Sonraki aksiyon başlatıldı';
-  const meta = getPrimaryActionMeta(lead);
-
-  if (meta.intent === 'enrich' || meta.intent === 'verify') {
-    openExternal(lead.maps_url || lead.website?.website_url || lead.social?.instagram_url);
-    return addOutreach(
-      lead.name,
-      'data_enrichment_started',
-      new Date().toISOString(),
-      nextAction
-    ).then(() => ({
-      feedback: meta.intent === 'verify'
-        ? 'Doğrulama kaynağı açıldı; uygun hizmeti görüşmede netleştir.'
-        : 'Veri tamamlama aksiyonu kaydedildi.',
-    }));
-  }
-
-  if (meta.intent === 'generate_ai') {
-    return fetchJSON('/api/lead_ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: lead.name }),
-    }).then(data => ({
-      feedback: data.lead?.ai_email
-        ? 'İhtiyaç raporu ve incelenebilir e-posta taslağı hazırlandı.'
-        : 'İhtiyaç raporu hazırlandı. E-posta için yeterli doğrulanmış kanıt bulunmadı.',
-    }));
-  }
-
-  if (meta.intent === 'draft' && lead.ai_email) {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(lead.ai_email).catch(() => {});
-    }
-    return addOutreach(
-      lead.name,
-      'email_drafted',
-      new Date().toISOString(),
-      'Hazır taslak panoya kopyalandı'
-    ).then(() => ({ feedback: 'Mail taslağı panoya kopyalandı.' }));
-  }
-
-  if (meta.intent === 'call' && lead.phone) {
-    window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
-    return addOutreach(
-      lead.name,
-      'call_started',
-      new Date().toISOString(),
-      nextAction
-    ).then(() => ({ feedback: 'Arama ekranı açıldı. Görüşme bitince sonucu ayrıca kaydet.' }));
-  }
-
-  return addOutreach(
-    lead.name,
-    'email_drafted',
-    new Date().toISOString(),
-    nextAction
-  ).then(() => ({ feedback: 'Aksiyon kaydedildi.' }));
-}
-
-function openFixContext(lead, issue) {
-  const target = issue?.source_url || lead.website?.website_url || lead.maps_url || lead.social?.instagram_url;
-  const issueText = typeof issue === 'string'
-    ? issue
-    : [issue?.title, issue?.evidence, issue?.verification].filter(Boolean).join(' — ');
-  if (issue && navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(`${lead.name}: ${issueText}`).catch(() => {});
-  }
-  if (target) {
-    openExternal(target);
-    return 'Doğrulama kaynağı yeni sekmede açıldı.';
-  }
-  return `${lead.name} için açılabilecek doğrulama kaynağı bulunamadı.`;
-}
-
-function createProposal(lead) {
-  const recommendation = lead.recommended_package || {};
-  const primary = (lead.matched_services || [])[0] || {};
-  const evidence = (primary.evidence || recommendation.evidence || []).map(item => `- ${item}`).join('\n');
-  const deliverables = (primary.deliverables || recommendation.deliverables || []).slice(0, 3).map(item => `- ${item}`).join('\n');
-  const questions = (primary.discovery_questions || recommendation.discovery_questions || []).slice(0, 3).map(item => `- ${item}`).join('\n');
-  const text = [
-    `ZEPLIN MEDIA GÖRÜŞME HAZIRLIK NOTU`,
-    `İşletme: ${lead.name}`,
-    `Önerilen hizmet: ${recommendation.primary_service || recommendation.name || 'Görüşmede netleştirilecek'}`,
-    `Durum: ${recommendation.stage || 'Keşif'}`,
-    ``,
-    `DOĞRULANAN AÇIKLAR`,
-    evidence || `- Yeterli kanıt yok; önce veri doğrulanmalı.`,
-    ``,
-    `SUNABİLECEĞİMİZ İŞLER`,
-    deliverables || `- İhtiyaç görüşmesinde netleştirilecek.`,
-    ``,
-    `GÖRÜŞMEDE SOR`,
-    questions || `- İşletmenin öncelikli hedefi ve mevcut süreci nedir?`,
-    ``,
-    `Bu belge iç hazırlık notudur; müşteriye teklif olarak gönderilmez.`,
-  ].join('\n');
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${lead.name.replace(/[^\wçğıöşüÇĞİÖŞÜ-]+/g, '-')}-gorusme-notu.txt`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-  return addOutreach(lead.name, 'proposal_created', new Date().toISOString(), recommendation.name || 'Görüşme notu');
-}
-
-function initialsFor(value) {
-  const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return 'ZM';
-  return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
-}
-
-function roleLabel(role) {
-  return role === 'admin' ? 'Patron' : 'Çalışan';
-}
+import { apiRequest, ApiError, fetchAdminJSON } from '../lib/api';
+import { newRequestId, openExternal } from '../lib/browser';
+import {
+  ACTIONS,
+  AI_STATE_NOTES,
+  CONTACT_CHANNEL_OPTIONS,
+  CONTACT_OUTCOME_OPTIONS,
+  FACT_LABELS,
+  FACT_SOURCES,
+  FILTER_DEFS,
+  FOLLOW_UP_DELAYS,
+  GRADE_COLORS,
+  PIPE_STAGES,
+  PLACE_REASONS,
+  SERVICES as services,
+  STATUS_OPTIONS,
+  gradeColor,
+  roleLabel,
+  statusMeta,
+} from '../domain/catalog';
+import { daysFromNowAtTen, fmt, fmtDate, initialsFor } from '../domain/format';
+import {
+  canonicalSector,
+  computeReadinessBuckets,
+  computeTabCounts,
+  computeWeekBuckets,
+  filterLeads,
+  findingSeverity,
+  followUpForOutcome,
+  getLeadReadiness,
+  getPipelineStage,
+  getPrimaryActionMeta,
+  manualVerificationDefaults,
+  mostCommonCity,
+  scoreIsAvailable,
+  taskMetaForLead,
+  verifiedInstagram,
+} from '../domain/lead';
+import {
+  copyEmailDraft,
+  createProposal,
+  exportLeadsCSV,
+  openFixContext,
+  recordCallStarted,
+  startLeadAction,
+  triggerQuickLeadAction,
+} from '../data/leadActions';
+import {
+  addOutreach,
+  saveContactResult,
+  saveDraftReview,
+  saveLeadAssignment,
+  saveManualVerification,
+  setLeadStatus,
+} from '../data/mutations';
+import { mergeEvents, useCrm, useLeadTimeline, useSession } from '../data/workspace';
 
 function roleTone(role) {
   return role === 'admin'
@@ -378,246 +67,7 @@ function roleTone(role) {
     : { bg: 'var(--raised)', fg: 'var(--sub)', bd: 'var(--line)' };
 }
 
-function searchLeads(rows, query) {
-  const term = String(query || '').trim().toLocaleLowerCase('tr-TR');
-  if (!term) return rows.slice(0, 8);
-  return rows.filter(lead => {
-    const haystack = [
-      lead.name,
-      lead.city,
-      lead.category,
-      lead.sector,
-      lead.next_action,
-      lead.phone,
-      lead.address,
-      ...(lead.audit_findings || []).map(item => `${item.title || ''} ${item.evidence || ''}`),
-      ...(lead.matched_services || []).map(item => item.name),
-    ].filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
-    return haystack.includes(term);
-  }).slice(0, 12);
-}
-
-const ACTIONS = {
-  data_enrichment_started: { label: 'Veri Tamamlama Başladı', icon: '🧭', status: null },
-  email_drafted:      { label: 'Mail Taslağı Hazır', icon: '📝', status: null },
-  outreach_review_started: { label: 'Aksiyon İnceleniyor', icon: '🗂️', status: null },
-  draft_reviewed:          { label: 'Taslak Onaylandı',     icon: '✓',  status: null },
-  manual_verification_saved:{ label: 'Manuel Kontrol Tamamlandı', icon: '✓', status: null },
-  email_sent:        { label: 'Mail Gönderildi',   icon: '✉️', status: 'contacted' },
-  reply_received:    { label: 'Cevap Alındı',       icon: '💬', status: 'contacted' },
-  call_started:      { label: 'Arama Başlatıldı',   icon: '📞', status: null },
-  call_completed:    { label: 'Arama Tamamlandı',   icon: '📞', status: 'contacted' },
-  contact_result_recorded: { label: 'Temas Sonucu Kaydedildi', icon: '✓', status: null },
-  follow_up_scheduled:{ label: 'Takip Planlandı',    icon: '📅', status: 'follow_up' },
-  note_added:        { label: 'Not Eklendi',         icon: '📝', status: null },
-  proposal_created:  { label: 'Teklif Taslağı Hazır',icon: '📄', status: null },
-  proposal_sent:     { label: 'Teklif Gönderildi',    icon: '📤', status: 'contacted' },
-  deal_won:          { label: 'Anlaşma Yapıldı 🎉', icon: '🎉', status: 'converted' },
-  deal_lost:         { label: 'Anlaşma Düştü',      icon: '❌', status: 'lost' },
-};
-
-const PIPE_STAGES = [
-  { key: 'new',      label: 'Yeni',              color: '#93938f', actions: [] },
-  { key: 'enrich',   label: 'Veri Tamamlama',    color: '#ffb36b', actions: ['data_enrichment_started'] },
-  { key: 'draft',    label: 'Taslak Hazır',      color: '#76a6ff', actions: ['email_drafted'] },
-  { key: 'contacted',label: 'Temasta',           color: '#b9a8ff', actions: [] },
-  { key: 'meeting',  label: 'Takip',             color: '#ff9f43', actions: ['follow_up_scheduled'] },
-  { key: 'won',      label: 'Kazanıldı',         color: '#7ce2b5', actions: ['deal_won'] },
-  { key: 'lost',     label: 'Kaybedildi',        color: '#ff6770', actions: ['deal_lost'] },
-];
-
-function getPipelineStage(lead) {
-  const st = getStatuses()[lead.name] || 'yeni';
-  if (st === 'converted') return 'won';
-  if (st === 'lost') return 'lost';
-  if (st === 'follow_up') return 'meeting';
-  if (st === 'missing_info') return 'enrich';
-  if (st === 'ready') return 'draft';
-  const evs = getLeadEvents(lead.name);
-  const last = evs.find(e => !['note', 'note_added'].includes(e.action));
-  if (!last) return st === 'contacted' ? 'contacted' : 'new';
-  const map = { data_enrichment_started: 'enrich', email_drafted: 'draft', draft_prepared: 'draft', outreach_review_started: 'draft', email_sent: 'contacted', reply_received: 'contacted', call_completed: 'contacted', call_made: 'contacted',
-                follow_up_scheduled: 'meeting', meeting_scheduled: 'meeting', deal_won: 'won', deal_lost: 'lost' };
-  return map[last.action] || (st === 'contacted' ? 'contacted' : 'new');
-}
-
-function hasContactInfo(lead) {
-  const researchEmails = lead.research?.website?.emails || [];
-  const verifiedInstagram = lead.social?.has_instagram === true
-    && Number(lead.social?.identity_confidence || 0) >= 70;
-  return Boolean(lead.phone || researchEmails.length || verifiedInstagram);
-}
-
-function needsContactCompletion(lead) {
-  const nextAction = lead.next_action || '';
-  return /telefon|adres/i.test(nextAction) || !hasContactInfo(lead);
-}
-
-function getPrimaryActionMeta(lead) {
-  if (needsContactCompletion(lead)) {
-    return {
-      label: 'Veriyi tamamla',
-      helper: 'Maps ya da siteyi açar; pipeline durumu değişmez.',
-      intent: 'enrich',
-    };
-  }
-  if (!lead.matched_services || !lead.matched_services.length) {
-    return {
-      label: 'İhtiyacı doğrula',
-      helper: 'Kaynağı açar; kanıt olmadan hizmet veya AI taslağı üretmez.',
-      intent: 'verify',
-    };
-  }
-  if (!lead.ai_report) {
-    return {
-      label: 'İhtiyaç raporu üret',
-      helper: 'Kanıtlanan açık ve eşleşen hizmetten araştırma raporu; kanıt yeterliyse e-posta taslağı oluşturur.',
-      intent: 'generate_ai',
-    };
-  }
-  if (lead.ai_state === 'stale') {
-    return {
-      label: 'Raporu yenile',
-      helper: 'İşletme verisi rapordan sonra değişti; rapor güncel veriyle yeniden üretilir.',
-      intent: 'generate_ai',
-    };
-  }
-  if (lead.ai_email) {
-    return {
-      label: 'Taslağı kopyala',
-      helper: 'Hazır e-postayı panoya kopyalar; otomatik göndermez.',
-      intent: 'draft',
-    };
-  }
-  if (lead.phone) {
-    return {
-      label: 'Telefonu aç',
-      helper: 'Mail için güçlü kanıt yok; raporu kullanarak telefon görüşmesi yap.',
-      intent: 'call',
-    };
-  }
-  return {
-    label: 'Aksiyonu kaydet',
-    helper: 'Sadece takip icin aktivite olusturur.',
-    intent: 'review',
-  };
-}
-
-function getLeadReadiness(lead) {
-  if (lead.workflow?.checks) {
-    return [
-      ...lead.workflow.checks.map(item => ({ label: item.label, ready: item.complete })),
-      { label: 'İletişim kanalı', ready: lead.workflow.contact_available },
-    ];
-  }
-  const scoreStatus = lead.scoring?.score_status || 'insufficient';
-  return [
-    { label: 'İletişim kanalı', ready: hasContactInfo(lead) },
-    { label: 'Denetim kanıtı', ready: scoreStatus !== 'insufficient' && Boolean(lead.audit_findings?.length) },
-    { label: 'AI raporu', ready: Boolean(lead.ai_report) },
-    { label: 'Kanıtlı hizmet', ready: Boolean(lead.matched_services?.length) },
-  ];
-}
-
-function triggerQuickLeadAction(lead) {
-  const meta = getPrimaryActionMeta(lead);
-  if (meta.intent === 'call' && lead.phone) {
-    openExternal(`tel:${lead.phone.replace(/\s+/g, '')}`);
-    return;
-  }
-  if (meta.intent === 'draft' && lead.ai_email && navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(lead.ai_email).catch(() => {});
-    return;
-  }
-  if (meta.intent === 'enrich') {
-    openExternal(lead.maps_url || lead.website?.website_url || lead.social?.instagram_url);
-    return;
-  }
-  openExternal(lead.website?.website_url || lead.maps_url || lead.social?.instagram_url);
-}
-
-function getDailyTasks(arr, statuses) {
-  return arr
-    .filter(lead => (statuses[lead.name] || 'yeni') !== 'converted')
-    .slice()
-    .sort((a, b) => {
-      const delta = (b.sales_priority_score || 0) - (a.sales_priority_score || 0);
-      if (delta !== 0) return delta;
-      return (b.estimated_value_tl || 0) - (a.estimated_value_tl || 0);
-    })
-    .slice(0, 5)
-    .map(lead => {
-      const meta = getPrimaryActionMeta(lead);
-      let reason = 'Sonraki adim belirginlestirilmeli.';
-      if (needsContactCompletion(lead)) {
-        reason = 'Temas öncesi telefon veya adres eksigi kapatilmali.';
-      } else if (lead.phone) {
-        reason = 'Telefon bilgisi hazir; bugun sicak temas kurulabilir.';
-      } else if (lead.ai_email) {
-        reason = 'Taslak hazir; gonderim oncesi son kontrol yeterli.';
-      }
-      return { lead, meta, reason };
-    });
-}
-
-function issueToSeverity(text) {
-  if (!text) return 'Bilgi';
-  const t = text.toLowerCase();
-  if (t.includes('ssl') || t.includes('https')) return 'Kritik';
-  if (t.includes('web sitesi yok') || t.includes('website yok') || t.includes('site yok')) return 'Yüksek';
-  if (t.includes('schema') || t.includes('og') || t.includes('open graph')) return 'Orta';
-  if (t.includes('telefon') || t.includes('adres') || t.includes('tamamla') || t.includes('instagram yok')) return 'Düşük';
-  return 'Bilgi';
-}
-
-function findingSeverity(finding) {
-  const severity = finding?.severity;
-  return ({ critical: 'Kritik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' })[severity]
-    || issueToSeverity(finding?.title || String(finding || ''));
-}
-
-function scoreIsAvailable(lead) {
-  return (lead?.scoring?.score_status || 'insufficient') !== 'insufficient';
-}
-
-function verifiedInstagram(lead) {
-  return lead?.social?.has_instagram === true
-    && Number(lead?.social?.identity_confidence || 0) >= 70;
-}
-
 function scoreDash(score) { return 326.7 * (1 - score / 100); }
-
-function computeKPIs(arr) {
-  const total = arr.length || 1;
-  return {
-    packagedCount: arr.filter(l => l.matched_services && l.matched_services.length > 0).length,
-    packagedPct:   Math.round(arr.filter(l => l.matched_services && l.matched_services.length > 0).length / total * 100),
-    phoneCount:    arr.filter(l => l.phone).length,
-    phonePct:      Math.round(arr.filter(l => l.phone).length / total * 100),
-    aiCount:       arr.filter(l => l.ai_report).length,
-    aiPct:         Math.round(arr.filter(l => l.ai_report).length / total * 100),
-    auditCount:    arr.filter(l => (l.audit_findings || []).length > 0).length,
-    auditPct:      Math.round(arr.filter(l => (l.audit_findings || []).length > 0).length / total * 100),
-  };
-}
-
-function computeTabCounts(arr, statuses) {
-  return {
-    total:     arr.length,
-    yeni:      arr.filter(l => (statuses[l.name] || 'yeni') === 'yeni').length,
-    contacted: arr.filter(l => statuses[l.name] === 'contacted').length,
-    converted: arr.filter(l => statuses[l.name] === 'converted').length,
-    low:       arr.filter(l => scoreIsAvailable(l) && l.scoring.score < 50).length,
-  };
-}
-
-function computeReadinessBuckets(arr) {
-  return {
-    readyToCall: arr.filter(lead => Boolean(lead.phone)).length,
-    needsData: arr.filter(lead => needsContactCompletion(lead)).length,
-    proposalReady: arr.filter(lead => Boolean(lead.ai_report) && Boolean(lead.ai_email) && Boolean(lead.matched_services?.length)).length,
-  };
-}
 
 // ── Shared design-system helpers (Lead Workspace look) ─────────────────────
 
@@ -625,46 +75,16 @@ function hexA(hex, a) {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
 }
-const GRADE_COLORS = { A: '#b6f24a', B: '#ffcf4a', C: '#ff8f4a', D: '#7a7a78' };
-function gradeColor(g) { return GRADE_COLORS[g] || '#93938f'; }
 function gradeChipStyle(g) {
   const c = gradeColor(g);
   return { fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 7, color: c, background: hexA(c, 0.12), border: '1px solid ' + hexA(c, 0.28) };
 }
 
-const STATUS_META = {
-  yeni:      { label: 'Yeni',      fg: '#c5f24a', bg: 'rgba(197,242,74,0.1)',  bd: 'rgba(197,242,74,0.28)' },
-  missing_info:{ label: 'Veri Eksik', fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)', bd: 'rgba(255,159,67,0.28)' },
-  ready:     { label: 'Hazır',     fg: '#76a6ff', bg: 'rgba(118,166,255,0.1)', bd: 'rgba(118,166,255,0.28)' },
-  contacted: { label: 'Görüşüldü', fg: '#ffcf4a', bg: 'rgba(255,207,74,0.1)',  bd: 'rgba(255,207,74,0.28)' },
-  follow_up: { label: 'Takipte',   fg: '#ff9f43', bg: 'rgba(255,159,67,0.1)',  bd: 'rgba(255,159,67,0.28)' },
-  converted: { label: 'Müşteri',   fg: '#b6f24a', bg: 'rgba(182,242,74,0.14)', bd: 'rgba(182,242,74,0.32)' },
-  lost:      { label: 'Kaybedildi',fg: '#ff6770', bg: 'rgba(255,103,112,0.1)', bd: 'rgba(255,103,112,0.28)' },
-};
-const STATUS_OPTIONS = [
-  ['yeni', 'Yeni'],
-  ['missing_info', 'Veri eksik'],
-  ['ready', 'Hazır'],
-  ['contacted', 'Temasta'],
-  ['follow_up', 'Takipte'],
-  ['converted', 'Kazanıldı'],
-  ['lost', 'Kaybedildi'],
-];
-function statusMeta(s) { return STATUS_META[s] || STATUS_META.yeni; }
 function statusChipStyle(s) {
   const m = statusMeta(s);
   return { fontSize: 10.5, fontWeight: 600, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.04em', color: m.fg, background: m.bg, border: '1px solid ' + m.bd };
 }
 
-const FILTER_DEFS = [['hepsi','Hepsi'], ['a','A Sınıfı'], ['b','B/C/D'], ['web','Web Yok'], ['ig','Instagram Yok'], ['sicak','🔥 Sıcak']];
-function filterLeads(leads, key) {
-  if (key === 'a')     return leads.filter(l => scoreIsAvailable(l) && l.scoring.grade === 'A');
-  if (key === 'b')     return leads.filter(l => scoreIsAvailable(l) && l.scoring.grade !== 'A');
-  if (key === 'web')   return leads.filter(l => (l.audit_findings || []).some(f => ['website.absent','website.invalid_candidate'].includes(f.code)));
-  if (key === 'ig')    return leads.filter(l => (l.audit_findings || []).some(f => f.code === 'social.instagram_absent'));
-  if (key === 'sicak') return leads.filter(l => (l.sales_priority_score || 0) >= 85);
-  return leads;
-}
 
 function FilterPills({ active, onChange, count }) {
   return (
@@ -743,126 +163,6 @@ function chipsFor(l) {
   return chips;
 }
 
-function computeWeekBuckets(leads) {
-  const now = new Date();
-  const buckets = new Array(8).fill(0);
-  leads.forEach(l => {
-    if (!l.last_analyzed) return;
-    const d = new Date(l.last_analyzed.replace(' ', 'T'));
-    if (isNaN(d)) return;
-    const diffDays = Math.floor((now - d) / 86400000);
-    const weekIdx = Math.floor(diffDays / 7);
-    if (weekIdx >= 0 && weekIdx < 8) buckets[7 - weekIdx] += 1;
-  });
-  return buckets;
-}
-
-function mostCommonCity(leads) {
-  const counts = {};
-  leads.forEach(l => { if (l.city) counts[l.city] = (counts[l.city]||0) + 1; });
-  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
-  return entries.length ? entries[0][0] : '';
-}
-
-function exportLeadsCSV(leads) {
-  const cols = ['name','city','category','scoring.score','scoring.grade','estimated_value_tl','sales_priority_score','phone'];
-  const get = (obj, path) => path.split('.').reduce((o,k) => (o||{})[k], obj);
-  const header = ['İşletme','Şehir','Kategori','Skor','Sınıf','Tahmini Değer','Öncelik','Telefon'];
-  const rows = leads.map(l => cols.map(c => { const v = get(l, c); return v === undefined || v === null ? '' : String(v).replace(/"/g,'""'); }));
-  const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'zeplin-leadler.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ── Shared Topbar ──────────────────────────────────────────────────────────
-
-function Topbar({ view, onNav, leadCount, onAutomationClick, onOpenSearch, theme, onToggleTheme, user, onLogout }) {
-  const navItems = [
-    { key: 'today',     label: 'Bugün', employeeOnly: true },
-    { key: 'cockpit',   label: 'Workspace' },
-    { key: 'raporlar',  label: 'Leadler',   badge: leadCount },
-    { key: 'pipeline',  label: 'Pipeline' },
-    { key: 'analytics', label: 'Raporlar' },
-    { key: 'hizmetler', label: 'Hizmetler' },
-    { key: 'profile',   label: 'Profil' },
-    { key: 'admin',     label: 'Admin' },
-  ].filter(n => {
-    if (n.employeeOnly) return user?.role === 'sales';
-    if (n.key === 'admin') return !user || user.role === 'admin';
-    if (n.key === 'cockpit') return user?.role !== 'sales';
-    return true;
-  });
-  const currentView = view === 'detail' ? 'raporlar' : view;
-  const initials = initialsFor(user?.name || user?.email || 'ZM');
-
-  return (
-    <header style={tb.bar}>
-      <div style={tb.brand}>
-        <div style={tb.logo}>
-          <img src="/logo-mark.png" alt="Zeplin Media" style={tb.logoImg}/>
-        </div>
-        <div className="tb-brand-text">
-          <div style={tb.brandName}>Zeplin Media</div>
-          <div style={tb.brandSub}>Lead Workspace</div>
-        </div>
-      </div>
-
-      <nav className="hide-sb tb-nav" style={tb.nav}>
-        {navItems.map(n => {
-          const active = currentView === n.key;
-          return (
-            <button type="button" key={n.key} className="tb-nav-item" style={active ? tb.itemActive : tb.item} onClick={() => onNav(n.key)}>
-              <span>{n.label}</span>
-              {n.badge !== undefined && (
-                <span style={active ? tb.badgeActive : tb.badge}>{n.badge}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div style={{ flex: 1 }}/>
-
-      <button className="tb-search-mobile" style={tb.search} onClick={onOpenSearch}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <span className="tb-search-label">Lead, firma veya hizmet ara</span>
-      </button>
-      <button title={theme === 'light' ? 'Karanlık moda geç' : 'Aydınlık moda geç'} style={tb.iconBtn} onClick={onToggleTheme}>
-        {theme === 'light'
-          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="var(--sub)" strokeWidth="1.8"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" stroke="var(--sub)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-      </button>
-      <button className="tb-automation-mobile" title="Otomasyonu etkinleştir" style={tb.iconBtn} onClick={onAutomationClick}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L5 13h6l-1 9 8-11h-6l1-9z" fill="var(--accent)" stroke="var(--accent)" strokeWidth="1.2" strokeLinejoin="round"/></svg>
-      </button>
-      <button style={tb.avatar} onClick={() => onNav('profile')} title={user ? `${user.name || user.email} profilini aç` : 'Profili aç'}>
-        {user?.avatar_url ? <img src={user.avatar_url} alt={user.name || user.email || 'Profil'} style={tb.avatarImg}/> : initials}
-      </button>
-    </header>
-  );
-}
-
-const tb = {
-  bar:          { display: 'flex', alignItems: 'center', gap: 14, padding: '14px 26px', borderBottom: '1px solid var(--line)', flexShrink: 0, position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg)' },
-  brand:        { display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 },
-  logo:         { width: 40, height: 40, display: 'grid', placeItems: 'center', borderRadius: 12, background: 'var(--panel2)', border: '1px solid var(--line)', flexShrink: 0, overflow: 'hidden' },
-  logoImg:      { width: '84%', height: '84%', objectFit: 'contain' },
-  brandName:    { fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 14.5, letterSpacing: -0.2, color: 'var(--tx)' },
-  brandSub:     { fontSize: 11, color: 'var(--muted)', marginTop: 1 },
-  nav:          { display: 'flex', gap: 4, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: 5, overflowX: 'auto', flexShrink: 1 },
-  item:         { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'transparent', color: 'var(--sub)', cursor: 'pointer', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' },
-  itemActive:   { display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 999, border: 'none', background: 'var(--selected-bg)', color: 'var(--selected-tx)', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' },
-  badge:        { fontSize: 10.5, background: 'var(--raised)', color: 'var(--sub)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
-  badgeActive:  { fontSize: 10.5, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 7px', borderRadius: 99, fontFamily: "'Space Grotesk'", fontWeight: 600 },
-  search:       { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 999, padding: '9px 16px', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer', flexShrink: 0, maxWidth: 230 },
-  iconBtn:      { width: 40, height: 40, borderRadius: 999, background: 'var(--panel)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 },
-  avatar:       { width: 38, height: 38, borderRadius: 999, border: '1px solid var(--line)', background: 'var(--panel2)', color: 'var(--accent-ink)', display: 'grid', placeItems: 'center', fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, flexShrink: 0, overflow: 'hidden', padding: 0, cursor: 'pointer' },
-  avatarImg:    { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-};
 
 // ── Workspace view (matches Lead Workspace design 1:1) ─────────────────────
 
@@ -1004,7 +304,7 @@ function SelectedPanel({ lead, onOpenDetail }) {
 
       <div style={{ display: 'flex', gap: 9 }}>
         {lead.phone
-          ? <a href={`tel:${lead.phone.replace(/\s+/g,'')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={wp.callBtn}><IconCall/> Ara</a>
+          ? <a href={`tel:${lead.phone.replace(/\s+/g,'')}`} onClick={() => recordCallStarted(lead)} style={wp.callBtn}><IconCall/> Ara</a>
           : <span style={{ ...wp.callBtn, opacity: 0.4, pointerEvents: 'none' }}><IconCall/> Ara</span>}
         {lead.ai_email
           ? <button style={wp.mailBtn} onClick={copyEmail}><IconMail color="currentColor"/> {copied ? 'Kopyalandı' : 'Taslağı Kopyala'}</button>
@@ -1015,43 +315,6 @@ function SelectedPanel({ lead, onOpenDetail }) {
       </div>
     </div>
   );
-}
-
-const CONTACT_CHANNEL_OPTIONS = [
-  ['phone', 'Telefon'],
-  ['whatsapp', 'WhatsApp'],
-  ['instagram', 'Instagram'],
-  ['email', 'E-posta'],
-  ['other', 'Diğer'],
-];
-
-const CONTACT_OUTCOME_OPTIONS = [
-  ['reached_interested', 'İlgilendi'],
-  ['proposal_requested', 'Teklif istedi'],
-  ['reached_later', 'Sonra görüşelim'],
-  ['no_answer', 'Ulaşılamadı'],
-  ['wrong_number', 'Numara yanlış'],
-  ['not_interested', 'İlgilenmedi'],
-  ['won', 'Anlaşma yapıldı'],
-  ['lost', 'Kaybedildi'],
-];
-
-function tomorrowAtTen() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  date.setHours(10, 0, 0, 0);
-  const pad = value => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function followUpForOutcome(outcome) {
-  const days = FOLLOW_UP_DELAYS[outcome];
-  if (!days) return '';
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  date.setHours(10, 0, 0, 0);
-  const pad = value => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function ContactResultDialog({ lead, onClose, onSaved, onOpenLead, onRefreshLead }) {
@@ -1290,74 +553,17 @@ function ContactResultDialog({ lead, onClose, onSaved, onOpenLead, onRefreshLead
   );
 }
 
-function isToday(value) {
-  if (!value) return false;
-  const date = new Date(value);
-  const now = new Date();
-  return date.getFullYear() === now.getFullYear()
-    && date.getMonth() === now.getMonth()
-    && date.getDate() === now.getDate();
-}
-
-function latestContactResult(leadName) {
-  return getLeadEvents(leadName).find(event => event.action === 'contact_result_recorded') || null;
-}
-
-function taskMetaForLead(lead) {
-  const workflow = lead.workflow || {};
-  const last = latestContactResult(lead.name);
-  const followUp = last?.followUpAt ? new Date(last.followUpAt) : null;
-  const now = new Date();
-  const due = followUp && followUp <= now;
-  const dueToday = followUp && isToday(followUp);
-  const assignmentDue = lead.assignment_due_at ? new Date(lead.assignment_due_at) : null;
-  let rank = 40;
-  let label = workflow.stage_label || 'İlk temas bekliyor';
-  let detail = lead.priority_reason || 'Lead’i incele ve ilk teması gerçekleştir.';
-  if (due) {
-    rank = 100;
-    label = dueToday ? 'Bugün takip' : 'Takip gecikti';
-    detail = `${last.outcomeLabel || 'Önceki temas'} sonrası yeniden iletişime geç.`;
-  } else if (workflow.stage === 'verification_required') {
-    rank = 90;
-    label = 'Kontrol bekliyor';
-    detail = `${workflow.completed_count || 0}/${workflow.required_count || 0} kaynak tamamlandı. Eksik: ${(workflow.missing || []).join(', ') || 'doğrulama'}.`;
-  } else if (workflow.stage === 'ready_to_contact') {
-    rank = 85;
-    label = 'Aramaya hazır';
-    detail = 'Zorunlu kaynak kontrolleri tamamlandı; konuşma rehberiyle temasa geç.';
-  } else if (assignmentDue && assignmentDue <= now) {
-    rank = 80;
-    label = 'Atama tarihi geldi';
-    detail = lead.priority_reason || 'Atanan lead için aksiyon bekleniyor.';
-  } else if (last) {
-    rank = 25;
-    label = last.outcomeLabel || 'Sonuç kaydedildi';
-    detail = followUp
-      ? `Takip: ${followUp.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-      : 'Yeni aksiyon için lead detayını kontrol et.';
-  }
-  return {
-    rank: rank + Number(lead.sales_priority_score || 0) / 100,
-    label,
-    detail,
-    followUp,
-    stage: workflow.stage || (last ? 'contacted' : 'verification_required'),
-    ready: Boolean(workflow.ready_to_contact || last),
-    completedToday: Boolean(last && isToday(last.happened_at || last.created_at || last.date)),
-  };
-}
-
 function TodayView({ leads, onSelect, onOpenResult, user, summary }) {
+  const crm = useCrm();
   const [taskFilter, setTaskFilter] = React.useState('open');
   const tasks = React.useMemo(
     () => leads
-      .filter(lead => !['converted', 'lost'].includes(getStatuses()[lead.name] || lead.status))
-      .map(lead => ({ lead, meta: taskMetaForLead(lead) }))
+      .filter(lead => !['converted', 'lost'].includes(crm.statuses[lead.name] || lead.status))
+      .map(lead => ({ lead, meta: taskMetaForLead(lead, crm.eventsFor(lead.name)) }))
       .sort((a, b) => b.meta.rank - a.meta.rank),
-    [leads, summary]
+    [leads, crm]
   );
-  const completed = leads.filter(lead => taskMetaForLead(lead).completedToday).length;
+  const completed = leads.filter(lead => taskMetaForLead(lead, crm.eventsFor(lead.name)).completedToday).length;
   const due = tasks.filter(item => item.meta.followUp && item.meta.followUp <= new Date()).length;
   const filteredTasks = tasks.filter(({ meta }) => {
     if (taskFilter === 'verification') return meta.stage === 'verification_required';
@@ -1370,7 +576,7 @@ function TodayView({ leads, onSelect, onOpenResult, user, summary }) {
 
   function startCall(lead) {
     if (!lead.phone) return;
-    addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {});
+    recordCallStarted(lead);
     window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`;
   }
 
@@ -1549,7 +755,7 @@ function ManagerOperations({ leads, teamUsers, teamPerformance, summary, onDataC
   const unassigned = leads.filter(lead => !lead.assigned_to && !['converted', 'lost'].includes(lead.status));
   const [leadName, setLeadName] = React.useState(unassigned[0]?.name || '');
   const [userEmail, setUserEmail] = React.useState(salesUsers.find(item => item.role === 'sales')?.email || salesUsers[0]?.email || '');
-  const [dueAt, setDueAt] = React.useState(tomorrowAtTen());
+  const [dueAt, setDueAt] = React.useState(daysFromNowAtTen(1));
   const [busy, setBusy] = React.useState(false);
   const [feedback, setFeedback] = React.useState('');
 
@@ -1839,55 +1045,6 @@ function sevStyle(s) {
   return ({ Kritik: { background: 'rgba(255,107,107,0.14)', color: '#ff8f8f' }, Yüksek: { background: 'rgba(255,159,67,0.14)', color: '#ffb36b' }, Orta: { background: 'rgba(255,207,74,0.14)', color: '#ffcf4a' }, Düşük: { background: 'rgba(124,197,255,0.14)', color: '#7cc5ff' }, Bilgi: { background: 'var(--raised)', color: 'var(--sub)' } })[s] || { background: 'var(--raised)', color: 'var(--sub)' };
 }
 
-function manualVerificationDefaults(lead) {
-  const current = lead.manual_verification || {};
-  return {
-    google: {
-      checked: !!current.google?.checked,
-      status: current.google?.status || (lead.maps_url ? 'found' : 'unknown'),
-      rating: current.google?.rating ?? '',
-      review_count: current.google?.review_count ?? '',
-    },
-    instagram: {
-      checked: !!current.instagram?.checked,
-      status: current.instagram?.status || 'unknown',
-      followers: current.instagram?.followers ?? '',
-      post_count: current.instagram?.post_count ?? '',
-      url: current.instagram?.url || lead.social?.instagram_url || '',
-    },
-    menu: {
-      checked: !!current.menu?.checked,
-      status: current.menu?.status || 'unknown',
-      url: current.menu?.url || '',
-    },
-    website: {
-      checked: !!current.website?.checked,
-      status: current.website?.status || 'unknown',
-      url: current.website?.url || lead.website?.website_url || '',
-    },
-    notes: current.notes || '',
-  };
-}
-
-// A report that is not known to match the current data is readable, never "current".
-const AI_STATE_NOTES = {
-  stale: 'Bu rapor işletme verisi değişmeden önce üretildi; güncel değil. Yenilemek için “Raporu yenile”.',
-  unknown: 'Bu raporun hangi veriyle üretildiği kayıtlı değil; güncelliği doğrulanamıyor.',
-};
-
-const PLACE_REASONS = {
-  close_candidates: 'Google’da birden fazla benzer işletme var; doğru şubeyi seç.',
-  other_district: 'Aynı isimli işletme başka bir ilçede görünüyor; doğruysa seç.',
-  location_unknown: 'Adayın konumu doğrulanamadı; doğruysa seç.',
-  name_differs: 'Telefon veya website eşleşiyor ama isim farklı; doğruysa seç.',
-  place_owned_by_other_lead: 'Bu Google kaydı başka bir lead’e bağlı; muhtemelen mükerrer kayıt. Yöneticiye bildir.',
-  location_conflict: 'Aynı isimli işletme başka şehirde bulundu; eşleştirilmedi.',
-  name_mismatch: 'Google’da bu isimle eşleşen işletme bulunamadı; manuel kontrol et.',
-  no_candidates: 'Google’da sonuç bulunamadı; manuel kontrol et.',
-  place_not_found: 'Seçilen Google kaydı artık yok; verileri yeniden yenile.',
-};
-const FACT_LABELS = { website_url: 'Website', instagram_url: 'Instagram', phone: 'Telefon', rating: 'Google puanı', review_count: 'Yorum sayısı', maps_url: 'Maps bağlantısı', address: 'Adres', menu_url: 'Menü' };
-const FACT_SOURCES = { manual: 'Ekip kontrolü', google_places: 'Google Places', scrape: 'Tarama' };
 const factValue = fact => fact.status === 'absent' ? 'yok' : String(fact.value ?? '—');
 
 function ManualVerificationCard({ lead, onDataChange, onFeedback, placesEnabled }) {
@@ -2198,22 +1355,12 @@ function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, 
   const [copied,     setCopied]     = React.useState(false);
   const [note,       setNote]       = React.useState('');
   const noteRequestRef = React.useRef(null);
-  const [, setTimelineVersion] = React.useState(0);
   const [feedback,   setFeedback]   = React.useState('');
 
-  // The workspace carries the last 30 days of events; load this lead's full timeline.
-  React.useEffect(() => {
-    const session = crmSession;
-    let cancelled = false;
-    fetchJSON(`/api/outreach?lead=${encodeURIComponent(lead.name)}&limit=200`)
-      .then(data => {
-        if (cancelled || session !== crmSession || !Array.isArray(data.items)) return;
-        mergeOutreach(data.items);
-        setTimelineVersion(version => version + 1);
-      })
-      .catch(err => console.warn('Timeline could not be loaded:', err));
-    return () => { cancelled = true; };
-  }, [lead.name]);
+  // The workspace carries the last 30 days of events; this adds the lead's full timeline.
+  const crm = useCrm();
+  const { user } = useSession();
+  const timeline = useLeadTimeline(user.email, lead.name);
   const [busy,       setBusy]       = React.useState(false);
   const findings   = lead.audit_findings || [];
   const opportunityFindings = findings.filter(finding => finding.finding_type === 'opportunity');
@@ -2225,7 +1372,7 @@ function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, 
   const hasRecommendation = displayedServices.length > 0;
   const isDiscoveryOnly = serviceMatches.length === 0;
   const svc = lead.recommended_package || {};
-  const events     = getLeadEvents(lead.name);
+  const events     = mergeEvents(crm.eventsFor(lead.name), timeline.data || []);
   const actionMeta = getPrimaryActionMeta(lead);
   const readiness  = getLeadReadiness(lead);
   const lastEvent  = events[0] || null;
@@ -2242,9 +1389,7 @@ function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, 
   const contactReady = Boolean(workflow.ready_to_contact || workflow.latest_contact_at);
 
   function copyEmail() {
-    navigator.clipboard.writeText(lead.ai_email || '').then(() => {
-      return addOutreach(lead.name, 'email_drafted', new Date().toISOString(), 'Taslak panoya kopyalandı');
-    }).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    copyEmailDraft(lead).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
 
   function copySalesText(text, label) {
@@ -2322,7 +1467,7 @@ function LeadDetail({ lead, idx, total, status, onStatusChange, onBack, onPrev, 
             {lead.phone && <span style={ld.urlChip}>{lead.phone}</span>}
           </div>
           <div style={ld.quickActions}>
-            {contactReady && lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} onClick={() => addOutreach(lead.name, 'call_started', new Date().toISOString(), 'Telefon bağlantısı açıldı').catch(() => {})} style={ld.quickBtn}>Telefonu aç</a>}
+            {contactReady && lead.phone && <a href={`tel:${lead.phone.replace(/\s+/g, '')}`} onClick={() => recordCallStarted(lead)} style={ld.quickBtn}>Telefonu aç</a>}
             {lead.website?.website_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.website.website_url)}>Siteyi aç</button>}
             {socialVerified && lead.social?.instagram_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.social.instagram_url)}>Instagram aç</button>}
             {lead.maps_url && <button style={ld.quickBtn} onClick={() => openExternal(lead.maps_url)}>Maps aç</button>}
@@ -2804,6 +1949,7 @@ const ld = {
 // ── Pipeline View ──────────────────────────────────────────────────────────
 
 function PipelineView({ leads, onSelect, onDataChange }) {
+  const crm = useCrm();
   const [tick, setTick] = React.useState(0);
   const [busyLead, setBusyLead] = React.useState('');
   const dragRef = React.useRef('');
@@ -2812,7 +1958,7 @@ function PipelineView({ leads, onSelect, onDataChange }) {
 
   const byStage = {};
   PIPE_STAGES.forEach(s => { byStage[s.key] = []; });
-  leads.forEach(l => { const stage = getPipelineStage(l); (byStage[stage] = byStage[stage] || []).push(l); });
+  leads.forEach(l => { const stage = getPipelineStage(crm.statuses[l.name] || 'yeni', crm.eventsFor(l.name)); (byStage[stage] = byStage[stage] || []).push(l); });
 
   const won = byStage['won'].length;
   const active = ['draft','contacted','meeting'].reduce((a, k) => a + (byStage[k]||[]).length, 0);
@@ -2839,9 +1985,9 @@ function PipelineView({ leads, onSelect, onDataChange }) {
     if (stageObj.actions.length) {
       operation = addOutreach(name, stageObj.actions[0], new Date().toISOString().slice(0,16), '');
     } else if (stageKey === 'new') {
-      operation = setStatusLS(name, 'yeni');
+      operation = setLeadStatus(name, 'yeni');
     } else if (stageKey === 'contacted') {
-      operation = setStatusLS(name, 'contacted');
+      operation = setLeadStatus(name, 'contacted');
     } else if (stageKey === 'won') {
       operation = addOutreach(name, 'deal_won', new Date().toISOString().slice(0,16), '');
     } else if (stageKey === 'lost') {
@@ -3280,28 +2426,6 @@ const av = {
 
 function bar(pct, color) { return { width: `${pct}%`, height: '100%', borderRadius: 99, background: color }; }
 
-const SECTOR_LABELS = {
-  restaurant: 'Restoran ve Kafe',
-  retail: 'Perakende ve Mağaza',
-  health: 'Sağlık ve Klinik',
-  salon: 'Güzellik ve Bakım',
-  auto: 'Otomotiv',
-  default: 'Diğer',
-};
-
-function canonicalSector(lead) {
-  const stored = String(lead.sector || '').trim().toLowerCase();
-  if (SECTOR_LABELS[stored]) return SECTOR_LABELS[stored];
-
-  const category = String(lead.category || '').toLocaleLowerCase('tr-TR');
-  if (/restoran|restaurant|cafe|kafe|coffee|bistro|lokanta|pastane|fırın|bakery/.test(category)) return SECTOR_LABELS.restaurant;
-  if (/diş|dental|dentist|klinik|clinic|doktor|sağlık|eczane|optik/.test(category)) return SECTOR_LABELS.health;
-  if (/kuaför|güzellik|beauty|spa|nail|berber|brow|lash|pilates|yoga|masaj/.test(category)) return SECTOR_LABELS.salon;
-  if (/oto|otomotiv|araba|araç|kaporta|lastik|galeri|garaj/.test(category)) return SECTOR_LABELS.auto;
-  if (/mağaza|market|butik|shop|store|giyim|perakende|çiçek|kitap|mobilya|depo/.test(category)) return SECTOR_LABELS.retail;
-  return SECTOR_LABELS.default;
-}
-
 function AnalyticsView({ leads, statuses }) {
   const [periodDays, setPeriodDays] = React.useState('all');
   const cutoff = periodDays === 'all' ? null : Date.now() - periodDays * 86400000;
@@ -3621,152 +2745,6 @@ const pf = {
   passivePill:    { border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.1)', color: '#ff8f8f', borderRadius: 999, padding: '5px 9px', fontSize: 11.5, fontWeight: 600 },
 };
 
-// ── Login ──────────────────────────────────────────────────────────────────
-
-function LoginView({ onSubmit, notice }) {
-  const [role, setRole]         = React.useState('admin');
-  const [email, setEmail]       = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError]       = React.useState(false);
-  const [busy, setBusy]         = React.useState(false);
-
-  function submit(e) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(false);
-    onSubmit(email, password, role).catch(() => setError(true)).finally(() => setBusy(false));
-  }
-
-  return (
-    <div style={lv.root}>
-      <div style={lv.brandPane}>
-        <div style={lv.glow}/>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
-          <div style={lv.brandLogo}><img src="/logo-mark.png" alt="Zeplin Media" style={{ width: '78%', height: '78%', objectFit: 'contain' }}/></div>
-          <div style={{ lineHeight: 1.05 }}>
-            <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>Zeplin Media</div>
-            <div style={{ fontSize: 11, color: '#a6a28f' }}>Lead Intelligence</div>
-          </div>
-        </div>
-        <div style={{ position: 'relative', maxWidth: 400 }}>
-          <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Bugün kimi arayacağını bilerek başla.</div>
-          <div style={{ marginTop: 14, fontSize: 14.5, color: '#a6a28f', lineHeight: 1.5 }}>Yapay zekâ her lead için sıradaki en iyi aksiyonu, gerekçesini ve hazır mesajını hazırlar. Sen sadece ara.</div>
-        </div>
-      </div>
-
-      <div style={lv.formPane}>
-        <form style={lv.formCard} onSubmit={submit}>
-          <div style={{ fontFamily: "'Space Grotesk'", fontSize: 23, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--tx)' }}>Panele giriş</div>
-          <div style={{ fontSize: 13.5, color: 'var(--sub)', marginTop: 4 }}>Rolünü seç ve devam et</div>
-
-          <div style={lv.roleTabs}>
-            <button type="button" style={role === 'admin' ? lv.roleTabActive : lv.roleTab} onClick={() => setRole('admin')}>Yönetici</button>
-            <button type="button" style={role === 'sales' ? lv.roleTabActive : lv.roleTab} onClick={() => setRole('sales')}>Çalışan</button>
-          </div>
-
-          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <label style={lv.label}>E-posta
-              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="ad@zeplinmedia.com" style={lv.input}/>
-            </label>
-            <label style={lv.label}>Şifre
-              <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" style={lv.input}/>
-            </label>
-          </div>
-
-          {notice && !error && <div style={lv.notice} role="status">{notice}</div>}
-          {error && <div style={lv.error}>E-posta veya şifre hatalı. Tekrar dene.</div>}
-
-          <button style={{ ...lv.submitBtn, opacity: busy ? 0.75 : 1 }} disabled={busy}>
-            {busy ? <span style={lv.spinner}/> : null}
-            {busy ? 'Giriş yapılıyor…' : 'Giriş yap'}
-          </button>
-          <div style={lv.hint}>Yönetici ve çalışan girişleri Supabase ekip hesaplarıyla yapılır.</div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-const lv = {
-  root:         { minHeight: '100vh', display: 'flex', flexWrap: 'wrap' },
-  brandPane:    { flex: '1 1 420px', minHeight: 320, background: '#0a0906', color: '#fbfaf4', padding: 48, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' },
-  glow:         { position: 'absolute', top: -120, right: -80, width: 360, height: 360, borderRadius: 999, background: 'radial-gradient(circle, rgba(197,242,74,0.22), transparent 68%)' },
-  brandLogo:    { width: 34, height: 34, borderRadius: 9, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' },
-  statVal:      { fontFamily: "'Space Grotesk'", fontSize: 26, fontWeight: 700, color: 'var(--accent)' },
-  statLbl:      { fontSize: 11.5, color: '#a6a28f' },
-  formPane:     { flex: '1 1 420px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, background: 'var(--bg)' },
-  formCard:     { width: '100%', maxWidth: 380 },
-  roleTabs:     { marginTop: 22, display: 'flex', background: 'var(--panel2)', border: '1px solid var(--line)', borderRadius: 12, padding: 4, gap: 4 },
-  roleTab:      { flex: 1, height: 38, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, background: 'transparent', color: 'var(--muted)' },
-  roleTabActive:{ flex: 1, height: 38, border: 'none', borderRadius: 9, cursor: 'pointer', fontFamily: "'Instrument Sans'", fontSize: 13, fontWeight: 600, background: 'var(--panel)', color: 'var(--tx)', boxShadow: '0 1px 3px rgba(0,0,0,0.16)' },
-  label:        { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--sub)' },
-  input:        { height: 44, padding: '0 14px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--panel)', color: 'var(--tx)', fontFamily: "'Instrument Sans'", fontSize: 14, fontWeight: 500, outline: 'none' },
-  error:        { marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'rgba(255,107,107,0.12)', color: '#ff8f8f', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
-  submitBtn:    { marginTop: 18, width: '100%', height: 46, border: 'none', borderRadius: 12, background: 'var(--accent)', color: 'var(--accent-ink)', fontFamily: "'Instrument Sans'", fontSize: 14.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  spinner:      { width: 15, height: 15, border: '2px solid rgba(18,20,10,0.35)', borderTopColor: '#12140a', borderRadius: 999, display: 'inline-block', animation: 'zspin .7s linear infinite' },
-  notice:       { marginTop: 12, padding: '10px 12px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderRadius: 10, fontSize: 12.5, fontWeight: 600 },
-  hint:         { marginTop: 14, fontSize: 11.5, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 },
-};
-
-function SearchDialog({ rows, onSelect, onClose }) {
-  const [query, setQuery] = React.useState('');
-  const results = React.useMemo(() => searchLeads(rows, query), [rows, query]);
-
-  React.useEffect(() => {
-    function handleKey(event) {
-      if (event.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  return (
-    <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-label="Lead ara" style={dialog.panel}>
-        <div style={dialog.head}>
-          <div>
-            <div style={pv.pageEyebrow}>HIZLI ERİŞİM</div>
-            <div style={ld.cardTitle}>Lead ara</div>
-          </div>
-          <button type="button" title="Kapat" style={tb.iconBtn} onClick={onClose}>×</button>
-        </div>
-        <input autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="Firma, ilçe, hizmet veya telefon" style={dialog.input}/>
-        <div style={dialog.results}>
-          {results.map(lead => {
-            const index = rows.indexOf(lead);
-            return (
-              <button type="button" key={lead.name} style={dialog.result} onClick={() => onSelect(index)}>
-                <span>
-                  <strong style={{ color: 'var(--tx)' }}>{lead.name}</strong>
-                  <span style={dialog.meta}>{lead.city || 'Bölge yok'} · {lead.category || lead.sector || 'Kategori yok'}</span>
-                </span>
-                <span style={statusChipStyle(getStatuses()[lead.name] || 'yeni')}>{statusMeta(getStatuses()[lead.name] || 'yeni').label}</span>
-              </button>
-            );
-          })}
-          {!results.length && <div style={dialog.empty}>Bu aramayla eşleşen lead bulunamadı.</div>}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ConfirmDialog({ title, text, confirmLabel, onConfirm, onCancel, busy }) {
-  return (
-    <div role="presentation" style={dialog.overlay} onMouseDown={event => { if (event.target === event.currentTarget && !busy) onCancel(); }}>
-      <section role="alertdialog" aria-modal="true" aria-label={title} style={{ ...dialog.panel, maxWidth: 420 }}>
-        <div style={ld.cardTitle}>{title}</div>
-        <p style={{ color: 'var(--sub)', fontSize: 13.5, lineHeight: 1.6, margin: '10px 0 20px' }}>{text}</p>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" style={ld.btnGhost} disabled={busy} onClick={onCancel}>Vazgeç</button>
-          <button type="button" style={av.primaryBtn} disabled={busy} onClick={onConfirm}>{busy ? 'Çıkış yapılıyor…' : confirmLabel}</button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 const dialog = {
   overlay: { position: 'fixed', inset: 0, zIndex: 90, display: 'grid', placeItems: 'start center', padding: '12vh 18px 24px', background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(5px)' },
   panel: { width: '100%', maxWidth: 620, maxHeight: '72vh', overflow: 'hidden', padding: 20, borderRadius: 12, border: '1px solid var(--line)', background: 'var(--panel)', boxShadow: '0 24px 80px rgba(0,0,0,0.34)' },
@@ -3778,321 +2756,16 @@ const dialog = {
   empty: { padding: 24, color: 'var(--muted)', fontSize: 13, textAlign: 'center' },
 };
 
-// ── App ────────────────────────────────────────────────────────────────────
 
-function Dashboard({ user, theme, onToggleTheme, onLogout }) {
-  // The URL decides the screen and the open lead (lib/router.ts).
-  const route = useRoute();
-  const homeView = user?.role === 'sales' ? 'today' : 'cockpit';
-  const view = route.kind === 'lead' ? 'detail' : route.kind === 'view' ? route.view : homeView;
-  const [leadRows,    setLeadRows]    = React.useState(() => leads.slice());
-  const [statuses,    setStatuses]    = React.useState(() => getStatuses());
-  const [summary,     setSummary]     = React.useState(null);
-  const [assignments, setAssignments] = React.useState([]);
-  const [teamUsers,   setTeamUsers]   = React.useState([]);
-  const [teamPerformance, setTeamPerformance] = React.useState([]);
-  const [integrations, setIntegrations] = React.useState({});
-  const [schemaStatus, setSchemaStatus] = React.useState(null);
-  const [loading,     setLoading]     = React.useState(true);
-  const [dataError,   setDataError]   = React.useState('');
-  const [searchOpen,  setSearchOpen]  = React.useState(false);
-  const [resultLead,  setResultLead]  = React.useState(null);
-
-  const sorted = React.useMemo(
-    () => [...leadRows].sort((a, b) => b.scoring.score - a.scoring.score),
-    [leadRows]
-  );
-  const selectedIdx = route.kind === 'lead' ? sorted.findIndex(item => Number(item.lead_id) === route.leadId) : -1;
-
-  function setView(next) { navigateTo(next === homeView ? '/' : routeFor({ view: next })); }
-  function openLeadAt(index, options) {
-    const target = sorted[index];
-    if (target && target.lead_id != null) navigateTo(routeFor({ leadId: target.lead_id }), options);
-  }
-
-  React.useEffect(() => {
-    if (route.kind === 'unknown') navigateTo('/', { replace: true });
-  }, [route.kind]);
-
-  function syncSharedState(next = {}) {
-    setLeadRows(leads.slice());
-    setStatuses({ ...getStatuses() });
-    if (next.summary !== undefined) setSummary(next.summary);
-    if (next.assignments !== undefined) setAssignments(next.assignments);
-  }
-
-  function hydrateWorkspace(data) {
-    if (Array.isArray(data.leads)) {
-      apiReady = true;
-      applyRemoteLeads(data.leads);
-    }
-    if (Array.isArray(data.outreach)) {
-      applyRemoteOutreach(data.outreach);
-    }
-    syncSharedState({
-      summary: data.summary || null,
-      assignments: Array.isArray(data.assignments) ? data.assignments : [],
-    });
-    setTeamPerformance(Array.isArray(data.team_performance) ? data.team_performance : []);
-    setIntegrations(data.integrations || {});
-    setSchemaStatus(data.schema || null);
-  }
-
-  function refreshWorkspace() {
-    const session = crmSession;
-    return fetchJSON('/api/workspace')
-      .then(data => {
-        if (session !== crmSession) return;
-        hydrateWorkspace(data);
-        setDataError('');
-      })
-      .catch(err => {
-        if (session !== crmSession) return;
-        setDataError(err.message);
-      });
-  }
-
-  function refreshTeamUsers() {
-    const session = crmSession;
-    return fetchJSON('/api/users')
-      .then(data => {
-        if (session === crmSession) setTeamUsers(Array.isArray(data.users) ? data.users : []);
-      })
-      .catch(err => {
-        if (session !== crmSession) return;
-        console.warn('Users API fallback:', err);
-        setTeamUsers(user ? [user] : []);
-      });
-  }
-
-  function handleStatusChange(name, s) {
-    setStatusLS(name, s)
-      .then(refreshWorkspace)
-      .catch(err => setDataError(err.message || 'Durum kaydedilemedi'));
-  }
-
-  function navigate(v) { setView(v); }
-
-  function selectLead(i) { openLeadAt(i); }
-
-  function openSearch() { setSearchOpen(true); }
-
-  function openAdmin() { setView('admin'); }
-
-  function handleAutomationClick() {
-    if (user?.role === 'admin') setView('admin');
-  }
-
-  React.useEffect(() => {
-    Promise.all([refreshWorkspace(), refreshTeamUsers()]).finally(() => setLoading(false));
-  }, []);
-
-  function renderContent() {
-    if (loading) {
-      return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>Workspace yükleniyor.</div>;
-    }
-    if (dataError && !sorted.length) {
-      return (
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center', background: 'var(--bg)' }}>
-          <div style={av.loginCard}>
-            <div style={pv.pageEyebrow}>BAĞLANTI</div>
-            <h1 style={pv.pageTitle}>Veri alınamadı</h1>
-            <p style={av.text}>{dataError}</p>
-            <button style={av.primaryBtn} onClick={() => { setLoading(true); refreshWorkspace().finally(() => setLoading(false)); }}>Tekrar dene</button>
-          </div>
-        </div>
-      );
-    }
-    if (view === 'profile') {
-      return <ProfileView user={user} users={teamUsers} summary={summary} assignments={assignments} onLogout={onLogout}/>;
-    }
-    if (view === 'admin') {
-      return <AdminView user={user} />;
-    }
-    if (!sorted.length) {
-      return <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--sub)', background: 'var(--bg)' }}>{user?.role === 'sales' ? 'Sana atanmış aktif lead yok.' : 'Lead verisi bulunamadı.'}</div>;
-    }
-    switch (view) {
-      case 'today':
-        return (
-          <TodayView
-            leads={sorted}
-            summary={summary}
-            user={user}
-            onSelect={selectLead}
-            onOpenResult={setResultLead}
-          />
-        );
-      case 'detail':
-        if (selectedIdx < 0) {
-          return (
-            <div style={{ flex: 1, display: 'grid', placeItems: 'center', background: 'var(--bg)' }}>
-              <div style={av.loginCard}>
-                <div style={pv.pageEyebrow}>LEAD</div>
-                <h1 style={pv.pageTitle}>Lead bulunamadı</h1>
-                <p style={av.text}>Bu lead silinmiş, birleştirilmiş ya da artık sana atanmamış olabilir.</p>
-                <button style={av.primaryBtn} onClick={() => setView(homeView)}>Ana ekrana dön</button>
-              </div>
-            </div>
-          );
-        }
-        return (
-          <LeadDetail
-            lead={sorted[selectedIdx]}
-            idx={selectedIdx}
-            total={sorted.length}
-            status={statuses[sorted[selectedIdx].name] || 'yeni'}
-            onStatusChange={s => handleStatusChange(sorted[selectedIdx].name, s)}
-            onDataChange={refreshWorkspace}
-            onOpenResult={() => setResultLead(sorted[selectedIdx])}
-            integrations={integrations}
-            onBack={() => setView(homeView)}
-            onPrev={() => openLeadAt(Math.max(0, selectedIdx - 1), { replace: true })}
-            onNext={() => openLeadAt(Math.min(sorted.length - 1, selectedIdx + 1), { replace: true })}
-          />
-        );
-      case 'pipeline':
-        return <PipelineView leads={sorted} onSelect={selectLead} onDataChange={refreshWorkspace}/>;
-      case 'hizmetler':
-        return <HizmetlerView leads={leadRows} />;
-      case 'raporlar':
-        return <RaporlarView leads={sorted} statuses={statuses} onSelect={selectLead}/>;
-      case 'analytics':
-        return <AnalyticsView leads={sorted} statuses={statuses}/>;
-      default:
-        return <CockpitMain leads={sorted} statuses={statuses} onSelect={selectLead} onOpenAdmin={openAdmin} user={user} summary={summary} assignments={assignments} teamUsers={teamUsers} teamPerformance={teamPerformance} onDataChange={refreshWorkspace}/>;
-    }
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-      <Topbar view={view} onNav={navigate} leadCount={leadRows.length} onAutomationClick={handleAutomationClick} onOpenSearch={openSearch} theme={theme} onToggleTheme={onToggleTheme} user={user} onLogout={onLogout}/>
-      {schemaStatus && !schemaStatus.ready && (
-        <div role="alert" style={staleBanner.root}>
-          <span>
-            Veritabanı şeması bu sürümle uyumlu değil (kurulu: {schemaStatus.version || 'bilinmiyor'}, gereken: {schemaStatus.required_version}).
-            {schemaStatus.failed_checks?.length ? ` Eksik: ${schemaStatus.failed_checks.join(', ')}.` : ''} Eksik migration'ları README'deki sırayla uygula.
-          </span>
-        </div>
-      )}
-      {dataError && sorted.length > 0 && (
-        <div role="status" style={staleBanner.root}>
-          <span>Veriler güncellenemedi; son alınan veriler gösteriliyor. ({dataError})</span>
-          <button type="button" style={staleBanner.btn} onClick={() => refreshWorkspace()}>Tekrar dene</button>
-        </div>
-      )}
-      <div style={{ display: 'flex', flex: 1, minWidth: 0 }}>
-        {renderContent()}
-      </div>
-      {searchOpen && <SearchDialog rows={sorted} onClose={() => setSearchOpen(false)} onSelect={index => { setSearchOpen(false); selectLead(index); }}/>}
-      {resultLead && (
-        <ContactResultDialog
-          lead={resultLead}
-          onClose={() => setResultLead(null)}
-          onOpenLead={() => {
-            const index = sorted.findIndex(item => item.name === resultLead.name);
-            if (index >= 0) selectLead(index);
-          }}
-          onSaved={() => {
-            setResultLead(null);
-            refreshWorkspace();
-          }}
-          onRefreshLead={() => refreshWorkspace().then(() => {
-            setResultLead(current => (current && leads.find(item => item.name === current.name)) || current);
-          })}
-        />
-      )}
-    </div>
-  );
-}
-
-const staleBanner = {
-  root: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 16px', background: 'var(--warn-bg)', color: 'var(--warn-tx)', borderBottom: '1px solid var(--line)', fontSize: 13, fontWeight: 600 },
-  btn: { height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid currentColor', background: 'transparent', color: 'inherit', font: '700 12.5px Instrument Sans', cursor: 'pointer' },
+export {
+  AdminView,
+  AnalyticsView,
+  CockpitMain,
+  ContactResultDialog,
+  HizmetlerView,
+  LeadDetail,
+  PipelineView,
+  ProfileView,
+  RaporlarView,
+  TodayView,
 };
-
-// ── Root: theme + auth gate ─────────────────────────────────────────────────
-
-function App() {
-  const [theme, setTheme] = React.useState(() => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'));
-  const [auth, setAuth]   = React.useState({ loading: true, configured: false, authenticated: false, user: null });
-  const [logoutOpen, setLogoutOpen] = React.useState(false);
-  const [logoutBusy, setLogoutBusy] = React.useState(false);
-  const [logoutError, setLogoutError] = React.useState('');
-  const [loginNotice, setLoginNotice] = React.useState('');
-
-  function endSession(notice) {
-    clearCrmState();
-    setLogoutOpen(false);
-    setLoginNotice(notice || '');
-    setAuth({ loading: false, configured: true, authenticated: false, user: null });
-  }
-
-  React.useEffect(() => {
-    function onExpired() { endSession('Oturumun sona erdi. Devam etmek için tekrar giriş yap.'); }
-    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
-    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
-  }, []);
-
-  React.useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('zeplin_theme', theme); } catch (e) {}
-  }, [theme]);
-
-  function toggleTheme() { setTheme(t => (t === 'light' ? 'dark' : 'light')); }
-
-  React.useEffect(() => {
-    fetchJSON('/api/auth').then(data => {
-      setAuth({ loading: false, configured: data.configured !== false, authenticated: Boolean(data.authenticated), user: data.user || null });
-    }).catch(() => {
-      setAuth({ loading: false, configured: true, authenticated: false, user: null });
-    });
-  }, []);
-
-  function login(email, password, role) {
-    return fetchJSON('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, role }),
-    }).then(data => {
-      clearCrmState();
-      setLoginNotice('');
-      setAuth({ loading: false, configured: true, authenticated: true, user: data.user || null });
-    });
-  }
-
-  function logout() {
-    setLogoutBusy(true);
-    setLogoutError('');
-    fetchJSON('/api/auth', { method: 'DELETE' })
-      .then(() => endSession(''))
-      .catch(() => setLogoutError('Çıkış yapılamadı. Bağlantını kontrol edip tekrar dene.'))
-      .finally(() => setLogoutBusy(false));
-  }
-
-  if (auth.loading) {
-    return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg)', color: 'var(--sub)', fontSize: 13 }}>Yükleniyor…</div>;
-  }
-
-  if (!auth.authenticated) {
-    return <LoginView onSubmit={login} notice={loginNotice}/>;
-  }
-
-  return (
-    <React.Fragment>
-      <Dashboard key={auth.user?.email || 'session'} user={auth.user} theme={theme} onToggleTheme={toggleTheme} onLogout={() => setLogoutOpen(true)}/>
-      {logoutOpen && (
-        <ConfirmDialog
-          title="Oturumu kapat"
-          text={logoutError || 'Bu cihazdaki Zeplin oturumun kapatılacak.'}
-          confirmLabel="Çıkış yap"
-          busy={logoutBusy}
-          onCancel={() => { setLogoutOpen(false); setLogoutError(''); }}
-          onConfirm={logout}
-        />
-      )}
-    </React.Fragment>
-  );
-}
-
-export default App;
