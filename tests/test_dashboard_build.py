@@ -53,6 +53,11 @@ class DashboardBuildTests(unittest.TestCase):
             self.assertTrue(src.startswith("/assets/"), src)
             self.assertTrue((ROOT / "public" / src.lstrip("/")).exists(), f"{src} is not in public/")
 
+    def test_dashboard_sources_are_all_typescript(self):
+        # Every screen is typed; untyped JS/JSX would skip the typecheck.
+        untyped = [str(path.relative_to(ROOT)) for path in (ROOT / "web" / "src").rglob("*") if path.suffix in {".js", ".jsx"}]
+        self.assertEqual(untyped, [])
+
     def test_unknown_paths_fall_back_to_the_built_page(self):
         # Vercel serves public/ as the site root, so deep links such as
         # /leads/57 must be rewritten to /index.html (not /public/index.html).

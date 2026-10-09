@@ -346,6 +346,23 @@ class DashboardE2E(unittest.TestCase):
         self.assertEqual(self.place_posts, [{"lead_name": lead["name"]}])
         self.assertEqual(self.errors, [])
 
+    def test_pipeline_card_moves_without_drag_and_failures_show(self):
+        lead = self.lead(4)
+        self.page.goto(f"{self.base}/pipeline")
+        self.heading("Satış kanalı")
+        self.page.get_by_label(f"{lead['name']} aşaması").select_option("won")
+        for _ in range(50):  # the request is sent after the select changes
+            if self.outreach_posts:
+                break
+            self.page.wait_for_timeout(100)
+        self.assertEqual([post["action"] for post in self.outreach_posts], ["deal_won"])
+        self.assertEqual(self.outreach_posts[0]["lead_name"], lead["name"])
+
+        self.outreach_statuses = [503]
+        other = self.lead(5)
+        self.page.get_by_label(f"{other['name']} aşaması").select_option("lost")
+        self.page.get_by_role("alert").filter(has_text=f"{other['name']} taşınamadı").wait_for()
+
     def test_no_runtime_compiler_or_third_party_scripts(self):
         self.page.goto(f"{self.base}/")
         self.page.wait_for_load_state("networkidle")

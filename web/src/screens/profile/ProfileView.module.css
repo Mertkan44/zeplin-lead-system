@@ -1,0 +1,44 @@
+.root { flex: 1; min-width: 0; background: var(--bg); color: var(--tx); }
+.hero { margin: 24px 32px 0; padding: 24px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(135deg, var(--panel), var(--panel2)); display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+.heroPhoto { width: 136px; height: 136px; border-radius: 24px; overflow: hidden; border: 1px solid var(--line); background: var(--raised); box-shadow: 0 20px 44px rgba(0,0,0,0.12); flex-shrink: 0; }
+.photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.initials { width: 100%; height: 100%; display: grid; place-items: center; font: 700 34px var(--font-display); color: var(--accent-ink); background: var(--accent); }
+.heroText { min-width: 0; flex: 1; }
+.heroEyebrow { font: 11px var(--font-display); color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 8px; }
+.heroName { font: 700 42px/1 var(--font-display); letter-spacing: -0.04em; color: var(--tx); overflow-wrap: anywhere; }
+.heroMeta { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; color: var(--sub); font-size: 13.5px; overflow-wrap: anywhere; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.heroStats { display: grid; grid-template-columns: repeat(2, minmax(110px, 1fr)); gap: 10px; flex: 1 1 260px; max-width: 380px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 15px; min-height: 82px; display: flex; flex-direction: column; justify-content: space-between; }
+.stat dd { font: 700 22px var(--font-display); }
+.stat dt { order: 2; font-size: 12px; color: var(--sub); }
+
+.sectionHead { margin: 28px 32px 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.eyebrow { font: 500 11px var(--font-display); text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+.sectionTitle { font: 700 24px var(--font-display); letter-spacing: -0.03em; }
+.sectionHint { font-size: 12.5px; color: var(--muted); }
+
+.team { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; padding: 0 32px 40px; list-style: none; }
+.member { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.memberMe { border-color: rgba(197,242,74,0.65); box-shadow: 0 16px 38px rgba(197,242,74,0.12); }
+.memberPhoto { position: relative; aspect-ratio: 1 / 1; background: var(--raised); overflow: hidden; }
+.memberPhoto .initials { font-size: 28px; }
+.meBadge { position: absolute; top: 12px; left: 12px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 700; }
+.memberBody { padding: 16px; min-height: 126px; }
+.memberName { font: 700 18px var(--font-display); letter-spacing: -0.02em; color: var(--tx); }
+.memberEmail { margin-top: 4px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.memberPills { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+.memberFooter { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; color: var(--sub); font-size: 12.5px; }
+.memberFooter strong { color: var(--tx); }
+
+.pill { border: 1px solid var(--line); background: var(--raised); color: var(--sub); border-radius: 999px; padding: 5px 9px; font-size: 11.5px; font-weight: 600; }
+.pillAdmin { border-color: transparent; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.pillPassive { border-color: rgba(255,107,107,0.25); background: var(--danger-bg); color: var(--danger-tx); }
+
+@media (max-width: 760px) {
+  .hero { margin: 16px 16px 0; padding: 18px; }
+  .heroPhoto { width: 96px; height: 96px; }
+  .heroName { font-size: 30px; }
+  .sectionHead { margin: 24px 16px 12px; }
+  .team { padding: 0 16px 32px; }
+}
