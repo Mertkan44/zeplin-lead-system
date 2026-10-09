@@ -76,6 +76,15 @@ class DashboardBuildTests(unittest.TestCase):
         allowed = set(re.findall(r"'sha256-[^']+'", script_src))
         self.assertEqual(allowed, expected, "update script-src in vercel.json to the inline script hashes")
 
+    def test_csp_allows_no_inline_styles(self):
+        # React sets styles through the CSSOM, which style-src does not govern;
+        # style attributes or <style> blocks in served HTML would be blocked.
+        style_src = _csp()["style-src"]
+        self.assertNotIn("'unsafe-inline'", style_src)
+        html = PUBLIC_INDEX.read_text(encoding="utf-8")
+        self.assertNotIn("<style", html)
+        self.assertNotIn(" style=", html)
+
 
 if __name__ == "__main__":
     unittest.main()

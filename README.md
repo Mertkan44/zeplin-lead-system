@@ -278,7 +278,9 @@ data is intentionally available only through the API.
 The dashboard is a Vite + React + TypeScript app in `web/`, compiled ahead of time
 into `public/` (committed; Vercel serves it next to the Python API). There is no
 runtime JSX compilation and no third-party script: the CSP allows only same-origin
-scripts plus the hash of the one inline theme snippet.
+scripts plus the hash of the one inline theme snippet, and no inline styles (React
+sets styles through the CSSOM, which `style-src` does not restrict). The browser
+tests serve the page with the production CSP, so a violation fails CI.
 
 ```bash
 python src/dashboard/build.py      # catalog + follow-up rules -> web/src/generated/app-config.json
@@ -296,11 +298,22 @@ browser tests. If you change the inline script in `web/index.html`, update its
 - `web/src/lib/router.ts` keeps the screen and the open lead in the URL
   (`/leads/<id>` by database id, `/pipeline`, `/profile`, ...), so deep links,
   back/forward and refresh keep the same lead.
-- `web/src/legacy/App.jsx` holds the existing screens, moved unchanged; they move
-  into typed modules one at a time (WP10).
+- `web/src/lib/queryClient.ts` is the one data cache (TanStack Query). Server data
+  lives there keyed by the signed-in user, never in module variables or
+  localStorage; `web/src/data/` reads (`workspace.ts`) and writes (`mutations.ts`)
+  it, `web/src/domain/` holds the shared rules (statuses, next action, pipeline
+  stage).
+- `web/src/ui/` holds the shared parts: `Button`, `Field`/`Input`/`Select`/`Textarea`,
+  `Dialog`/`ConfirmDialog` (focus trap, Escape, focus return), `Badge`/`StatusBadge`,
+  `EmptyState`/`ErrorState`/`Banner`. Colors and fonts are tokens in
+  `web/src/styles/tokens.css` (dark and light); components use CSS modules.
+- `web/src/app/` is the shell (login, top bar, search, routing).
+  `web/src/legacy/screens.jsx` holds the screens not yet moved; they move into
+  typed modules with CSS one at a time.
 
 After authentication the dashboard reads role-filtered live data from the API. CRM
-data is kept in memory only; logout, a 401 response, or a user switch clears it.
+data is kept in memory only; logout, a 401 response, or a user switch clears the
+cache and cancels requests in flight. Only the theme is kept in localStorage.
 
 Lead access follows one policy, `public.readable_leads` (migration 010), used by every
 read path through `src/auth.py`: admins see every lead; a sales user reads and writes

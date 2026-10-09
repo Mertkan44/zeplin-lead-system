@@ -1,7 +1,8 @@
 """End-to-end checks of the built dashboard (public/) in Chromium.
 
-The page is served from public/ with the same fallback Vercel uses (unknown
-paths get index.html); the API is mocked in the browser, with the workspace
+The page is served from public/ with the same fallback and Content-Security-
+Policy header Vercel uses (unknown paths get index.html, so a CSP violation
+shows up as a console error); the API is mocked in the browser, with the workspace
 payload produced by the real api/workspace.py handler from the synthetic
 sample leads. Runs only with RUN_E2E=1 (CI's e2e job):
 
@@ -23,6 +24,11 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / "public"
 SAMPLE = json.loads((ROOT / "tests" / "fixtures" / "leads_sample.json").read_text(encoding="utf-8"))
+CSP = next(
+    header["value"]
+    for header in json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))["headers"][0]["headers"]
+    if header["key"] == "Content-Security-Policy"
+)
 
 
 def workspace_payload(user: dict) -> dict:
@@ -56,6 +62,10 @@ class _SpaHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, *_args):
         pass
+
+    def end_headers(self):
+        self.send_header("Content-Security-Policy", CSP)
+        super().end_headers()
 
     def send_head(self):
         path = self.translate_path(self.path)
@@ -91,6 +101,7 @@ class DashboardE2E(unittest.TestCase):
         self.errors, self.external = [], []
         self.session = {"user": self.admin}
         self.workspace_status = 200
+        self.status_save_status = 200
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
         self.page.on("console", lambda msg: msg.type == "error" and self.errors.append(msg.text))
         self.page.route("**/*", self._route)
@@ -116,6 +127,8 @@ class DashboardE2E(unittest.TestCase):
             if self.workspace_status != 200:
                 return route.fulfill(status=self.workspace_status, json={"ok": False, "error": "login required"})
             return route.fulfill(json=self.payload)
+        if path == "/api/status" and self.status_save_status != 200:
+            return route.fulfill(status=self.status_save_status, json={"ok": False, "error": "status save failed"})
         if path.startswith("/api/"):
             return route.fulfill(json={"ok": True, "users": [], "items": [], "jobs": [], "token_summary": {}})
         return route.continue_()
@@ -169,6 +182,66 @@ class DashboardE2E(unittest.TestCase):
         self.workspace_status = 401
         self.page.goto(f"{self.base}/")
         self.page.get_by_text("Oturumun sona erdi").wait_for(timeout=15000)
+
+    def test_every_screen_renders_under_the_production_csp(self):
+        lead = self.lead(0)
+        screens = {
+            "/": "Lead Workspace",
+            "/raporlar": "Leadler",
+            "/pipeline": "Satış kanalı",
+            "/analytics": "Raporlar",
+            "/hizmetler": "Zeplin Media Hizmetleri",
+            "/profile": "Ekip ve hesap",
+            "/admin": "Search operasyonu",
+            f"/leads/{lead['lead_id']}": lead["name"],
+        }
+        for path, title in screens.items():
+            with self.subTest(path=path):
+                self.page.goto(f"{self.base}{path}")
+                self.heading(title)
+        self.assertEqual(self.errors, [])
+
+    def test_search_dialog_keeps_focus_inside_and_returns_it(self):
+        lead = self.lead(2)
+        self.page.goto(f"{self.base}/")
+        self.heading("Lead Workspace")
+        opener = self.page.get_by_role("button", name="Lead ara")
+        opener.click()
+        dialog = self.page.get_by_role("dialog", name="Lead ara")
+        dialog.wait_for()
+        self.assertTrue(self.page.evaluate("document.getElementById('root').inert"))
+        for _ in range(6):
+            self.page.keyboard.press("Tab")
+            self.assertTrue(dialog.evaluate("node => node.contains(document.activeElement)"))
+        self.page.keyboard.press("Escape")
+        dialog.wait_for(state="detached")
+        self.assertTrue(opener.evaluate("node => node === document.activeElement"))
+
+        opener.click()
+        self.page.keyboard.type(lead["name"])
+        dialog.get_by_role("link", name=lead["name"]).click()
+        self.heading(lead["name"])
+        self.assertEqual(self.page.evaluate("location.pathname"), f"/leads/{lead['lead_id']}")
+        self.assertEqual(self.errors, [])
+
+    def test_failed_status_change_reverts_and_says_so(self):
+        lead = self.lead(0)
+        self.status_save_status = 500
+        self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
+        self.heading(lead["name"])
+        self.page.get_by_role("button", name="Kazanıldı", exact=True).click()
+        self.page.get_by_role("alert").filter(has_text="Durum kaydedilemedi.").wait_for(timeout=10000)
+        self.page.get_by_text("● YENI").wait_for()
+
+    def test_theme_is_the_only_thing_kept_in_browser_storage(self):
+        self.page.goto(f"{self.base}/leads/{self.lead(0)['lead_id']}")
+        self.heading(self.lead(0)["name"])
+        self.page.get_by_role("button", name="Aydınlık moda geç").click()
+        self.page.reload()
+        self.heading(self.lead(0)["name"])
+        self.assertEqual(self.page.evaluate("document.documentElement.dataset.theme"), "light")
+        self.assertEqual(self.page.evaluate("Object.keys(localStorage)"), ["zeplin_theme"])
+        self.assertEqual(self.page.evaluate("Object.keys(sessionStorage)"), [])
 
     def test_no_runtime_compiler_or_third_party_scripts(self):
         self.page.goto(f"{self.base}/")

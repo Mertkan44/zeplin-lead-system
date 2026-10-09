@@ -1,32 +1,6 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root, [data-theme="dark"] {
-  --accent: #c5f24a; --accent-ink: #12140a;
-  --bg: #0a0a0b; --panel: #141418; --panel2: #17171c; --raised: #1c1c22;
-  --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.12);
-  --tx: #f3f3f0; --sub: #93938f; --muted: #5c5c5a;
-  --selected-bg: #000000; --selected-tx: #f3f3f0;
-  --warn-bg: rgba(244,197,107,0.12); --warn-tx: #f4c56b;
-  --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.06), transparent 60%);
-  --r: 26px; --rs: 18px;
-}
-[data-theme="light"] {
-  --accent: #c5f24a; --accent-ink: #12140a;
-  --bg: #faf9f4; --panel: #ffffff; --panel2: #f3f1e9; --raised: #efece0;
-  --line: #e9e4d6; --line2: #ddd6c2;
-  --tx: #0c0b08; --sub: #4a4535; --muted: #8b856f;
-  --selected-bg: #0c0b08; --selected-tx: #faf9f4;
-  --warn-bg: #fff4dc; --warn-tx: #855500;
-  --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197,242,74,0.14), transparent 60%);
-}
-html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
-body { font-family: 'Instrument Sans', system-ui, sans-serif; color: var(--tx); -webkit-font-smoothing: antialiased; background: var(--glow), var(--bg); transition: background-color .2s, color .2s; }
-#root { min-height: 100vh; display: flex; flex-direction: column; }
-button { font-family: inherit; }
-textarea, input, select { font-family: inherit; }
-a { text-decoration: none; color: inherit; }
-::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 99px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* Rules the screens still on legacy inline styles depend on (hover, drag,
+   responsive overrides of inline values). Each block goes away when its
+   screen moves to its own CSS module. */
 .pipe-card.dragging { opacity: 0.4; }
 .pipe-col.drag-over { background: var(--raised); }
 .ll-row:hover { background: var(--raised); }
