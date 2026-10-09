@@ -3,43 +3,19 @@
    screen moves to its own CSS module. */
 .pipe-card.dragging { opacity: 0.4; }
 .pipe-col.drag-over { background: var(--raised); }
-.ll-row:hover { background: var(--raised); }
 .hide-sb { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-sb::-webkit-scrollbar { display: none; }
-@keyframes zspin { to { transform: rotate(360deg); } }
-@media (max-width: 1080px) {
-  .tb-search-label { display: none !important; }
-  .tb-nav-item { padding: 9px 11px !important; font-size: 12px !important; }
-  .contact-center-grid { grid-template-columns: 1fr !important; }
-}
 @media (max-width: 760px) {
-  .responsive-kpis, .responsive-main, .responsive-detail, .responsive-admin, .responsive-report {
+  .responsive-detail, .responsive-admin, .responsive-report {
     grid-template-columns: 1fr !important;
-  }
-  .responsive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  .responsive-opportunity-columns { grid-template-columns: 1fr !important; }
-  .responsive-main, .responsive-kpis, .responsive-detail, .responsive-admin, .responsive-report {
     padding-left: 14px !important;
     padding-right: 14px !important;
   }
-  .responsive-table { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
-  .responsive-table-head, .responsive-table-row { min-width: 760px; }
+  .responsive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .responsive-opportunity-columns { grid-template-columns: 1fr !important; }
   .responsive-pipeline { overflow-x: auto !important; padding-left: 14px !important; padding-right: 14px !important; }
   .responsive-pipeline > * { min-width: 270px; }
   .responsive-report > [style*="grid-column"] { grid-column: auto !important; }
-  .tb-brand-text, .tb-search-mobile, .tb-automation-mobile { display: none !important; }
-  .tb-nav { flex: 1 1 auto !important; min-width: 0 !important; }
-  .today-main { padding: 24px 16px 48px !important; }
-  .today-hero { display: block !important; }
-  .today-title { font-size: 40px !important; }
-  .today-hero-stats { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; margin-top: 20px !important; }
-  .today-hero-stat { min-width: 0 !important; padding: 12px 10px !important; }
-  .today-section-head { align-items: flex-start !important; }
-  .today-task-card { grid-template-columns: 36px minmax(0, 1fr) !important; }
-  .today-task-body { padding: 16px 14px !important; }
-  .today-task-top { display: block !important; }
-  .today-task-actions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; margin-top: 14px !important; }
-  .today-task-actions > * { min-width: 0 !important; padding-left: 7px !important; padding-right: 7px !important; }
   .lead-detail-root { padding: 18px 16px 42px !important; }
   .lead-detail-top { align-items: flex-start !important; gap: 12px !important; }
   .lead-detail-top > div:last-child { display: none !important; }

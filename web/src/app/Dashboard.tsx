@@ -7,18 +7,11 @@ import { buildCrm, CrmContext, useSession, useTeamUsers, useWorkspaceQuery } fro
 import type { Lead, LeadStatus } from '../data/types';
 import { navigate, routeFor, useRoute, type View } from '../lib/router';
 import { Banner, Button, EmptyState, ErrorState, LoadingState } from '../ui';
-import {
-  AdminView,
-  AnalyticsView,
-  CockpitMain,
-  ContactResultDialog,
-  HizmetlerView,
-  LeadDetail,
-  PipelineView,
-  ProfileView,
-  RaporlarView,
-  TodayView,
-} from '../legacy/screens.jsx';
+import { AdminView, AnalyticsView, HizmetlerView, LeadDetail, PipelineView, ProfileView } from '../legacy/screens.jsx';
+import { ContactResultDialog } from '../screens/contact/ContactResultDialog';
+import { LeadListView } from '../screens/leads/LeadListView';
+import { TodayView } from '../screens/today/TodayView';
+import { WorkspaceView } from '../screens/workspace/WorkspaceView';
 import { SearchDialog } from './SearchDialog';
 import type { Theme } from './theme';
 import { Topbar } from './Topbar';
@@ -99,7 +92,7 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
     }
     switch (view) {
       case 'today':
-        return <TodayView leads={leads} summary={crm.summary} user={user} onSelect={selectLead} onOpenResult={(lead: Lead) => setResultLeadName(lead.name)} />;
+        return <TodayView leads={leads} summary={crm.summary} user={user} onOpenResult={lead => setResultLeadName(lead.name)} />;
       case 'detail': {
         const lead = leads[selectedIdx];
         if (!lead) {
@@ -135,21 +128,17 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
       case 'hizmetler':
         return <HizmetlerView leads={crm.rows} />;
       case 'raporlar':
-        return <RaporlarView leads={leads} statuses={crm.statuses} onSelect={selectLead} />;
+        return <LeadListView leads={leads} />;
       case 'analytics':
         return <AnalyticsView leads={leads} statuses={crm.statuses} />;
       default:
         return (
-          <CockpitMain
+          <WorkspaceView
             leads={leads}
-            statuses={crm.statuses}
-            onSelect={selectLead}
-            onOpenAdmin={() => setView('admin')}
             user={user}
             summary={crm.summary}
             teamUsers={team.data || []}
             teamPerformance={crm.teamPerformance}
-            onDataChange={refreshWorkspace}
           />
         );
     }

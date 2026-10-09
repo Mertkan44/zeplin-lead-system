@@ -307,9 +307,10 @@ browser tests. If you change the inline script in `web/index.html`, update its
   `Dialog`/`ConfirmDialog` (focus trap, Escape, focus return), `Badge`/`StatusBadge`,
   `EmptyState`/`ErrorState`/`Banner`. Colors and fonts are tokens in
   `web/src/styles/tokens.css` (dark and light); components use CSS modules.
-- `web/src/app/` is the shell (login, top bar, search, routing).
-  `web/src/legacy/screens.jsx` holds the screens not yet moved; they move into
-  typed modules with CSS one at a time.
+- `web/src/app/` is the shell (login, top bar, search, routing); `web/src/screens/`
+  holds the typed screens (Today, Workspace, lead list, contact dialog) with
+  their CSS modules. `web/src/legacy/screens.jsx` holds the screens not yet
+  moved; they move one at a time.
 
 After authentication the dashboard reads role-filtered live data from the API. CRM
 data is kept in memory only; logout, a 401 response, or a user switch clears the

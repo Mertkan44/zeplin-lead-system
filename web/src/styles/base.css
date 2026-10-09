@@ -1,6 +1,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body { min-height: 100vh; background: var(--bg); overflow-x: hidden; }
+/* clip, not hidden: hidden would make body a scroll container, which breaks
+   the sticky top bar and lets focus scroll the page sideways. */
+html, body { min-height: 100vh; background: var(--bg); overflow-x: clip; }
 body {
   font-family: var(--font-body);
   color: var(--tx);

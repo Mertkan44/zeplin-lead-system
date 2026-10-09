@@ -87,7 +87,11 @@ class DashboardE2E(unittest.TestCase):
         executable = os.environ.get("E2E_CHROMIUM_PATH") or None
         cls.browser = cls.playwright.chromium.launch(executable_path=executable)
         cls.admin = {"email": "boss@example.com", "name": "Boss", "role": "admin"}
+        cls.sales = {"email": "seller@example.com", "name": "Satış Kişisi", "role": "sales"}
         cls.payload = workspace_payload({"sub": cls.admin["email"], **cls.admin})
+        # The top lead has passed its checks, so the contact dialog can save.
+        top = max(cls.payload["leads"], key=lambda lead: lead["scoring"]["score"])
+        top["workflow"] = {**(top.get("workflow") or {}), "ready_to_contact": True, "stage": "ready_to_contact", "stage_label": "Aramaya hazır"}
 
     @classmethod
     def tearDownClass(cls):
@@ -102,6 +106,8 @@ class DashboardE2E(unittest.TestCase):
         self.session = {"user": self.admin}
         self.workspace_status = 200
         self.status_save_status = 200
+        self.outreach_statuses = []  # status codes for the next POST /api/outreach calls
+        self.outreach_posts = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
         self.page.on("console", lambda msg: msg.type == "error" and self.errors.append(msg.text))
         self.page.route("**/*", self._route)
@@ -127,6 +133,12 @@ class DashboardE2E(unittest.TestCase):
             if self.workspace_status != 200:
                 return route.fulfill(status=self.workspace_status, json={"ok": False, "error": "login required"})
             return route.fulfill(json=self.payload)
+        if path == "/api/outreach" and request.method == "POST":
+            self.outreach_posts.append(json.loads(request.post_data or "{}"))
+            status = self.outreach_statuses.pop(0) if self.outreach_statuses else 200
+            if status != 200:
+                return route.fulfill(status=status, json={"ok": False, "error": "temporary"})
+            return route.fulfill(json={"ok": True})
         if path == "/api/status" and self.status_save_status != 200:
             return route.fulfill(status=self.status_save_status, json={"ok": False, "error": "status save failed"})
         if path.startswith("/api/"):
@@ -242,6 +254,69 @@ class DashboardE2E(unittest.TestCase):
         self.assertEqual(self.page.evaluate("document.documentElement.dataset.theme"), "light")
         self.assertEqual(self.page.evaluate("Object.keys(localStorage)"), ["zeplin_theme"])
         self.assertEqual(self.page.evaluate("Object.keys(sessionStorage)"), [])
+
+    def test_contact_result_keeps_the_form_on_failure_and_retries_once(self):
+        lead = self.lead(0)
+        self.outreach_statuses = [503]
+        self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
+        self.heading(lead["name"])
+        self.page.get_by_role("button", name="Temas ekranı", exact=True).click()
+        dialog = self.page.get_by_role("dialog", name=lead["name"])
+        dialog.wait_for()
+        dialog.get_by_role("button", name="Ulaşılamadı", exact=True).click()
+        dialog.get_by_label("Görüşme notu").fill("Telefon kapalıydı")
+        dialog.get_by_role("button", name="Sonucu ve görevi kaydet").click()
+        dialog.get_by_role("alert").wait_for()
+        # Nothing typed or chosen is lost.
+        self.assertEqual(dialog.get_by_label("Görüşme notu").input_value(), "Telefon kapalıydı")
+        self.assertEqual(dialog.get_by_role("button", name="Ulaşılamadı", exact=True).get_attribute("aria-pressed"), "true")
+        dialog.get_by_role("button", name="Sonucu ve görevi kaydet").click()
+        dialog.wait_for(state="detached")
+        first, retry = self.outreach_posts
+        self.assertEqual(first["idempotency_key"], retry["idempotency_key"])
+        self.assertEqual((retry["outcome"], retry["note"], retry["lead_name"]), ("no_answer", "Telefon kapalıydı", lead["name"]))
+        # The browser logs the simulated 503 itself; nothing else may fail.
+        self.assertEqual([e for e in self.errors if "status of 503" not in e], [])
+
+    def test_lead_list_rows_are_links(self):
+        lead = self.lead(3)
+        self.page.goto(f"{self.base}/raporlar")
+        self.heading("Leadler")
+        row = self.page.get_by_role("link", name=lead["name"])
+        self.assertEqual(row.get_attribute("href"), f"/leads/{lead['lead_id']}")
+        row.click()
+        self.heading(lead["name"])
+        self.page.go_back()
+        self.heading("Leadler")
+
+    def test_workspace_card_selects_and_panel_links_to_the_lead(self):
+        lead = self.lead(1)
+        self.page.goto(f"{self.base}/")
+        self.heading("Lead Workspace")
+        card = self.page.get_by_role("button", name=lead["name"])
+        card.click()
+        self.assertEqual(card.get_attribute("aria-pressed"), "true")
+        panel = self.page.get_by_role("complementary", name="Seçili lead")
+        panel.get_by_role("link", name=lead["name"]).click()
+        self.heading(lead["name"])
+        self.assertEqual(self.page.evaluate("location.pathname"), f"/leads/{lead['lead_id']}")
+
+    def test_sales_home_is_the_work_queue(self):
+        self.session["user"] = self.sales
+        self.page.goto(f"{self.base}/")
+        self.heading("Bugünkü İşlerim")
+        self.assertEqual(self.page.get_by_role("link", name="Admin").count(), 0)
+        self.page.get_by_role("button", name="Aramaya hazır").click()
+        self.page.get_by_role("button", name="Temas ekranı").first.click()
+        self.page.get_by_role("dialog").wait_for()
+        self.page.keyboard.press("Escape")
+        self.page.get_by_role("dialog").wait_for(state="detached")
+        self.page.get_by_role("button", name="Kontrol", exact=False).first.click()
+        queue_item = self.page.get_by_role("link", name="Kontrolü tamamla").first
+        path = queue_item.get_attribute("href")
+        queue_item.click()
+        self.page.wait_for_url(f"{self.base}{path}")
+        self.assertEqual(self.errors, [])
 
     def test_no_runtime_compiler_or_third_party_scripts(self):
         self.page.goto(f"{self.base}/")

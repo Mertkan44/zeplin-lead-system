@@ -1,8 +1,8 @@
-import { useEffect, useRef, type MouseEvent } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { initialsFor } from '../domain/format';
 import type { User } from '../data/types';
-import { navigate, routeFor, type View } from '../lib/router';
+import { followLink, routeFor, type View } from '../lib/router';
 import type { Theme } from './theme';
 import styles from './Topbar.module.css';
 
@@ -25,13 +25,6 @@ function navItems(user: User, leadCount: number): NavItem[] {
     user.role === 'admin' && { view: 'admin', label: 'Admin' },
   ];
   return items.filter((item): item is NavItem => Boolean(item));
-}
-
-/** Plain clicks navigate in place; ctrl/cmd/middle clicks open a new tab. */
-export function followLink(event: MouseEvent<HTMLAnchorElement>, path: string): void {
-  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  event.preventDefault();
-  navigate(path);
 }
 
 export interface TopbarProps {
