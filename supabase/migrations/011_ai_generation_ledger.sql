@@ -188,14 +188,18 @@ as $$
   with usage_rows as (
     select * from public.ai_token_ledger where kind = 'usage'
   ),
+  -- A reservation is open while its job is queued or running and has no
+  -- release row; jobs finished before 011 have no release row but are closed.
   reservations as (
-    select job_id,
-           sum(estimated_tokens) filter (where kind = 'reservation') as reserved_tokens,
-           sum(estimated_cost_usd) filter (where kind = 'reservation') as reserved_usd,
-           bool_or(kind = 'release') as released
-    from public.ai_token_ledger
-    where kind in ('reservation', 'release')
-    group by job_id
+    select ledger.job_id,
+           sum(ledger.estimated_tokens) filter (where ledger.kind = 'reservation') as reserved_tokens,
+           sum(ledger.estimated_cost_usd) filter (where ledger.kind = 'reservation') as reserved_usd,
+           bool_or(ledger.kind = 'release')
+             or coalesce(max(job.status) not in ('queued', 'running'), true) as released
+    from public.ai_token_ledger ledger
+    left join public.admin_search_jobs job on job.id = ledger.job_id
+    where ledger.kind in ('reservation', 'release')
+    group by ledger.job_id
   )
   select jsonb_build_object(
     'actual_cost_usd', coalesce((select round(sum(actual_cost_usd), 6) from usage_rows), 0),

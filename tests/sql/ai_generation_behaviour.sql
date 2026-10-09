@@ -56,10 +56,12 @@ begin
   assert pg_temp.claim('legacy', 'worker-a') ->> 'status' = 'ready', 'legacy row is a hit';
 
   -- Ledger: one reservation released, one open; usage, a cache hit, a failure, an unpriced call.
+  -- 9003 finished before release rows existed: closed all the same.
   insert into public.admin_search_jobs (id, query, city, max_results, deep_research, ai_mode, created_by, status)
-  overriding system value values (9001, 'q', 'c', 1, true, 'smart', 'a', 'success'), (9002, 'q', 'c', 1, true, 'smart', 'a', 'queued');
+  overriding system value values (9001, 'q', 'c', 1, true, 'smart', 'a', 'success'), (9002, 'q', 'c', 1, true, 'smart', 'a', 'queued'),
+                                 (9003, 'q', 'c', 1, true, 'smart', 'a', 'success');
   insert into public.ai_token_ledger (job_id, kind, estimated_tokens, estimated_cost_usd) values
-    (9001, 'reservation', 9000, 0.01), (9002, 'reservation', 18000, 0.02);
+    (9001, 'reservation', 9000, 0.01), (9002, 'reservation', 18000, 0.02), (9003, 'reservation', 4000, 0.005);
   insert into public.ai_token_ledger (job_id, kind) values (9001, 'release');
   insert into public.ai_token_ledger (kind, task, model, outcome, actual_tokens, actual_cost_usd, created_at) values
     ('usage', 'report', 'deepseek-v4-flash', 'success', 1000, 0.0005, now()),
@@ -73,8 +75,8 @@ begin
   assert (summary ->> 'cache_hits')::integer = 1, 'cache hit counted';
   assert (summary ->> 'failed_calls')::integer = 1, 'failed call counted';
   assert (summary ->> 'unpriced_calls')::integer = 1, 'call without a price counted';
-  assert (summary ->> 'active_reserved_usd')::numeric = 0.02, 'released reservation no longer active';
-  assert (summary ->> 'estimated_cost_usd')::numeric = 0.03, 'historical estimates kept';
+  assert (summary ->> 'active_reserved_usd')::numeric = 0.02, 'released and finished reservations no longer active';
+  assert (summary ->> 'estimated_cost_usd')::numeric = 0.035, 'historical estimates kept';
   assert (summary ->> 'today_cost_usd')::numeric = 0.0005, 'today window applied';
   assert (summary -> 'by_task' -> 'report' ->> 'calls')::integer = 1, 'per-task totals exclude cache hits';
 end;
