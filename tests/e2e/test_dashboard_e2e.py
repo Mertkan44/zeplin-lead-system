@@ -246,11 +246,10 @@ class DashboardE2E(unittest.TestCase):
         self.status_save_status = 500
         self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
         self.heading(lead["name"])
-        self.page.get_by_role("button", name="Kazanıldı", exact=True).click()
+        stage = self.page.get_by_label("Aşama", exact=True)
+        stage.select_option("converted")
         self.page.get_by_role("alert").filter(has_text="Durum kaydedilemedi.").wait_for(timeout=10000)
-        statuses = self.page.get_by_role("group", name="Pipeline durumu")
-        self.assertEqual(statuses.get_by_role("button", name="Kazanıldı").get_attribute("aria-pressed"), "false")
-        self.assertEqual(statuses.get_by_role("button", name="Yeni").get_attribute("aria-pressed"), "true")
+        self.page.wait_for_function("() => document.getElementById('lead-stage').value === 'yeni'")
 
     def test_theme_is_the_only_thing_kept_in_browser_storage(self):
         self.page.goto(f"{self.base}/leads/{self.lead(0)['lead_id']}")
@@ -267,7 +266,7 @@ class DashboardE2E(unittest.TestCase):
         self.outreach_statuses = [503]
         self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
         self.heading(lead["name"])
-        self.page.get_by_role("button", name="Temas ekranı", exact=True).click()
+        self.page.get_by_role("button", name="Sonuç kaydet", exact=True).click()
         dialog = self.page.get_by_role("dialog", name=lead["name"])
         dialog.wait_for()
         dialog.get_by_role("button", name="Ulaşılamadı", exact=True).click()
@@ -385,18 +384,40 @@ class DashboardE2E(unittest.TestCase):
         first, second = self.lead(0), self.lead(1)
         self.page.goto(f"{self.base}/leads/{first['lead_id']}")
         self.heading(first["name"])
-        self.page.get_by_label("Hızlı not").fill("Sadece ilk lead için")
+        self.page.get_by_role("tab", name="Aktivite").click()
+        self.page.get_by_label("Not", exact=True).fill("Sadece ilk lead için")
         self.page.get_by_role("button", name="Sonraki").first.click()
         self.heading(second["name"])
-        self.assertEqual(self.page.get_by_label("Hızlı not").input_value(), "")
+        # The open tab carries over to the next lead; the note does not.
+        self.assertEqual(self.page.get_by_role("tab", name="Aktivite").get_attribute("aria-selected"), "true")
+        self.assertEqual(self.page.get_by_label("Not", exact=True).input_value(), "")
         self.page.get_by_role("button", name="Önceki").first.click()
         self.heading(first["name"])
-        self.assertEqual(self.page.get_by_label("Hızlı not").input_value(), "Sadece ilk lead için")
+        self.assertEqual(self.page.get_by_label("Not", exact=True).input_value(), "Sadece ilk lead için")
+
+    def test_detail_tabs_follow_the_url_and_the_keyboard(self):
+        lead = self.lead(0)
+        original = lead.get("phone")
+        self.addCleanup(lead.__setitem__, "phone", original)
+        lead["phone"] = "0532 123 45 67"
+        self.page.goto(f"{self.base}/leads/{lead['lead_id']}?sekme=iletisim")
+        self.heading(lead["name"])
+        tab = self.page.get_by_role("tab", name="İletişim")
+        self.assertEqual(tab.get_attribute("aria-selected"), "true")
+        tab.focus()
+        self.page.keyboard.press("ArrowRight")
+        self.page.wait_for_url("**?sekme=aktivite")
+        self.assertTrue(self.page.get_by_role("tab", name="Aktivite").evaluate("node => node === document.activeElement"))
+        self.page.get_by_role("tabpanel").get_by_label("Not", exact=True).wait_for()
+        # A Turkish local number gets the country code in the WhatsApp link.
+        self.assertEqual(self.page.get_by_role("link", name="WhatsApp").first.get_attribute("href"), "https://wa.me/905321234567")
+        self.assertEqual(self.errors, [])
 
     def test_google_refresh_sends_only_the_lead_name(self):
         lead = self.lead(0)
         self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
         self.heading(lead["name"])
+        self.page.get_by_role("tab", name="Araştırma").click()
         self.page.get_by_role("button", name="Google verisini yenile").click()
         self.page.get_by_text("Google verisi kayıtlı işletme üzerinden yenilendi.").first.wait_for()
         self.assertEqual(self.place_posts, [{"lead_name": lead["name"]}])

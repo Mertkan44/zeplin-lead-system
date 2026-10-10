@@ -67,8 +67,11 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
     navigate(next === homeView ? '/' : routeFor({ view: next }));
   }
 
-  function openLead(lead: Lead | undefined, options?: { replace?: boolean }) {
-    if (lead && lead.lead_id != null) navigate(routeFor({ leadId: lead.lead_id }), options);
+  function openLead(lead: Lead | undefined, options?: { replace?: boolean; keepTab?: boolean }) {
+    if (!lead || lead.lead_id == null) return;
+    // Prev/next keep the open tab (?sekme=…), so moving along a list stays in context.
+    const tab = options?.keepTab ? new URLSearchParams(window.location.search).get('sekme') : null;
+    navigate(routeFor({ leadId: lead.lead_id }) + (tab ? `?sekme=${encodeURIComponent(tab)}` : ''), { replace: options?.replace });
   }
 
   function changeStatus(name: string, status: LeadStatus) {
@@ -128,11 +131,12 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
             total={leads.length}
             status={crm.statuses[lead.name] || 'yeni'}
             homePath="/"
+            ownerName={lead.assigned_to ? (team.data || []).find(member => member.email === lead.assigned_to)?.name || lead.assigned_to : null}
             placesEnabled={Boolean(crm.integrations.google_places)}
             onStatusChange={status => changeStatus(lead.name, status)}
             onOpenResult={() => setResultLeadName(lead.name)}
-            onPrev={() => openLead(leads[Math.max(0, selectedIdx - 1)], { replace: true })}
-            onNext={() => openLead(leads[Math.min(leads.length - 1, selectedIdx + 1)], { replace: true })}
+            onPrev={() => openLead(leads[Math.max(0, selectedIdx - 1)], { replace: true, keepTab: true })}
+            onNext={() => openLead(leads[Math.min(leads.length - 1, selectedIdx + 1)], { replace: true, keepTab: true })}
           />
         );
       }
