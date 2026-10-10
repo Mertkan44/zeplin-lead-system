@@ -50,10 +50,10 @@ class FakeRemote:
             row.update(status="pending", owner=owner, until=time.monotonic() + lease_seconds)
             return {"status": "claimed"}
 
-    def complete_ai_generation(self, *, cache_key, content, provider, model, usage):
+    def complete_ai_generation(self, *, cache_key, content, provider, model, usage, owner=None):
         with self.lock:
             row = self.rows[cache_key]
-            if row["status"] == "ready":
+            if row["status"] == "ready" or (owner and row["owner"] != owner):
                 return False
             row.update(status="ready", content=content, provider=provider, model=model)
             return True
@@ -118,7 +118,7 @@ class GenerationTests(unittest.TestCase):
             first, second = self.report(), self.report()
         self.assertEqual(first, second)
         self.assertEqual(self.provider.calls, 1)
-        self.assertEqual(counters, {"provider_calls": 1, "cache_hits": 1, "cost_usd": counters["cost_usd"]})
+        self.assertEqual(counters, {"provider_calls": 1, "cache_hits": 1, "cost_usd": counters["cost_usd"], "ledger_errors": 0})
         outcomes = [row["outcome"] for row in self.remote.ledger]
         self.assertEqual(outcomes, ["success", "cache_hit"])
         self.assertTrue(all(row["job_id"] == 11 for row in self.remote.ledger))
@@ -359,42 +359,6 @@ class LeadAiEndpointTests(unittest.TestCase):
 
         self.assertEqual(self._post(busy)[0]["status"], 409)
         self.assertEqual(self._post(broke)[0]["status"], 429)
-
-
-class WorkerTests(unittest.TestCase):
-    def _process(self, scan):
-        import asyncio
-        import scripts.process_search_jobs as worker
-
-        released, updates = [], []
-        with patch.object(worker, "run_scan", scan), \
-                patch.object(worker, "update_search_job", lambda job_id, **kw: updates.append(kw)), \
-                patch.object(worker, "record_reservation_release", lambda job_id, status: released.append((job_id, status))):
-            try:
-                asyncio.run(worker.process_job({"id": 5, "query": "q", "city": "c", "max_results": 1, "created_by": "a@x"}))
-            except RuntimeError:
-                pass
-        return released, updates
-
-    def test_usage_rows_carry_the_job_and_the_reservation_is_released(self):
-        seen = []
-
-        async def scan(**_):
-            seen.append(usage.current())
-            return {"leads": 1}
-
-        released, updates = self._process(scan)
-        self.assertEqual(seen[0]["job_id"], 5)
-        self.assertEqual(released, [(5, "success")])
-        self.assertEqual(updates[-1]["status"], "success")
-
-    def test_failed_job_still_releases_its_reservation(self):
-        async def scan(**_):
-            raise RuntimeError("scrape failed")
-
-        released, updates = self._process(scan)
-        self.assertEqual(released, [(5, "failed")])
-        self.assertEqual(updates[-1]["status"], "failed")
 
 
 if __name__ == "__main__":

@@ -24,3 +24,17 @@
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; padding: 16px 16px 32px; }
 }
+
+.job > div { min-width: 0; }
+.jobError { color: var(--tx); background: var(--raised); border-left: 3px solid var(--accent); padding: 8px; margin: 8px 0; font-size: 12px; overflow-wrap: anywhere; }
+.job button { margin-top: 8px; }
+@media (max-width: 480px) {
+  .job { flex-direction: column; }
+  .jobStatus { order: -1; }
+  .panel { padding: 16px; }
+}
+
+.jobStatus[data-status="failed"] { background: var(--danger-bg); color: var(--danger-tx); }
+.jobStatus[data-status="partial_success"], .jobStatus[data-status="retry_wait"] { background: var(--warn-bg); color: var(--warn-tx); }
+.jobStatus[data-status="cancelled"], .jobStatus[data-status="queued"] { background: var(--raised); color: var(--sub); }
+.jobStatus[data-status="success"] { background: var(--success-bg); color: var(--success-tx); }

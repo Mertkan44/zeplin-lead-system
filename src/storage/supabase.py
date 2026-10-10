@@ -51,7 +51,7 @@ def _eq(value: str) -> str:
     return quote(str(value), safe="")
 
 
-_READ_ONLY_LEAD_KEYS = {"lead_id", "revision", "supabase_updated_at"}
+_READ_ONLY_LEAD_KEYS = {"lead_id", "revision", "supabase_updated_at", "_generation_input", "_ai_mode"}
 
 
 def _lead_row(lead: dict[str, Any]) -> dict[str, Any]:
@@ -659,7 +659,7 @@ def set_app_user_active(email: str, active: bool) -> None:
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
 
 
-REQUIRED_SCHEMA_VERSION = "011"
+REQUIRED_SCHEMA_VERSION = "012"
 
 
 def fetch_schema_readiness() -> dict[str, Any]:
@@ -1088,7 +1088,8 @@ def fetch_search_jobs(limit: int = 20, *, status: str | None = None) -> list[dic
         raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
     query = (
         "select=id,query,city,max_results,deep_research,ai_mode,status,created_by,"
-        "estimated_tokens,estimated_cost_usd,result,meta,created_at,updated_at"
+        "estimated_tokens,estimated_cost_usd,result,meta,created_at,updated_at,lease_until,heartbeat_at,"
+        "attempt_count,max_attempts,next_attempt_at,progress_stage,progress_done,progress_total,last_error"
         "&order=created_at.desc"
         f"&limit={min(limit, 100)}"
     )
@@ -1100,59 +1101,40 @@ def fetch_search_jobs(limit: int = 20, *, status: str | None = None) -> list[dic
         return response.json()
 
 
-def update_search_job(job_id: int, *, status: str, result: dict[str, Any] | None = None) -> None:
-    config = supabase_config()
-    if not config:
-        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    row: dict[str, Any] = {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}
-    if result is not None:
-        row["result"] = result
+def claim_search_jobs(*, owner: str) -> list[dict[str, Any]]:
+    # One claim immediately before execution; never lease jobs waiting behind it.
+    return _rpc("claim_search_job", {"p_owner": owner}) or []
+
+
+def heartbeat_search_job(job_id: int, owner: str) -> bool:
+    return bool(_rpc("heartbeat_search_job", {"p_job_id": job_id, "p_owner": owner}))
+
+
+def fetch_search_checkpoints(job_id: int) -> dict[str, dict[str, Any]]:
+    config = _require_config()
     with httpx.Client(timeout=20) as client:
-        response = client.patch(
-            _postgrest_url(config, "admin_search_jobs", f"id=eq.{job_id}"),
-            headers=_headers(config, prefer="return=minimal"),
-            json=row,
-        )
+        response = client.get(_postgrest_url(config, "admin_search_checkpoints",
+            f"select=*&job_id=eq.{int(job_id)}"), headers=_headers(config))
         response.raise_for_status()
+        return {row["item_key"]: row for row in response.json()}
 
 
-def claim_search_jobs(limit: int = 1) -> list[dict[str, Any]]:
-    config = supabase_config()
-    if not config:
-        raise RuntimeError("Supabase is not configured.")
-    with httpx.Client(timeout=20) as client:
-        response = client.post(
-            f"{config.url}/rest/v1/rpc/claim_admin_search_jobs",
-            headers=_headers(config),
-            json={"job_limit": min(max(int(limit), 1), 10)},
-        )
-        if response.status_code != 404:
-            response.raise_for_status()
-            body = response.json()
-            return body if isinstance(body, list) else []
+def checkpoint_search_job(job_id: int, owner: str, key: str, stage: str,
+                          payload: dict[str, Any], *, lead_id: int | None = None,
+                          error: dict[str, Any] | None = None) -> bool:
+    return bool(_rpc("checkpoint_search_job", {
+        "p_job_id": job_id, "p_owner": owner, "p_item_key": key, "p_stage": stage,
+        "p_payload": payload, "p_lead_id": lead_id, "p_error": error,
+    }))
 
-        # GitHub Actions concurrency keeps this fallback single-worker until migration 006.
-        queued = fetch_search_jobs(limit=min(max(int(limit), 1), 10), status="queued")
-        claimed = []
-        for job in reversed(queued):
-            claim_response = client.patch(
-                _postgrest_url(
-                    config,
-                    "admin_search_jobs",
-                    f"id=eq.{int(job['id'])}&status=eq.queued",
-                ),
-                headers=_headers(config, prefer="return=representation"),
-                json={
-                    "status": "running",
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "result": {"queue_mode": "legacy_single_worker"},
-                },
-            )
-            claim_response.raise_for_status()
-            rows = claim_response.json()
-            if rows:
-                claimed.append(rows[0])
-        return claimed
+
+def finish_search_job(job_id: int, owner: str, result: dict[str, Any], error: dict[str, Any] | None) -> str:
+    return _rpc("finish_search_job", {"p_job_id": job_id, "p_owner": owner,
+                                      "p_result": result, "p_error": error})
+
+
+def control_search_job(job_id: int, action: str) -> dict[str, Any]:
+    return _rpc("control_search_job", {"p_job_id": job_id, "p_action": action}) or {}
 
 
 def _rpc(name: str, payload: dict[str, Any], *, timeout: float = 20) -> Any:
@@ -1177,15 +1159,21 @@ def claim_ai_generation(
     catalog_version: str | None = None,
 ) -> dict[str, Any]:
     """{"status": ready|claimed|busy, ...} (migration 011)."""
-    return _rpc("claim_ai_generation", {
+    from src.ai.usage import current
+    context = current()
+    rpc_name = "claim_worker_ai_generation" if context.get("job_owner") else "claim_ai_generation"
+    job_fields = {"p_job_id": context["job_id"], "p_job_owner": context["job_owner"]} if context.get("job_owner") else {}
+    return _rpc(rpc_name, {
+        **job_fields,
         "p_cache_key": cache_key, "p_task": task, "p_owner": owner, "p_lease_seconds": lease_seconds,
         "p_provider": provider, "p_requested_model": requested_model, "p_lead_id": lead_id,
         "p_input_hash": input_hash, "p_prompt_version": prompt_version, "p_catalog_version": catalog_version,
     }) or {}
 
 
-def complete_ai_generation(*, cache_key: str, content: str, provider: str, model: str, usage: dict[str, Any]) -> bool:
-    return bool(_rpc("complete_ai_generation", {
+def complete_ai_generation(*, cache_key: str, content: str, provider: str, model: str, usage: dict[str, Any], owner: str | None = None) -> bool:
+    return bool(_rpc("complete_owned_ai_generation" if owner else "complete_ai_generation", {
+        **({"p_owner": owner} if owner else {}),
         "p_cache_key": cache_key, "p_content": content, "p_provider": provider, "p_model": model, "p_usage": usage,
     }))
 
@@ -1255,3 +1243,19 @@ def fetch_model_rates() -> list[dict[str, Any]]:
 def fetch_spend_summary(*, today_start: datetime | None = None) -> dict[str, Any]:
     """Whole-ledger AI totals from the database (ai_spend_summary, migration 011)."""
     return _rpc("ai_spend_summary", {"p_today_start": today_start.isoformat() if today_start else None}) or {}
+
+
+def persist_search_lead(job_id: int, owner: str, key: str, stage: str, lead: dict[str, Any],
+                        *, error: dict[str, Any] | None = None) -> int | None:
+    return _rpc("persist_search_lead", {
+        "p_job_id": job_id, "p_owner": owner, "p_item_key": key, "p_stage": stage,
+        "p_row": _lead_row(lead), "p_payload": lead, "p_error": error,
+    })
+
+
+def fetch_worker_summary() -> dict[str, Any]:
+    return _rpc("search_worker_summary", {}) or {}
+
+
+def set_search_job_stage(job_id: int, owner: str, stage: str) -> bool:
+    return bool(_rpc('set_search_job_stage', {'p_job_id': job_id, 'p_owner': owner, 'p_stage': stage}))
