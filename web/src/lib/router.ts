@@ -4,6 +4,9 @@
 //   /                 the role's home screen
 //   /today /cockpit /pipeline /hizmetler /raporlar /analytics /profile /admin
 //   /leads/:leadId    one lead (database id, not a list position)
+//
+// List filters live in the query string (/raporlar?asama=contacted&sayfa=2),
+// so a filtered view can be shared and back returns to the previous one.
 import { useSyncExternalStore, type MouseEvent } from 'react';
 
 export const VIEWS = ['today', 'cockpit', 'pipeline', 'hizmetler', 'raporlar', 'analytics', 'profile', 'admin'] as const;
@@ -35,12 +38,12 @@ function emit(): void {
   listeners.forEach(listener => listener());
 }
 
-export function navigate(path: string, options: { replace?: boolean } = {}): void {
-  if (path === window.location.pathname) return;
+export function navigate(path: string, options: { replace?: boolean; keepScroll?: boolean } = {}): void {
+  if (path === window.location.pathname + window.location.search) return;
   if (options.replace) window.history.replaceState(null, '', path);
   else window.history.pushState(null, '', path);
   emit();
-  window.scrollTo(0, 0);
+  if (!options.keepScroll) window.scrollTo(0, 0);
 }
 
 function subscribe(listener: () => void): () => void {
@@ -55,6 +58,26 @@ function subscribe(listener: () => void): () => void {
 export function useRoute(): Route {
   const pathname = useSyncExternalStore(subscribe, () => window.location.pathname);
   return parseRoute(pathname);
+}
+
+/**
+ * The current query string, and a setter that merges changes into it
+ * (null or '' removes a key). Filter changes push a history entry so back
+ * returns to the previous filter; `replace` is for typing.
+ */
+export function useQueryParams(): [URLSearchParams, (changes: Record<string, string | null>, options?: { replace?: boolean }) => void] {
+  const search = useSyncExternalStore(subscribe, () => window.location.search);
+  const params = new URLSearchParams(search);
+  function update(changes: Record<string, string | null>, options: { replace?: boolean } = {}) {
+    const next = new URLSearchParams(window.location.search);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value === null || value === '') next.delete(key);
+      else next.set(key, value);
+    });
+    const query = next.toString();
+    navigate(window.location.pathname + (query ? `?${query}` : ''), { replace: options.replace, keepScroll: true });
+  }
+  return [params, update];
 }
 
 /** For <a href> links: plain clicks navigate in place; modified or middle clicks open a new tab. */

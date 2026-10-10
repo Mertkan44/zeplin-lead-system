@@ -141,7 +141,7 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
       case 'hizmetler':
         return <ServicesView leads={crm.rows} />;
       case 'raporlar':
-        return <LeadListView leads={leads} />;
+        return <LeadListView leads={leads} user={user} teamUsers={team.data || []} onOpenResult={lead => setResultLeadName(lead.name)} />;
       case 'analytics':
         return <AnalyticsView leads={leads} />;
       default:

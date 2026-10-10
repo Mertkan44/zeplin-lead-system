@@ -112,23 +112,3 @@ export function createProposal(lead: Lead): Promise<void> {
   downloadFile(`${lead.name.replace(/[^\wçğıöşüÇĞİÖŞÜ-]+/g, '-')}-gorusme-notu.txt`, text, 'text/plain;charset=utf-8');
   return addOutreach(lead.name, 'proposal_created', now(), recommendation.name || 'Görüşme notu');
 }
-
-export function exportLeadsCSV(leads: Lead[]): void {
-  const columns: Array<(lead: Lead) => unknown> = [
-    lead => lead.name,
-    lead => lead.city,
-    lead => lead.category,
-    lead => lead.scoring?.score,
-    lead => lead.scoring?.grade,
-    lead => lead.estimated_value_tl,
-    lead => lead.sales_priority_score,
-    lead => lead.phone,
-  ];
-  const header = ['İşletme', 'Şehir', 'Kategori', 'Skor', 'Sınıf', 'Tahmini Değer', 'Öncelik', 'Telefon'];
-  const rows = leads.map(lead => columns.map(get => {
-    const value = get(lead);
-    return value === undefined || value === null ? '' : String(value).replace(/"/g, '""');
-  }));
-  const csv = [header, ...rows].map(row => row.map(value => `"${value}"`).join(',')).join('\n');
-  downloadFile('zeplin-leadler.csv', '﻿' + csv, 'text/csv;charset=utf-8;');
-}

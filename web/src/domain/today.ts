@@ -20,13 +20,13 @@ export interface TodayTask {
   assignmentLate: boolean;
 }
 
-function startOfDay(date: Date): Date {
+export function startOfDay(date: Date): Date {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
   return copy;
 }
 
-function sameDay(a: Date, b: Date): boolean {
+export function sameDay(a: Date, b: Date): boolean {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
 }
 
