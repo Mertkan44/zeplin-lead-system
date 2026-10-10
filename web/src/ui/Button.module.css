@@ -28,7 +28,7 @@
 .quiet { background: var(--raised); border-color: var(--line); color: var(--tx); font-weight: 500; }
 .quiet:hover:not(:disabled) { border-color: var(--line2); }
 .danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger-tx) 35%, transparent); color: var(--danger-tx); }
-.link { min-height: 0; padding: 0; border: 0; background: none; color: var(--accent); font-weight: 500; }
+.link { min-height: 0; padding: 0; border: 0; background: none; color: var(--accent-text); font-weight: 500; }
 [data-theme="light"] .link { color: var(--tx); text-decoration: underline; text-underline-offset: 2px; }
 
 .spinner {

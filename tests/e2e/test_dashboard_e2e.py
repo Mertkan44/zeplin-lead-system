@@ -363,6 +363,29 @@ class DashboardE2E(unittest.TestCase):
         self.page.get_by_label(f"{other['name']} aşaması").select_option("lost")
         self.page.get_by_role("alert").filter(has_text=f"{other['name']} taşınamadı").wait_for()
 
+    def test_phone_layout_has_bottom_bar_and_menu(self):
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.page.goto(f"{self.base}/")
+        self.heading("Lead Workspace")
+        quick = self.page.get_by_role("navigation", name="Hızlı menü")
+        quick.get_by_role("link", name="Leadler").click()
+        self.heading("Leadler")
+        quick.get_by_role("button", name="Menü").click()
+        menu = self.page.get_by_role("dialog", name="Menü")
+        menu.get_by_role("link", name="Hizmetler").click()
+        menu.wait_for(state="detached")
+        self.heading("Zeplin Media Hizmetleri")
+        # Nothing wider than the screen.
+        widest = self.page.evaluate("Math.max(...[...document.querySelectorAll('body *')].map(e => e.getBoundingClientRect().right))")
+        self.assertLessEqual(widest, 390)
+        self.assertEqual(self.errors, [])
+
+    def test_slash_opens_search(self):
+        self.page.goto(f"{self.base}/")
+        self.heading("Lead Workspace")
+        self.page.keyboard.press("/")
+        self.page.get_by_role("dialog", name="Lead ara").wait_for()
+
     def test_no_runtime_compiler_or_third_party_scripts(self):
         self.page.goto(f"{self.base}/")
         self.page.wait_for_load_state("networkidle")

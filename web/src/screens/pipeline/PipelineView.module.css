@@ -15,8 +15,7 @@
 .actionLabel { font: 10.5px var(--font-display); color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
 .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .score { font: 700 11px var(--font-display); padding: 2px 8px; border-radius: 6px; color: var(--stage); background: color-mix(in srgb, var(--stage) 14%, transparent); }
-.value { font: 11px var(--font-display); color: var(--accent); }
-:global([data-theme="light"]) .value { color: #4d6b00; }
+.value { font: 11px var(--font-display); color: var(--accent-text); }
 .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .primary, .ghost { min-height: 32px; padding: 7px 10px; border-radius: 8px; font: 600 11.5px var(--font-body); cursor: pointer; }
 .primary { flex: 1; border: none; background: var(--accent); color: var(--accent-ink); }

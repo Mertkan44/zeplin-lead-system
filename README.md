@@ -307,7 +307,9 @@ browser tests. If you change the inline script in `web/index.html`, update its
   `Dialog`/`ConfirmDialog` (focus trap, Escape, focus return), `Badge`/`StatusBadge`,
   `EmptyState`/`ErrorState`/`Banner`. Colors and fonts are tokens in
   `web/src/styles/tokens.css` (dark and light); components use CSS modules.
-- `web/src/app/` is the shell (login, top bar, search, routing); `web/src/screens/`
+- `web/src/app/` is the shell (login, navigation, search, routing). Navigation is a
+  sidebar from 768 px (icons only below 1280 px) and, on phones, a top bar plus
+  a bottom bar with a menu drawer; `/` opens the lead search. `web/src/screens/`
   holds one folder per screen (today, workspace, leads, lead, contact, pipeline,
   services, analytics, admin, profile), each a typed component with its CSS
   module. All dashboard code is TypeScript (a unit test keeps it that way).
