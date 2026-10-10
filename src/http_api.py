@@ -93,5 +93,5 @@ def send_internal_error(
     error: str = "service temporarily unavailable",
     allow_methods: str = "GET, POST, PATCH, DELETE, OPTIONS",
 ) -> None:
-    handler.log_error("%s: %s", error, exc)
+    handler.log_error("%s (%s)", error, type(exc).__name__)
     send_json(handler, 502, {"ok": False, "error": error}, allow_methods=allow_methods)

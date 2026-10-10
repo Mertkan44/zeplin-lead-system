@@ -1,6 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 import sys
 from pathlib import Path
+import os
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -32,6 +34,9 @@ class handler(BaseHTTPRequestHandler):
             return
         user = current_user(self)
         payload = {"ok": status["ready"], "ready": status["ready"]}
+        commit = os.getenv("VERCEL_GIT_COMMIT_SHA", "")
+        if re.fullmatch(r"[0-9a-f]{40}", commit):
+            payload["release"] = commit
         if user and user.get("role") == "admin":
             payload["schema"] = status
         send_json(self, 200 if status["ready"] else 503, payload, allow_methods="GET, OPTIONS")
