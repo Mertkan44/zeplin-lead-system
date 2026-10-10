@@ -111,6 +111,16 @@ class DashboardE2E(unittest.TestCase):
         self.outreach_posts = []
         self.place_posts = []
         self.metric_periods = []
+        self.pipeline_posts = []
+        self.pipeline_statuses = []
+        self.pipeline_rows = [{
+            "id": index + 1, "lead_id": lead["lead_id"], "lead_name": lead["name"],
+            "lead_revision": 0, "lead_status": "yeni", "revision": 1,
+            "stage": "decision" if index == 4 else "new", "service_slug": "website_creation",
+            "amount": 12000 if index == 4 else None, "amount_unknown": index != 4,
+            "owner_email": "seller@example.com", "due_at": None, "last_contact_at": None,
+            "lost_reason": None, "can_write": True, "stage_entered_at": "2026-10-09T07:00:00Z",
+        } for index, lead in enumerate(self.payload["leads"])]
         self.search_jobs = []
         self.search_posts = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
@@ -134,6 +144,29 @@ class DashboardE2E(unittest.TestCase):
                 return route.fulfill(json={"ok": True})
             user = self.session["user"]
             return route.fulfill(json={"ok": True, "configured": True, "authenticated": bool(user), "user": user})
+        if path == "/api/workspace" and "view=pipeline" in url:
+            from urllib.parse import parse_qs, urlparse
+            query = parse_qs(urlparse(url).query)
+            if request.method == "POST":
+                body = json.loads(request.post_data or "{}")
+                self.pipeline_posts.append(body)
+                status = self.pipeline_statuses.pop(0) if self.pipeline_statuses else 200
+                if status != 200:
+                    if status == 409:
+                        current = next(item for item in self.pipeline_rows if item["lead_id"] == body["lead_id"])
+                        current.update(revision=current["revision"] + 1, lead_revision=current["lead_revision"] + 1, stage="proposal")
+                    return route.fulfill(status=status, json={"ok": False, "code": "OPPORTUNITY_VERSION_CONFLICT" if status == 409 else None})
+                current = next((item for item in self.pipeline_rows if item["lead_id"] == body["lead_id"]), None)
+                if current is None:
+                    lead = next(item for item in self.payload["leads"] if item["lead_id"] == body["lead_id"])
+                    current = {"id": body["lead_id"], "lead_id": body["lead_id"], "lead_name": lead["name"], "revision": 0, "lead_revision": 0, "owner_email": None, "last_contact_at": None, "due_at": None, "can_write": True}
+                    self.pipeline_rows.append(current)
+                current.update(stage=body["stage"], amount=body["amount"], amount_unknown=body["amount_unknown"], service_slug=body["service_slug"], revision=current["revision"] + 1, lead_revision=current["lead_revision"] + 1, stage_entered_at="2026-10-10T07:00:00Z", lost_reason=body["note"] if body["stage"] == "lost" else None)
+                return route.fulfill(json={"ok": True, "opportunity": current, "lead_revision": current["lead_revision"], "lead_status": "converted" if current["stage"] == "won" else "lost" if current["stage"] == "lost" else "yeni"})
+            if "lead_id" in query:
+                current = next(item for item in self.pipeline_rows if item["lead_id"] == int(query["lead_id"][0]))
+                return route.fulfill(json={"ok": True, "items": [{"id": 1, "revision": current["revision"], "from_stage": None, "to_stage": current["stage"], "actor_email": "seller@example.com", "source": "pipeline", "note": "Sentetik geçiş notu", "amount": current["amount"], "amount_unknown": current["amount_unknown"], "service_slug": current["service_slug"], "happened_at": "2026-10-10T07:00:00Z"}], "next_before": None})
+            return route.fulfill(json={"ok": True, "opportunities": self.pipeline_rows})
         if path == "/api/workspace" and "view=metrics" in url:
             from urllib.parse import parse_qs, urlparse
 
@@ -519,17 +552,86 @@ class DashboardE2E(unittest.TestCase):
         self.page.goto(f"{self.base}/pipeline")
         self.heading("Satış kanalı")
         self.page.get_by_label(f"{lead['name']} aşaması").select_option("won")
-        for _ in range(50):  # the request is sent after the select changes
-            if self.outreach_posts:
-                break
-            self.page.wait_for_timeout(100)
-        self.assertEqual([post["action"] for post in self.outreach_posts], ["deal_won"])
-        self.assertEqual(self.outreach_posts[0]["lead_name"], lead["name"])
+        dialog = self.page.get_by_role("dialog", name=lead['name'])
+        dialog.get_by_label("Tutar henüz bilinmiyor").check()
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.wait_for(state="detached")
+        self.assertEqual(self.outreach_posts, [])
+        self.assertEqual(self.pipeline_posts[0]["lead_id"], lead["lead_id"])
+        self.assertTrue(self.pipeline_posts[0]["amount_unknown"])
+        self.assertEqual(self.page.get_by_label(f"{lead['name']} aşaması").input_value(), "won")
 
-        self.outreach_statuses = [503]
+        self.pipeline_statuses = [503]
         other = self.lead(5)
         self.page.get_by_label(f"{other['name']} aşaması").select_option("lost")
-        self.page.get_by_role("alert").filter(has_text=f"{other['name']} taşınamadı").wait_for()
+        dialog = self.page.get_by_role("dialog", name=other['name'])
+        dialog.get_by_label("Kaybetme nedeni").fill("Bütçesi uygun değil")
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.get_by_role("alert").filter(has_text="Fırsat kaydedilemedi").wait_for()
+        self.assertEqual(dialog.get_by_label("Kaybetme nedeni").input_value(), "Bütçesi uygun değil")
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.wait_for(state="detached")
+        self.assertEqual(self.pipeline_posts[1]["idempotency_key"], self.pipeline_posts[2]["idempotency_key"])
+        self.assertEqual(self.page.get_by_label(f"{other['name']} aşaması").input_value(), "lost")
+
+    def test_pipeline_can_complete_won_amount_without_reopening(self):
+        lead = self.lead(4)
+        self.pipeline_rows[4]["stage"] = "won"
+        self.pipeline_rows[4]["amount"] = None
+        self.pipeline_rows[4]["amount_unknown"] = True
+        self.page.goto(f"{self.base}/pipeline")
+        card = self.page.locator("li").filter(has=self.page.get_by_role("link", name=lead['name'], exact=True))
+        card.get_by_role("button", name="Düzenle", exact=True).click()
+        dialog = self.page.get_by_role("dialog", name=lead['name'])
+        dialog.get_by_label("Fırsat tutarı (TL)", exact=True).fill("45000")
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.wait_for(state="detached")
+        self.assertEqual(self.pipeline_posts[0]["stage"], "won")
+        self.assertEqual(self.pipeline_posts[0]["amount"], "45000")
+        self.assertFalse(self.pipeline_posts[0]["amount_unknown"])
+        self.assertEqual(self.outreach_posts, [])
+
+    def test_pipeline_conflict_refresh_keeps_form_and_uses_new_versions(self):
+        lead = self.lead(2)
+        self.pipeline_statuses = [409]
+        self.page.goto(f"{self.base}/pipeline")
+        self.page.get_by_label(f"{lead['name']} aşaması").select_option("decision")
+        dialog = self.page.get_by_role("dialog", name=lead['name'])
+        dialog.get_by_label("Geçiş notu (isteğe bağlı)").fill("Karar bekleniyor")
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.get_by_role("button", name="Güncel bilgileri al").click()
+        dialog.get_by_text("Güncel bilgiler alındı.", exact=False).wait_for()
+        self.assertEqual(dialog.get_by_label("Geçiş notu (isteğe bağlı)").input_value(), "Karar bekleniyor")
+        dialog.get_by_role("button", name="Fırsatı kaydet").click()
+        dialog.wait_for(state="detached")
+        self.assertNotEqual(self.pipeline_posts[0]["idempotency_key"], self.pipeline_posts[1]["idempotency_key"])
+        self.assertEqual(self.pipeline_posts[1]["expected_opportunity_revision"], self.pipeline_posts[0]["expected_opportunity_revision"] + 1)
+
+    def test_pipeline_mobile_list_history_and_empty_creation(self):
+        self.page.set_viewport_size({"width": 320, "height": 844})
+        self.page.goto(f"{self.base}/pipeline")
+        self.heading("Satış kanalı")
+        self.page.get_by_role("button", name="Liste", exact=True).wait_for()
+        self.assertEqual(self.page.get_by_role("button", name="Liste", exact=True).get_attribute("aria-pressed"), "true")
+        self.page.get_by_role("button", name="Geçmiş", exact=True).first.click()
+        history = self.page.get_by_role("dialog")
+        history.get_by_text("Sentetik geçiş notu").wait_for()
+        self.page.keyboard.press("Escape")
+        history.wait_for(state="detached")
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"), 320)
+        self.pipeline_rows = []
+        self.page.reload()
+        self.page.get_by_text("Henüz satış fırsatı yok").wait_for()
+        self.page.get_by_role("button", name="Fırsat oluştur", exact=True).click()
+        dialog = self.page.get_by_role("dialog", name="Fırsat oluştur")
+        lead = self.lead(0)
+        dialog.get_by_label("İşletme", exact=True).select_option(str(lead['lead_id']))
+        dialog = self.page.get_by_role("dialog", name=lead['name'])
+        dialog.get_by_role("button", name="Fırsatı oluştur").click()
+        self.page.get_by_role("dialog").wait_for(state="detached")
+        self.assertEqual(self.pipeline_posts[0]["stage"], "new")
+        self.assertEqual(self.pipeline_posts[0]["expected_opportunity_revision"], 0)
+        self.assertEqual(self.errors, [])
 
     def test_phone_layout_has_bottom_bar_and_menu(self):
         self.page.set_viewport_size({"width": 390, "height": 844})

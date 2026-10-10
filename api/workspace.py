@@ -14,6 +14,7 @@ from src.auth import lead_read_scope, normalize_email, require_auth
 from src.activity import enrich_outreach_event, manual_verification_from_event
 from src.http_api import send_internal_error, send_json, send_options
 from src.metrics import PERIODS, WEEKS, build_metrics, period_bounds
+from src.opportunities import command as opportunity_command
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.workflow import build_lead_workflow, build_team_performance
@@ -29,6 +30,10 @@ from src.storage.supabase import (
     fetch_leads_by_names,
     is_enabled as supabase_enabled,
     schema_status,
+    CommandRejected,
+    fetch_opportunities,
+    fetch_opportunity_history,
+    change_opportunity_stage,
 )
 
 # Recent events feed today's counts and the activity feed. Current state (latest
@@ -149,7 +154,51 @@ def _summary(
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
-        send_options(self, allow_methods="GET, OPTIONS")
+        send_options(self, allow_methods="GET, POST, OPTIONS")
+
+    def do_POST(self):
+        from src.http_api import read_json
+        try:
+            user = require_auth(self)
+        except PermissionError:
+            send_json(self, 401, {"ok": False, "error": "login required"})
+            return
+        if not supabase_enabled():
+            send_json(self, 503, {"ok": False, "error": "supabase is not configured"})
+            return
+        if (parse_qs(urlparse(self.path).query).get("view") or [""])[0] != "pipeline":
+            send_json(self, 400, {"ok": False, "error": "view= pipeline required"})
+            return
+        try:
+            values = opportunity_command(read_json(self))
+            result = change_opportunity_stage(actor=normalize_email(user.get("sub")), is_admin=user.get("role") == "admin", **values)
+            send_json(self, 200, {"ok": True, **result})
+        except CommandRejected as exc:
+            send_json(self, exc.status, {"ok": False, "error": exc.code, "code": exc.code})
+        except ValueError as exc:
+            send_json(self, 400, {"ok": False, "error": str(exc)})
+        except Exception as exc:
+            send_internal_error(self, exc, error="opportunity save failed")
+
+    def _send_pipeline(self, user, query):
+        try:
+            actor = normalize_email(user.get("sub"))
+            is_admin = user.get("role") == "admin"
+            lead_raw = (query.get("lead_id") or [None])[0]
+            if lead_raw is not None:
+                before_raw = (query.get("before") or [None])[0]
+                lead_id = int(lead_raw)
+                before = int(before_raw) if before_raw else None
+                if lead_id <= 0 or before is not None and before <= 0:
+                    raise ValueError("invalid history cursor")
+                items = fetch_opportunity_history(actor=actor, is_admin=is_admin, lead_id=lead_id, before=before)
+                send_json(self, 200, {"ok": True, "items": items, "next_before": items[-1]["id"] if len(items) == 50 else None})
+            else:
+                send_json(self, 200, {"ok": True, "opportunities": fetch_opportunities(actor=actor, is_admin=is_admin)})
+        except ValueError:
+            send_json(self, 400, {"ok": False, "error": "Geçerli işletme kimliği ve tarihçe imleci gerekli."})
+        except Exception as exc:
+            send_internal_error(self, exc, error="opportunity fetch failed")
 
     def _send_metrics(self, user: dict, period: str) -> None:
         """GET /api/workspace?view=metrics&period=7|30|90|all (src/metrics.py)."""
@@ -188,6 +237,9 @@ class handler(BaseHTTPRequestHandler):
             send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="GET, OPTIONS")
             return
         query = parse_qs(urlparse(self.path).query)
+        if (query.get("view") or [""])[0] == "pipeline":
+            self._send_pipeline(user, query)
+            return
         if (query.get("view") or [""])[0] == "metrics":
             self._send_metrics(user, (query.get("period") or ["30"])[0])
             return
@@ -223,7 +275,7 @@ class handler(BaseHTTPRequestHandler):
                     continue
                 contact = state.get("latest_contact")
                 if contact:
-                    contact = enrich_outreach_event(dict(contact))
+                    contact = {**enrich_outreach_event(dict(contact)), "follow_up_at": state.get("latest_follow_up_at")}
                     latest_results[lead_name] = contact
                     if contact.get("outcome") == "won" and state.get("latest_contact_actor"):
                         won_by_actor[state["latest_contact_actor"]] += 1

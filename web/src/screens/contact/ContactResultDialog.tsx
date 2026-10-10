@@ -25,7 +25,7 @@ const OUTCOME_EFFECTS: Record<string, string> = {
   no_answer: 'Lead “Takipte” kalır; yarın 10:00 için tekrar arama görevi açılır.',
   wrong_number: 'Lead “Veri eksik” olur ve doğrulama listesine düşer; takip görevi açılmaz.',
   not_interested: 'Lead kapanır (Kaybedildi) ve atama tamamlanır. Nedenini nota yaz.',
-  won: 'Lead “Müşteri” olur ve atama tamamlanır.',
+  won: 'Lead “Müşteri” olur, fırsat kazanılır ve atama tamamlanır. Fırsat tutarı girilmediyse “bilinmiyor” olarak kalır.',
   lost: 'Lead kapanır (Kaybedildi) ve atama tamamlanır. Nedenini nota yaz.',
 };
 
@@ -135,6 +135,10 @@ export function ContactResultDialog({ lead, onClose, onSaved, onOpenLead, onRefr
     }
     if (needsFollowUp && !followUpAt) {
       setError('Takip tarihi seçmelisin.');
+      return;
+    }
+    if (['lost', 'not_interested'].includes(outcome) && !note.trim()) {
+      setError('Kaybetme nedenini görüşme notuna yaz.');
       return;
     }
     if (!requestIdRef.current) requestIdRef.current = newRequestId();
