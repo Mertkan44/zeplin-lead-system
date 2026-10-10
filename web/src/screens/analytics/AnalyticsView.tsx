@@ -1,164 +1,207 @@
-// Reports over the leads analysed in the chosen period: grades, funnel,
-// average score, weekly volume, sectors and contact readiness. Every chart
-// also states its numbers as text.
-import { useState, type CSSProperties } from 'react';
+// Reports (review §10, §12.9). Sales performance in the chosen period,
+// follow-ups and the status distribution as they are now, research quality,
+// and the last eight weeks. Every number comes from the server
+// (src/metrics.py) with the definition shown under it; "0" and "not measured"
+// look different, and an empty bar is empty.
+import type { CSSProperties } from 'react';
 
-import type { Lead } from '../../data/types';
-import { useCrm } from '../../data/workspace';
+import { useMetrics, type CountItem, type Metric, type Metrics, type Period } from '../../data/metrics';
+import type { User } from '../../data/types';
 import { GRADE_COLORS } from '../../domain/catalog';
-import { canonicalSector, computeReadinessBuckets, computeTabCounts, computeWeekBuckets } from '../../domain/lead';
-import { PageHeader } from '../shared/PageHeader';
+import { csvCell } from '../../domain/leadList';
+import { downloadFile } from '../../lib/browser';
+import { routeFor, useQueryParams } from '../../lib/router';
+import { Button, ErrorState, Link, LoadingState } from '../../ui';
 import styles from './AnalyticsView.module.css';
 
-type Period = 7 | 30 | 90 | 'all';
-
-const PERIODS: Array<[Period, string]> = [[7, '7g'], [30, '30g'], [90, 'Çeyrek'], ['all', 'Tümü']];
-const SECTOR_COLORS = ['#b6f24a', '#ffcf4a', '#ff8f4a', '#7cc5ff', '#a78bfa'];
-const GAUGE = 389.6;
-
+const PERIODS: Array<[Period, string]> = [['7', '7 gün'], ['30', '30 gün'], ['90', '90 gün'], ['all', 'Tümü']];
 const vars = (values: Record<string, string>) => values as CSSProperties;
+const leadsPath = (query: string) => `${routeFor({ view: 'raporlar' })}?${query}`;
 
-function inPeriod(lead: Lead, cutoff: number | null): boolean {
-  if (cutoff === null) return true;
-  if (!lead.last_analyzed) return false;
-  const stamp = new Date(lead.last_analyzed.replace(' ', 'T')).getTime();
-  return !Number.isNaN(stamp) && stamp >= cutoff;
+function Kpi({ metric, to, late = false }: { metric: Metric; to?: string; late?: boolean }) {
+  const body = (
+    <>
+      <span className={metric.value === null ? `${styles.kpiValue} ${styles.none}` : styles.kpiValue}>
+        {metric.value === null ? 'Ölçülemedi' : metric.value}
+      </span>
+      <span className={styles.kpiLabel}>{metric.label}</span>
+      <span className={styles.kpiDefinition}>
+        {metric.definition}
+        {metric.sample !== undefined && ` ${metric.sample} lead üzerinden${metric.excluded ? `; ${metric.excluded} lead hariç` : ''}.`}
+      </span>
+    </>
+  );
+  const className = late && metric.value ? `${styles.kpi} ${styles.kpiLate}` : styles.kpi;
+  return <li>{to ? <Link to={to} className={className}>{body}</Link> : <div className={className}>{body}</div>}</li>;
 }
 
-export function AnalyticsView({ leads }: { leads: Lead[] }) {
-  const { statuses } = useCrm();
-  const [period, setPeriod] = useState<Period>('all');
-  const cutoff = period === 'all' ? null : Date.now() - period * 86400000;
-  const periodLeads = leads.filter(lead => inPeriod(lead, cutoff));
-  const actualTotal = periodLeads.length;
-  const total = actualTotal || 1;
+function Bars({ items, color, link }: { items: Array<CountItem & { name: string }>; color?: (item: CountItem) => string; link?: (item: CountItem) => string | null }) {
+  const max = Math.max(0, ...items.map(item => item.count));
+  return (
+    <ul className={styles.bars}>
+      {items.map(item => {
+        const href = link?.(item);
+        return (
+          <li key={item.name} className={styles.bar}>
+            {href ? <Link to={href}>{item.name}</Link> : <span>{item.name}</span>}
+            <span className={styles.track} aria-hidden="true">
+              <span className={styles.fill} style={vars({ '--pct': max ? `${(item.count / max) * 100}%` : '0%', ...(color ? { '--fill': color(item) } : {}) })} />
+            </span>
+            <span className={styles.count}>{item.count}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-  const gradeCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
-  periodLeads.forEach(lead => { if (lead.scoring?.grade in gradeCounts) gradeCounts[lead.scoring.grade] += 1; });
-  const gradeMax = Math.max(...Object.values(gradeCounts), 1);
+function exportSummary(metrics: Metrics) {
+  const rows: Array<[string, string, unknown]> = [];
+  const add = (section: string, metric: Metric) => rows.push([section, metric.label, metric.value ?? '']);
+  Object.values(metrics.sales).forEach(value => { if (!Array.isArray(value)) add('Satış', value); });
+  metrics.sales.outcomes.forEach(item => rows.push(['Görüşme sonucu', item.label || '', item.count]));
+  Object.values(metrics.tasks).forEach(metric => add('Takip (şu an)', metric));
+  metrics.statuses.items.forEach(item => rows.push(['Durum (şu an)', item.label || '', item.count]));
+  [metrics.research.new_leads, metrics.research.analyzed_leads, metrics.research.average_score, metrics.research.average_coverage].forEach(metric => add('Araştırma', metric));
+  metrics.research.sectors.items.forEach(item => rows.push(['Sektör', item.label || '', item.count]));
+  const csv = [['Bölüm', 'Metrik', 'Değer'], ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+  downloadFile(`zeplin-rapor-${metrics.period.key}.csv`, '\ufeff' + `${csvCell(metrics.period.label)}\r\n` + csv, 'text/csv;charset=utf-8;');
+}
 
-  const counts = computeTabCounts(periodLeads, statuses);
-  const funnel = [
-    { label: 'Toplam', count: actualTotal, className: styles.stepTotal },
-    { label: 'Yeni', count: counts.yeni, className: styles.stepNew },
-    { label: 'Temasta', count: counts.contacted, className: styles.stepContacted },
-    { label: 'Kazanıldı', count: counts.converted, className: styles.stepWon },
-  ];
+export function AnalyticsView({ user }: { user: User }) {
+  const [params, setParams] = useQueryParams();
+  const period = (PERIODS.some(([key]) => key === params.get('donem')) ? params.get('donem') : '30') as Period;
+  const query = useMetrics(user.email, period);
+  const metrics = query.data;
 
-  const avgScore = Math.round(periodLeads.reduce((sum, lead) => sum + (lead.scoring?.score || 0), 0) / total);
-  const weekBuckets = computeWeekBuckets(periodLeads);
-  const weekMax = Math.max(...weekBuckets, 1);
-  const weeklyTotal = weekBuckets.reduce((sum, value) => sum + value, 0);
+  if (query.isPending) return <LoadingState label="Raporlar hazırlanıyor…" />;
+  if (!metrics) {
+    return <ErrorState eyebrow="RAPORLAR" title="Raporlar alınamadı" message={query.error?.message || 'Sunucuya ulaşılamadı.'} onRetry={() => void query.refetch()} retrying={query.isFetching} />;
+  }
 
-  const sectorCounts = new Map<string, number>();
-  periodLeads.forEach(lead => {
-    const sector = canonicalSector(lead);
-    sectorCounts.set(sector, (sectorCounts.get(sector) || 0) + 1);
-  });
-  const sectors = [...sectorCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([name, count], index) => ({ name, pct: Math.round((count / total) * 100), color: SECTOR_COLORS[index] }));
-
-  const readiness = computeReadinessBuckets(periodLeads);
+  const { sales, tasks, statuses, research, weekly } = metrics;
+  const weekMax = Math.max(0, ...weekly.new_leads, ...weekly.contact_results);
 
   return (
-    <div className={styles.root}>
-      <PageHeader
-        eyebrow={period === 'all' ? 'PERFORMANS · TÜM ZAMANLAR' : `PERFORMANS · SON ${period} GÜN`}
-        title="Raporlar"
-        actions={(
+    <main className={styles.root} aria-busy={query.isFetching}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Raporlar</h1>
+          <div className={styles.scope}>{metrics.period.label} · İstanbul saati · {metrics.lead_count} lead{user.role === 'sales' ? ' (sana atananlar)' : ''}</div>
+        </div>
+        <div className={styles.headerActions}>
           <div className={styles.periods} role="group" aria-label="Dönem">
-            {PERIODS.map(([value, label]) => (
-              <button type="button" key={value} className={styles.period} aria-pressed={period === value} onClick={() => setPeriod(value)}>{label}</button>
+            {PERIODS.map(([key, label]) => (
+              <button type="button" key={key} className={styles.period} aria-pressed={period === key} onClick={() => setParams({ donem: key === '30' ? null : key })}>{label}</button>
             ))}
           </div>
-        )}
-      />
-
-      <div className={styles.grid}>
-        <section className={styles.card} aria-labelledby="grades-title">
-          <h2 id="grades-title" className={styles.cardTitle}>Not Dağılımı</h2>
-          <div className={styles.cardSub}>{actualTotal} lead sınıflandırıldı</div>
-          <ul className={styles.stack}>
-            {['A', 'B', 'C', 'D'].map(grade => (
-              <li key={grade} style={vars({ '--fill': GRADE_COLORS[grade], '--pct': `${(gradeCounts[grade] / gradeMax) * 100}%` })}>
-                <div className={styles.rowHead}><span className={styles.gradeLabel}>Sınıf {grade}</span><span className={styles.num}>{gradeCounts[grade]}</span></div>
-                <div className={styles.track} aria-hidden="true"><span className={styles.fill} /></div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.card} aria-labelledby="funnel-title">
-          <h2 id="funnel-title" className={styles.cardTitle}>Dönüşüm Hunisi</h2>
-          <div className={styles.cardSub}>Yeni → Müşteri · %{Math.round((counts.converted / total) * 100)}</div>
-          <ol className={styles.funnel}>
-            {funnel.map(step => (
-              <li key={step.label} className={`${styles.step} ${step.className}`} style={vars({ '--pct': `${40 + (step.count / total) * 60}%` })}>
-                <span>{step.label}</span>
-                <strong>{step.count}</strong>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className={`${styles.card} ${styles.gaugeCard}`} aria-labelledby="score-title">
-          <h2 id="score-title" className={styles.cardTitle}>Ortalama Skor</h2>
-          <div className={styles.cardSub}>tüm aktif leadler</div>
-          <div className={styles.gauge}>
-            <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
-              <circle cx="75" cy="75" r="62" fill="none" stroke="var(--line2)" strokeWidth="11" />
-              <circle className={styles.gaugeProgress} cx="75" cy="75" r="62" fill="none" stroke="var(--accent)" strokeWidth="11" strokeLinecap="round" strokeDasharray={GAUGE} strokeDashoffset={GAUGE * (1 - Math.min(avgScore, 100) / 100)} />
-            </svg>
-            <div className={styles.gaugeValue}><strong>{avgScore}</strong><span>/ 100</span></div>
-          </div>
-        </section>
-
-        <section className={`${styles.card} ${styles.wide}`} aria-labelledby="weekly-title">
-          <div className={styles.weeklyHead}>
-            <div>
-              <h2 id="weekly-title" className={styles.cardTitle}>Haftalık Yeni Lead</h2>
-              <div className={styles.cardSub}>tarama hacmi · 8 hafta</div>
-            </div>
-            <div className={styles.weeklyTotal}>{weeklyTotal}<span> toplam</span></div>
-          </div>
-          <ol className={styles.weeks}>
-            {weekBuckets.map((value, index) => (
-              <li key={index} className={styles.week}>
-                <span className={styles.weekCount}>{value}</span>
-                <span className={styles.weekBar} style={vars({ '--pct': `${Math.max((value / weekMax) * 100, 4)}%` })} aria-hidden="true" />
-                <span className={styles.weekLabel}>{index === 7 ? 'Bu hafta' : `-${7 - index}h`}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className={styles.card} aria-labelledby="sectors-title">
-          <h2 id="sectors-title" className={styles.cardTitle}>Sektör Dağılımı</h2>
-          <div className={styles.cardSub}>seçili dönemdeki {actualTotal} lead · benzer kategoriler birleştirildi</div>
-          <ul className={styles.stack}>
-            {sectors.map(sector => (
-              <li key={sector.name} style={vars({ '--fill': sector.color, '--pct': `${sector.pct}%` })}>
-                <div className={styles.rowHead}><span>{sector.name}</span><span className={styles.num}>{sector.pct}%</span></div>
-                <div className={`${styles.track} ${styles.trackThin}`} aria-hidden="true"><span className={styles.fill} /></div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={`${styles.card} ${styles.full}`} aria-label="Temas hazırlığı">
-          {[
-            { label: 'Hazır arama', value: readiness.readyToCall, sub: 'telefon bilgisi tamam' },
-            { label: 'Veri tamamlama', value: readiness.needsData, sub: 'telefon / adres eksik' },
-            { label: 'Temasa hazır', value: readiness.proposalReady, sub: 'kanıt + hizmet + onaylı taslak' },
-          ].map(item => (
-            <div key={item.label} className={styles.readiness}>
-              <strong>{item.value}</strong>
-              <div className={styles.readinessLabel}>{item.label}</div>
-              <div className={styles.readinessSub}>{item.sub}</div>
-            </div>
-          ))}
-        </section>
+          <Button onClick={() => exportSummary(metrics)}>Özeti indir (CSV)</Button>
+        </div>
       </div>
-    </div>
+
+      <section className={styles.section} aria-labelledby="sales-title">
+        <div className={styles.sectionHead}>
+          <h2 id="sales-title" className={styles.sectionTitle}>Satış performansı</h2>
+          <span className={styles.sectionNote}>{metrics.period.label}; görüşme sonucunun kaydedildiği tarihe göre</span>
+        </div>
+        <ul className={styles.kpis}>
+          <Kpi metric={sales.contacted_businesses} />
+          <Kpi metric={sales.contact_results} />
+          <Kpi metric={sales.interested_businesses} />
+          <Kpi metric={sales.proposal_businesses} />
+          <Kpi metric={sales.won_businesses} />
+          <Kpi metric={sales.lost_businesses} />
+        </ul>
+      </section>
+
+      <section className={styles.section} aria-labelledby="tasks-title">
+        <div className={styles.sectionHead}>
+          <h2 id="tasks-title" className={styles.sectionTitle}>Takipler</h2>
+          <span className={styles.sectionNote}>Şu an; dönem seçiminden etkilenmez</span>
+        </div>
+        <ul className={styles.kpis}>
+          <Kpi metric={tasks.overdue} to={leadsPath('is=overdue')} late />
+          <Kpi metric={tasks.due_today} to={leadsPath('is=due_today')} />
+          <Kpi metric={tasks.upcoming} to={leadsPath('is=scheduled')} />
+        </ul>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.panels}>
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>Görüşme sonuçları</h2>
+            <p className={styles.panelNote}>{metrics.period.label}; her kayıt ayrı sayılır.</p>
+            {sales.contact_results.value
+              ? <Bars items={sales.outcomes.map(item => ({ ...item, name: item.label || '' }))} />
+              : <p className={styles.empty}>Bu dönemde kaydedilmiş görüşme sonucu yok.</p>}
+          </div>
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>{statuses.label}</h2>
+            <p className={styles.panelNote}>{statuses.definition}</p>
+            <Bars items={statuses.items.map(item => ({ ...item, name: item.label || '' }))} link={item => leadsPath(`asama=${item.key}`)} />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="research-title">
+        <div className={styles.sectionHead}>
+          <h2 id="research-title" className={styles.sectionTitle}>Araştırma kalitesi</h2>
+          <span className={styles.sectionNote}>Yeni ve analiz edilen lead seçilen döneme göre; skorlar şu an</span>
+        </div>
+        <ul className={`${styles.kpis} ${styles.kpis4}`}>
+          <Kpi metric={research.new_leads} />
+          <Kpi metric={research.analyzed_leads} />
+          <Kpi metric={research.average_score} />
+          <Kpi metric={research.average_coverage} />
+        </ul>
+        <div className={`${styles.panels} ${styles.spaced}`}>
+          <div className={styles.panel}>
+            <h3 className={styles.panelTitle}>Dijital skor sınıfı</h3>
+            <p className={styles.panelNote}>{research.grades.definition} Skoru hesaplanamayan: {research.grades.unscored}.</p>
+            <Bars items={research.grades.items.map(item => ({ ...item, name: `Sınıf ${item.key}` }))} color={item => GRADE_COLORS[item.key || ''] || 'var(--text-secondary)'} />
+          </div>
+          <div className={styles.panel}>
+            <h3 className={styles.panelTitle}>Sektör dağılımı</h3>
+            <p className={styles.panelNote}>{research.sectors.definition} Toplam {research.sectors.total} lead.</p>
+            {research.sectors.items.length
+              ? <Bars items={research.sectors.items.map(item => ({ ...item, name: item.label || '' }))} />
+              : <p className={styles.empty}>Henüz lead yok.</p>}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="weekly-title">
+        <div className={styles.sectionHead}>
+          <h2 id="weekly-title" className={styles.sectionTitle}>Son 8 hafta</h2>
+          <span className={styles.sectionNote}>{weekly.definition}</span>
+        </div>
+        <div className={styles.panel}>
+          <div className={styles.weeksWrap}>
+            <table className={styles.weeks}>
+              <thead>
+                <tr>
+                  <th scope="col">Hafta (pazartesi)</th>
+                  <th scope="col">Yeni lead</th>
+                  <th scope="col">Görüşme sonucu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weekly.weeks.map((week, index) => (
+                  <tr key={week}>
+                    <th scope="row">{new Date(`${week}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}{index === weekly.weeks.length - 1 ? ' (bu hafta)' : ''}</th>
+                    {([[weekly.new_leads[index], 'var(--info-tx)'], [weekly.contact_results[index], 'var(--accent-text)']] as Array<[number, string]>).map(([value, fill], column) => (
+                      <td key={column}>
+                        <span className={styles.spark} style={vars({ '--w': weekMax ? `${Math.round((value / weekMax) * 100)}%` : '0%', '--fill': fill })} aria-hidden="true" />
+                        <span className={styles.sparkValue}>{value}</span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

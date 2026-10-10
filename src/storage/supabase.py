@@ -271,7 +271,7 @@ def list_leads(limit: int = 20) -> list[dict[str, Any]]:
         return response.json()
 
 
-_LEAD_COLUMNS = "id,raw,status,updated_at,revision,sales_priority_score"
+_LEAD_COLUMNS = "id,raw,status,created_at,updated_at,revision,sales_priority_score"
 _EVENT_COLUMNS = (
     "id,lead_id,lead_name,action,note,happened_at,created_at,actor_email,source,idempotency_key,"
     "channel,outcome,follow_up_at,service_slugs,contact_name"
@@ -294,6 +294,9 @@ def _lead_from_row(row: dict[str, Any]) -> dict[str, Any] | None:
     raw["lead_id"] = row.get("id")
     raw["status"] = row.get("status") or raw.get("status") or "yeni"
     raw["supabase_updated_at"] = row.get("updated_at")
+    # When the lead entered the CRM (reports count new leads by this, not by analysis).
+    if row.get("created_at"):
+        raw["created_at"] = row["created_at"]
     raw["revision"] = row.get("revision")
     return raw
 

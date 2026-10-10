@@ -158,15 +158,6 @@ export const FACT_LABELS: Record<string, string> = {
 
 export const FACT_SOURCES: Record<string, string> = { manual: 'Ekip kontrolü', google_places: 'Google Places', scrape: 'Tarama' };
 
-export const SECTOR_LABELS: Record<string, string> = {
-  restaurant: 'Restoran ve Kafe',
-  retail: 'Perakende ve Mağaza',
-  health: 'Sağlık ve Klinik',
-  salon: 'Güzellik ve Bakım',
-  auto: 'Otomotiv',
-  default: 'Diğer',
-};
-
 /** Messages for the error codes POST /api/outreach returns. */
 export const OUTREACH_ERRORS: Record<string, string> = {
   LEAD_VERSION_CONFLICT: 'Bu lead sen formu doldururken başka bir işlemle güncellendi. Güncel veriyi alıp tekrar kaydet.',

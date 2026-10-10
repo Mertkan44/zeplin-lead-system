@@ -1,7 +1,7 @@
 // Rules about a lead that several screens share. Pure functions: the lead's
 // status and events are passed in, nothing is read from shared state.
 import type { Lead, LeadStatus, OutreachEvent } from '../data/types';
-import { FOLLOW_UP_DELAYS, SECTOR_LABELS, type LeadFilter, type PipelineStageKey } from './catalog';
+import { FOLLOW_UP_DELAYS, type LeadFilter, type PipelineStageKey } from './catalog';
 import { daysFromNowAtTen } from './format';
 
 export function scoreIsAvailable(lead: Lead | null | undefined): boolean {
@@ -157,24 +157,6 @@ export function searchLeads(rows: Lead[], query: string): Lead[] {
   }).slice(0, 12);
 }
 
-export function computeTabCounts(leads: Lead[], statuses: Record<string, LeadStatus>) {
-  return {
-    total: leads.length,
-    yeni: leads.filter(l => (statuses[l.name] || 'yeni') === 'yeni').length,
-    contacted: leads.filter(l => statuses[l.name] === 'contacted').length,
-    converted: leads.filter(l => statuses[l.name] === 'converted').length,
-    low: leads.filter(l => scoreIsAvailable(l) && l.scoring.score < 50).length,
-  };
-}
-
-export function computeReadinessBuckets(leads: Lead[]) {
-  return {
-    readyToCall: leads.filter(lead => Boolean(lead.phone)).length,
-    needsData: leads.filter(lead => needsContactCompletion(lead)).length,
-    proposalReady: leads.filter(lead => Boolean(lead.ai_report) && Boolean(lead.ai_email) && Boolean(lead.matched_services?.length)).length,
-  };
-}
-
 /** Leads analysed per week over the last 8 weeks, oldest first. */
 export function computeWeekBuckets(leads: Lead[]): number[] {
   const now = Date.now();
@@ -194,18 +176,6 @@ export function mostCommonCity(leads: Lead[]): string {
   leads.forEach(lead => { if (lead.city) counts[lead.city] = (counts[lead.city] || 0) + 1; });
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   return entries.length ? entries[0][0] : '';
-}
-
-export function canonicalSector(lead: Lead): string {
-  const stored = String(lead.sector || '').trim().toLowerCase();
-  if (SECTOR_LABELS[stored]) return SECTOR_LABELS[stored];
-  const category = String(lead.category || '').toLocaleLowerCase('tr-TR');
-  if (/restoran|restaurant|cafe|kafe|coffee|bistro|lokanta|pastane|fırın|bakery/.test(category)) return SECTOR_LABELS.restaurant;
-  if (/diş|dental|dentist|klinik|clinic|doktor|sağlık|eczane|optik/.test(category)) return SECTOR_LABELS.health;
-  if (/kuaför|güzellik|beauty|spa|nail|berber|brow|lash|pilates|yoga|masaj/.test(category)) return SECTOR_LABELS.salon;
-  if (/oto|otomotiv|araba|araç|kaporta|lastik|galeri|garaj/.test(category)) return SECTOR_LABELS.auto;
-  if (/mağaza|market|butik|shop|store|giyim|perakende|çiçek|kitap|mobilya|depo/.test(category)) return SECTOR_LABELS.retail;
-  return SECTOR_LABELS.default;
 }
 
 /** Default follow-up time for a contact outcome ('' when it needs none). */

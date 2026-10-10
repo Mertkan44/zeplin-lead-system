@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import sys
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qs, urlparse
 from collections import Counter
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -12,6 +13,7 @@ if str(ROOT) not in sys.path:
 from src.auth import lead_read_scope, normalize_email, require_auth
 from src.activity import enrich_outreach_event, manual_verification_from_event
 from src.http_api import send_internal_error, send_json, send_options
+from src.metrics import PERIODS, WEEKS, build_metrics, period_bounds
 from src.sales_assistant import build_sales_playbook
 from src.research_brief import build_research_brief
 from src.workflow import build_lead_workflow, build_team_performance
@@ -149,6 +151,33 @@ class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         send_options(self, allow_methods="GET, OPTIONS")
 
+    def _send_metrics(self, user: dict, period: str) -> None:
+        """GET /api/workspace?view=metrics&period=7|30|90|all (src/metrics.py)."""
+        if period not in PERIODS:
+            send_json(self, 400, {"ok": False, "error": "period must be one of 7, 30, 90, all"}, allow_methods="GET, OPTIONS")
+            return
+        try:
+            scope = lead_read_scope(user)
+            if scope is None:
+                leads = fetch_all_leads()
+            else:
+                readable_names, _assignments = scope
+                leads = fetch_leads_by_names(readable_names) if readable_names else []
+            names = {lead.get("name") for lead in leads}
+            lead_ids = [lead.get("lead_id") for lead in leads if lead.get("lead_id") is not None]
+            states = fetch_activity_states(None if scope is None else lead_ids) if lead_ids or scope is None else {}
+            now = datetime.now(timezone.utc)
+            start, _end = period_bounds(period, now)
+            # Events for the period and for the weekly series, whichever reaches back further.
+            weekly_start = now - timedelta(weeks=WEEKS + 1)
+            since = weekly_start if start is None or start > weekly_start else start
+            since_iso = "1970-01-01T00:00:00+00:00" if start is None else since.isoformat()
+            events = fetch_events_since(since_iso, None if scope is None else names) if names else []
+            metrics = build_metrics(leads, events, states, period=period, now=now)
+            send_json(self, 200, {"ok": True, "metrics": metrics}, allow_methods="GET, OPTIONS")
+        except Exception as exc:
+            send_internal_error(self, exc, error="metrics failed", allow_methods="GET, OPTIONS")
+
     def do_GET(self):
         try:
             user = require_auth(self)
@@ -157,6 +186,10 @@ class handler(BaseHTTPRequestHandler):
             return
         if not supabase_enabled():
             send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="GET, OPTIONS")
+            return
+        query = parse_qs(urlparse(self.path).query)
+        if (query.get("view") or [""])[0] == "metrics":
+            self._send_metrics(user, (query.get("period") or ["30"])[0])
             return
         try:
             user_email = normalize_email(user.get("sub"))

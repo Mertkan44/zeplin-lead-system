@@ -41,7 +41,7 @@ export function WorkspaceView({ leads, user, summary, teamUsers, teamPerformance
   const totalValue = leads.reduce((sum, lead) => sum + (lead.estimated_value_tl || 0), 0);
   const gradeA = leads.filter(lead => lead.scoring.grade === 'A').length;
   const weekBuckets = useMemo(() => computeWeekBuckets(leads), [leads]);
-  const weekMax = Math.max(...weekBuckets, 1);
+  const weekMax = Math.max(0, ...weekBuckets);
   const topCity = useMemo(() => mostCommonCity(leads), [leads]);
   const today = useMemo(() => new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), []);
 
@@ -69,15 +69,16 @@ export function WorkspaceView({ leads, user, summary, teamUsers, teamPerformance
         <div className={styles.accentCard}>
           <div className={styles.accentTop}>
             <div>
-              <div className={styles.accentLabel}>Tahmini Pipeline</div>
-              <div className={styles.accentValue}>~{fmt(totalValue)} ₺</div>
-              <div className={styles.accentSub}>{leads.length} aktif lead · {gradeA} A sınıfı</div>
+              {/* A catalog estimate, not an approved price: no value is "not set", never "0 ₺" (§10). */}
+              <div className={styles.accentLabel}>Katalog tahmini</div>
+              <div className={totalValue > 0 ? styles.accentValue : `${styles.accentValue} ${styles.accentValueText}`}>{totalValue > 0 ? `~${fmt(totalValue)} ₺` : 'Değer belirlenmedi'}</div>
+              <div className={styles.accentSub}>{leads.length} görünür lead · {gradeA} A sınıfı · onaylı fiyat değildir</div>
             </div>
             <div className={styles.accentIcon}><IconTrend /></div>
           </div>
-          <div className={styles.bars} role="img" aria-label={`Son 8 haftada analiz edilen lead: ${weekBuckets.join(', ')}`}>
+          <div className={styles.bars} role="img" aria-label={`Son 8 haftada haftalık analiz edilen lead: ${weekBuckets.join(', ')}`} title="Son 8 hafta, haftalık analiz edilen lead">
             {weekBuckets.map((count, index) => (
-              <div key={index} className={index === 7 ? `${styles.bar} ${styles.barCurrent}` : styles.bar} style={{ height: `${Math.max((count / weekMax) * 100, 8)}%` }} />
+              <div key={index} className={index === 7 ? `${styles.bar} ${styles.barCurrent}` : styles.bar} style={{ height: weekMax ? `${(count / weekMax) * 100}%` : '0%' }} />
             ))}
           </div>
         </div>

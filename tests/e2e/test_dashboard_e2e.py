@@ -110,6 +110,7 @@ class DashboardE2E(unittest.TestCase):
         self.outreach_statuses = []  # status codes for the next POST /api/outreach calls
         self.outreach_posts = []
         self.place_posts = []
+        self.metric_periods = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
         self.page.on("console", lambda msg: msg.type == "error" and self.errors.append(msg.text))
         self.page.route("**/*", self._route)
@@ -131,6 +132,14 @@ class DashboardE2E(unittest.TestCase):
                 return route.fulfill(json={"ok": True})
             user = self.session["user"]
             return route.fulfill(json={"ok": True, "configured": True, "authenticated": bool(user), "user": user})
+        if path == "/api/workspace" and "view=metrics" in url:
+            from urllib.parse import parse_qs, urlparse
+
+            from src.metrics import build_metrics
+
+            period = parse_qs(urlparse(url).query).get("period", ["30"])[0]
+            self.metric_periods.append(period)
+            return route.fulfill(json={"ok": True, "metrics": build_metrics(self.payload["leads"], [], {}, period=period)})
         if path == "/api/workspace":
             if self.workspace_status != 200:
                 return route.fulfill(status=self.workspace_status, json={"ok": False, "error": "login required"})
@@ -483,6 +492,23 @@ class DashboardE2E(unittest.TestCase):
         self.heading("Lead Workspace")
         self.page.keyboard.press("/")
         self.page.get_by_role("dialog", name="Lead ara").wait_for()
+
+    def test_reports_show_definitions_and_link_to_the_list(self):
+        self.page.goto(f"{self.base}/analytics")
+        self.heading("Raporlar")
+        self.assertEqual(self.metric_periods, ["30"])
+        # A status distribution, never called a funnel.
+        self.page.get_by_role("heading", name="Durum dağılımı").wait_for()
+        self.assertEqual(self.page.get_by_text("Dönüşüm Hunisi", exact=True).count(), 0)
+        self.page.get_by_text("aynı işletme iki kez sayılmaz").wait_for()
+        self.page.get_by_role("group", name="Dönem").get_by_role("button", name="7 gün").click()
+        self.page.wait_for_url("**/analytics?donem=7")
+        self.page.get_by_text("Son 7 gün (bugün dahil)").first.wait_for()
+        self.assertIn("7", self.metric_periods)
+        self.page.get_by_role("link", name="Yeni", exact=True).click()
+        self.page.wait_for_url("**/raporlar?asama=yeni")
+        self.heading("Leadler")
+        self.assertEqual(self.errors, [])
 
     def test_no_runtime_compiler_or_third_party_scripts(self):
         self.page.goto(f"{self.base}/")

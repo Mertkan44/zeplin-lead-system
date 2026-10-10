@@ -201,6 +201,22 @@ class AccessPolicyTests(unittest.TestCase):
         _, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace")
         self.assertEqual(len(payload["leads"]), 4)
 
+    def test_metrics_count_only_the_readable_leads(self):
+        self.store.events = [
+            {"id": index + 1, "lead_name": lead["name"], "action": "contact_result_recorded", "outcome": "won",
+             "happened_at": datetime.now(timezone.utc).isoformat()}
+            for index, lead in enumerate(self.store.leads)
+        ]
+        status, payload = self._call(workspace_api, "GET", ALI, path="/api/workspace?view=metrics&period=7")
+        self.assertEqual(status, 200)
+        # Ali reads "Own Closed" and "Own Active" only.
+        self.assertEqual(payload["metrics"]["lead_count"], 2)
+        self.assertEqual(payload["metrics"]["sales"]["won_businesses"]["value"], 2)
+        _, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace?view=metrics&period=all")
+        self.assertEqual(payload["metrics"]["sales"]["won_businesses"]["value"], 4)
+        status, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace?view=metrics&period=365")
+        self.assertEqual(status, 400)
+
     def test_only_admins_see_schema_readiness_in_workspace(self):
         _, payload = self._call(workspace_api, "GET", ADMIN, path="/api/workspace")
         self.assertEqual(payload["schema"]["failed_checks"], ["lead_sources"])
