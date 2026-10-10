@@ -147,7 +147,7 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
       case 'raporlar':
         return <LeadListView leads={leads} user={user} teamUsers={team.data || []} onOpenResult={lead => setResultLeadName(lead.name)} />;
       case 'analytics':
-        return <AnalyticsView leads={leads} />;
+        return <AnalyticsView user={user} />;
       default:
         return (
           <WorkspaceView

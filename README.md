@@ -199,6 +199,7 @@ GET/POST/DELETE /api/auth
 GET/POST/PATCH /api/users          # admin only
 GET/POST/PATCH /api/assignments    # admin assigns, users update assignment status
 GET /api/workspace                 # role-shaped dashboard payload (events: last 30 days, feed capped at 1,000)
+GET /api/workspace?view=metrics&period=7|30|90|all   # report numbers with definitions (src/metrics.py)
 GET /api/leads                     # paginated list: ?cursor=&limit=1-100&q=&status= -> {items, next_cursor, total}
 GET /api/leads?id=123 | ?name=...  # one lead with assignments and latest activity
 GET /api/outreach?lead=...         # timeline, newest first: &before=<event id>&limit=1-200 -> {items, next_before}
@@ -339,6 +340,17 @@ recommendation into the local operational dataset. `src/dashboard/build.py`
 reads no lead data; it writes only the non-secret service catalog and follow-up
 rules for the dashboard build. Scans no longer rebuild or push anything: `--build`
 and `--push` are accepted but do nothing.
+
+## Report metrics
+
+`src/metrics.py` defines every number on the Raporlar screen once (review §10):
+days start at midnight Europe/Istanbul; activity counts use the date the
+contact result was recorded, new leads use `leads.created_at` and analyses
+`last_analyzed`; "won" counts distinct businesses, so a repeated win does not
+inflate it; unknown scores are left out of averages instead of counted as 0;
+sectors beyond the top five fold into "Diğer". There is no stage history yet,
+so current statuses are shown as a distribution, not a conversion funnel.
+`tests/test_metrics.py` checks the numerator and denominator of each metric.
 
 ## Security Reminder
 
