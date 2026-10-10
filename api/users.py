@@ -7,160 +7,217 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.auth import make_password_hash, normalize_email, require_admin, require_auth
+from src.auth import (
+    clear_session_cookie,
+    login_rate_limited,
+    make_password_hash,
+    normalize_email,
+    record_login_attempt,
+    require_auth,
+    verify_password_hash,
+)
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
+    CommandRejected,
     fetch_app_user_by_email,
     fetch_app_users,
-    is_enabled as supabase_enabled,
-    insert_audit_event,
-    set_app_user_active,
-    upsert_app_user,
+    is_enabled,
+    team_rpc,
 )
+from src.users import password, team_command, version
 
-
-def _clean_text(value: str | None, *, max_len: int = 120) -> str:
-    return (value or "").strip()[:max_len]
+METHODS = "GET, POST, PATCH, OPTIONS"
 
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
-        send_options(self, allow_methods="GET, POST, PATCH, OPTIONS")
+        send_options(self, allow_methods=METHODS)
+
+    def _user(self, *, admin=False):
+        try:
+            user = require_auth(self)
+        except PermissionError:
+            send_json(
+                self,
+                401,
+                {"ok": False, "error": "login required"},
+                allow_methods=METHODS,
+            )
+            return None
+        if admin and user.get("role") != "admin":
+            send_json(
+                self,
+                403,
+                {"ok": False, "error": "Yönetici erişimi gerekli."},
+                allow_methods=METHODS,
+            )
+            return None
+        if not is_enabled():
+            send_json(
+                self,
+                503,
+                {"ok": False, "error": "Veritabanı bağlantısı gerekli."},
+                allow_methods=METHODS,
+            )
+            return None
+        return user
 
     def do_GET(self):
-        try:
-            viewer = require_auth(self)
-        except PermissionError:
-            send_json(self, 401, {"ok": False, "error": "login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        if not supabase_enabled():
-            send_json(self, 503, {"ok": False, "error": "supabase is not configured"}, allow_methods="GET, POST, PATCH, OPTIONS")
+        query = parse_qs(urlparse(self.path).query)
+        modern = query.get("view") == ["team"]
+        viewer = self._user(admin=modern)
+        if not viewer:
             return
         try:
-            users = fetch_app_users()
-            if viewer.get("role") != "admin":
-                own_email = normalize_email(viewer.get("sub"))
-                users = [
-                    {
-                        "email": row.get("email") if normalize_email(row.get("email")) == own_email else None,
-                        "name": row.get("name"),
-                        "role": row.get("role"),
-                        "title": row.get("title"),
-                        "avatar_url": row.get("avatar_url"),
-                        "active": row.get("active"),
-                    }
-                    for row in users
-                    if row.get("active", True)
-                ]
-            send_json(self, 200, {"ok": True, "users": users}, allow_methods="GET, POST, PATCH, OPTIONS")
+            if modern:
+                users = team_rpc(
+                    "team_management_state", actor=normalize_email(viewer.get("sub"))
+                )
+            else:
+                users = fetch_app_users()
+                if viewer.get("role") != "admin":
+                    own = normalize_email(viewer.get("sub"))
+                    users = [
+                        {
+                            key: row.get(key)
+                            for key in ("name", "role", "title", "avatar_url", "active")
+                        }
+                        | {
+                            "email": (
+                                row.get("email")
+                                if normalize_email(row.get("email")) == own
+                                else None
+                            )
+                        }
+                        for row in users
+                        if row.get("active", True)
+                    ]
+            send_json(self, 200, {"ok": True, "users": users}, allow_methods=METHODS)
+        except CommandRejected as exc:
+            self._rejected(exc)
         except Exception as exc:
-            send_internal_error(self, exc, error="user fetch failed", allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(
+                self, exc, error="user fetch failed", allow_methods=METHODS
+            )
+
+    def _rejected(self, exc):
+        send_json(
+            self,
+            exc.status,
+            {"ok": False, "error": exc.code, "code": exc.code},
+            allow_methods=METHODS,
+        )
 
     def do_POST(self):
-        try:
-            admin = require_admin(self)
-        except PermissionError:
-            send_json(self, 401, {"ok": False, "error": "admin login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        try:
-            payload = read_json(self)
-        except ValueError as exc:
-            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-
-        email = normalize_email(payload.get("email"))
-        name = _clean_text(payload.get("name") or email)
-        role = _clean_text(payload.get("role") or "sales", max_len=20)
-        title = _clean_text(payload.get("title") or ("Patron" if role == "admin" else "Çalışan"))
-        avatar_url = _clean_text(payload.get("avatar_url"), max_len=240)
-        password = payload.get("password")
-        active = bool(payload.get("active", True))
-        if not email or "@" not in email:
-            send_json(self, 400, {"ok": False, "error": "valid email is required"}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        if role not in {"admin", "sales"}:
-            send_json(self, 400, {"ok": False, "error": "role must be admin or sales"}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        if not password:
-            send_json(self, 400, {"ok": False, "error": "password is required"}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        try:
-            user = upsert_app_user(
-                email=email,
-                name=name,
-                role=role,
-                title=title,
-                avatar_url=avatar_url,
-                password_hash=make_password_hash(password),
-                active=active,
-            )
-            user.pop("password_hash", None)
-            insert_audit_event(
-                actor_email=admin.get("sub"),
-                event_type="user_created",
-                target_type="user",
-                target_key=email,
-                meta={"role": role, "active": active},
-            )
-            send_json(self, 200, {"ok": True, "user": user}, allow_methods="GET, POST, PATCH, OPTIONS")
-        except Exception as exc:
-            send_internal_error(self, exc, error="user save failed", allow_methods="GET, POST, PATCH, OPTIONS")
+        self._manage(create=True)
 
     def do_PATCH(self):
-        try:
-            admin = require_admin(self)
-        except PermissionError:
-            send_json(self, 401, {"ok": False, "error": "admin login required"}, allow_methods="GET, POST, PATCH, OPTIONS")
+        if parse_qs(urlparse(self.path).query).get("view") == ["account"]:
+            self._password()
+        else:
+            self._manage(create=False)
+
+    def _manage(self, *, create):
+        viewer = self._user(admin=True)
+        if not viewer:
             return
-        query = parse_qs(urlparse(self.path).query)
-        email = normalize_email(query.get("email", [""])[0])
         try:
             payload = read_json(self)
+            # Query email remains compatible as an identity selector.
+            if "email" not in payload:
+                payload["email"] = (
+                    parse_qs(urlparse(self.path).query).get("email") or [""]
+                )[0]
+            values, raw_password = team_command(payload, create=create)
+            result = team_rpc(
+                "manage_team_user",
+                actor=normalize_email(viewer.get("sub")),
+                **values,
+                password_hash=make_password_hash(raw_password) if raw_password else None
+            )
+            kwargs = (
+                {"set_cookie": clear_session_cookie()}
+                if result.get("account_changed")
+                else {}
+            )
+            send_json(
+                self, 200, {"ok": True, **result}, allow_methods=METHODS, **kwargs
+            )
         except ValueError as exc:
-            send_json(self, 400, {"ok": False, "error": str(exc)}, allow_methods="GET, POST, PATCH, OPTIONS")
-            return
-        if not email:
-            send_json(self, 400, {"ok": False, "error": "email is required"}, allow_methods="GET, POST, PATCH, OPTIONS")
+            send_json(
+                self, 400, {"ok": False, "error": str(exc)}, allow_methods=METHODS
+            )
+        except CommandRejected as exc:
+            self._rejected(exc)
+        except Exception as exc:
+            send_internal_error(
+                self, exc, error="user save failed", allow_methods=METHODS
+            )
+
+    def _password(self):
+        viewer = self._user()
+        if not viewer:
             return
         try:
-            if "active" in payload:
-                set_app_user_active(email, bool(payload["active"]))
-                insert_audit_event(
-                    actor_email=admin.get("sub"),
-                    event_type="user_active_changed",
-                    target_type="user",
-                    target_key=email,
-                    meta={"active": bool(payload["active"])},
+            payload = read_json(self)
+            if set(payload) - {
+                "current_password",
+                "new_password",
+                "expected_updated_at",
+            }:
+                raise ValueError("Bu işlem yalnız kendi şifreni değiştirir.")
+            old = payload.get("current_password")
+            new = password(payload.get("new_password"))
+            if not isinstance(old, str) or not 1 <= len(old) <= 128:
+                raise ValueError("Mevcut şifreni yaz.")
+            if old == new:
+                raise ValueError("Yeni şifre mevcut şifreden farklı olmalı.")
+            expected = version(payload.get("expected_updated_at"))
+            actor = normalize_email(viewer.get("sub"))
+            throttle = "password:" + actor
+            if login_rate_limited(throttle):
+                send_json(
+                    self,
+                    429,
+                    {
+                        "ok": False,
+                        "error": "Çok fazla deneme. Bir süre sonra tekrar dene.",
+                    },
+                    allow_methods=METHODS,
                 )
-            fields = {"name", "role", "title", "avatar_url", "password"}
-            if any(field in payload for field in fields):
-                current = fetch_app_user_by_email(email)
-                if not current:
-                    send_json(self, 404, {"ok": False, "error": "user not found"}, allow_methods="GET, POST, PATCH, OPTIONS")
-                    return
-                role = _clean_text(payload.get("role") or current.get("role") or "sales", max_len=20)
-                if role not in {"admin", "sales"}:
-                    send_json(self, 400, {"ok": False, "error": "role must be admin or sales"}, allow_methods="GET, POST, PATCH, OPTIONS")
-                    return
-                user = upsert_app_user(
-                    email=email,
-                    name=_clean_text(payload.get("name") or current.get("name") or email),
-                    role=role,
-                    title=_clean_text(payload.get("title") or current.get("title") or ("Patron" if role == "admin" else "Çalışan")),
-                    avatar_url=_clean_text(payload.get("avatar_url") or current.get("avatar_url"), max_len=240),
-                    password_hash=make_password_hash(payload["password"]) if payload.get("password") else None,
-                    active=bool(payload.get("active", current.get("active", True))),
-                )
-                user.pop("password_hash", None)
-                insert_audit_event(
-                    actor_email=admin.get("sub"),
-                    event_type="user_updated",
-                    target_type="user",
-                    target_key=email,
-                    meta={"role": role, "password_changed": bool(payload.get("password"))},
-                )
-                send_json(self, 200, {"ok": True, "user": user}, allow_methods="GET, POST, PATCH, OPTIONS")
                 return
-            send_json(self, 200, {"ok": True}, allow_methods="GET, POST, PATCH, OPTIONS")
+            row = fetch_app_user_by_email(actor)
+            if not row or not verify_password_hash(old, row.get("password_hash")):
+                record_login_attempt(throttle, success=False)
+                send_json(
+                    self,
+                    400,
+                    {"ok": False, "error": "Mevcut şifre doğru değil."},
+                    allow_methods=METHODS,
+                )
+                return
+            result = team_rpc(
+                "change_own_password",
+                actor=actor,
+                expected=expected,
+                previous_hash=row["password_hash"],
+                new_hash=make_password_hash(new),
+            )
+            record_login_attempt(throttle, success=True)
+            send_json(
+                self,
+                200,
+                {"ok": True, **result},
+                allow_methods=METHODS,
+                set_cookie=clear_session_cookie(),
+            )
+        except ValueError as exc:
+            send_json(
+                self, 400, {"ok": False, "error": str(exc)}, allow_methods=METHODS
+            )
+        except CommandRejected as exc:
+            self._rejected(exc)
         except Exception as exc:
-            send_internal_error(self, exc, error="user update failed", allow_methods="GET, POST, PATCH, OPTIONS")
+            send_internal_error(
+                self, exc, error="password change failed", allow_methods=METHODS
+            )

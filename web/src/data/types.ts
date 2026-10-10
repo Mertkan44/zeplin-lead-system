@@ -10,6 +10,7 @@ export interface User {
   title?: string | null;
   avatar_url?: string | null;
   active?: boolean;
+  updated_at?: string;
 }
 
 export type LeadStatus = 'yeni' | 'missing_info' | 'ready' | 'contacted' | 'follow_up' | 'converted' | 'lost';

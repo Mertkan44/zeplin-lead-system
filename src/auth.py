@@ -160,7 +160,7 @@ def current_user(handler: BaseHTTPRequestHandler) -> dict[str, Any] | None:
         if not row or not row.get("active", True) or row.get("role") not in USER_ROLES:
             return None
         session_version = str(row.get("updated_at") or "")
-        if payload.get("ver") and not hmac.compare_digest(str(payload["ver"]), session_version):
+        if not payload.get("ver") or not session_version or not hmac.compare_digest(str(payload["ver"]), session_version):
             return None
         payload.update(
             {

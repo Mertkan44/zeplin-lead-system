@@ -169,5 +169,5 @@ export const OUTREACH_ERRORS: Record<string, string> = {
 };
 
 export function roleLabel(role: string | null | undefined): string {
-  return role === 'admin' ? 'Patron' : 'Çalışan';
+  return role === 'admin' ? 'Yönetici' : 'Satış';
 }

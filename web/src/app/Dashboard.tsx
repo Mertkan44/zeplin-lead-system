@@ -13,21 +13,25 @@ import { ContactResultDialog } from '../screens/contact/ContactResultDialog';
 import { LeadDetailView } from '../screens/lead/LeadDetailView';
 import { LeadListView } from '../screens/leads/LeadListView';
 import { PipelineView } from '../screens/pipeline/PipelineView';
+import { TeamView } from '../screens/team/TeamView';
 import { ProfileView } from '../screens/profile/ProfileView';
 import { ServicesView } from '../screens/services/ServicesView';
 import { TodayView } from '../screens/today/TodayView';
 import { WorkspaceView } from '../screens/workspace/WorkspaceView';
 import { SearchDialog } from './SearchDialog';
+import type { Density } from './density';
 import type { Theme } from './theme';
 import { BottomNav, MenuDrawer, Sidebar, TopBar, type NavigationProps } from './Navigation';
 import styles from './Dashboard.module.css';
 
 export interface DashboardProps {
   theme: Theme;
+  density: Density;
+  onDensityChange: (value: Density) => void;
   onToggleTheme: () => void;
 }
 
-export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
+export function Dashboard({ theme, onToggleTheme, density, onDensityChange }: DashboardProps) {
   const { user, requestLogout } = useSession();
   const route = useRoute();
   const homeView: View = user.role === 'sales' ? 'today' : 'cockpit';
@@ -82,6 +86,10 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
   }
 
   function renderContent() {
+    if (view === 'profile') return <ProfileView user={user} theme={theme} onToggleTheme={onToggleTheme} onLogout={requestLogout} density={density} onDensityChange={onDensityChange} />;
+    if (view === 'admin') return <AdminView user={user} />;
+    if (view === 'team') return <TeamView user={user} />;
+    if (view === 'hizmetler') return <ServicesView leads={crm?.rows || []} signalsAvailable={Boolean(crm)} />;
     if (workspace.isPending) return <LoadingState label="Workspace yükleniyor." />;
     if (!crm) {
       return (
@@ -94,15 +102,11 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
         />
       );
     }
-    if (view === 'profile') {
-      return <ProfileView user={user} users={team.data || [user]} summary={crm.summary} assignments={crm.assignments} onLogout={requestLogout} />;
-    }
-    if (view === 'admin') return <AdminView user={user} />;
     if (!leads.length) {
       return (
         <div className={styles.center}>
           <EmptyState title={user.role === 'sales' ? 'Sana atanmış aktif lead yok.' : 'Lead verisi bulunamadı.'}>
-            {user.role === 'sales' ? 'Yöneticin sana lead atadığında burada görünecek.' : 'Yeni lead için Admin ekranından tarama başlat.'}
+            {user.role === 'sales' ? 'Yöneticin sana lead atadığında burada görünecek.' : 'Yeni lead için Tarama merkezinden tarama başlat.'}
           </EmptyState>
         </div>
       );
@@ -142,8 +146,6 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
       }
       case 'pipeline':
         return <PipelineView leads={leads} />;
-      case 'hizmetler':
-        return <ServicesView leads={crm.rows} />;
       case 'raporlar':
         return <LeadListView leads={leads} user={user} teamUsers={team.data || []} onOpenResult={lead => setResultLeadName(lead.name)} />;
       case 'analytics':

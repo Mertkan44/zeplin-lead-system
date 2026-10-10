@@ -9,6 +9,7 @@ import type { Role, User } from '../data/types';
 import { ConfirmDialog, LoadingState } from '../ui';
 import { Dashboard } from './Dashboard';
 import { LoginView } from './LoginView';
+import { useDensity } from './density';
 import { useTheme } from './theme';
 
 type AuthState =
@@ -23,6 +24,7 @@ interface AuthResponse {
 
 export function App() {
   const [theme, toggleTheme] = useTheme();
+  const [density, setDensity] = useDensity();
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' });
   const [loginNotice, setLoginNotice] = useState('');
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -37,7 +39,7 @@ export function App() {
   }
 
   useEffect(() => {
-    const onExpired = () => endSession('Oturumun sona erdi. Devam etmek için tekrar giriş yap.');
+    const onExpired = (event: Event) => endSession((event as CustomEvent<{ notice?: string }>).detail?.notice || 'Oturumun sona erdi. Devam etmek için tekrar giriş yap.');
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, []);
@@ -73,7 +75,7 @@ export function App() {
 
   return (
     <SessionContext.Provider value={session}>
-      <Dashboard key={session.user.email} theme={theme} onToggleTheme={toggleTheme} />
+      <Dashboard key={session.user.email} theme={theme} onToggleTheme={toggleTheme} density={density} onDensityChange={setDensity} />
       {logoutOpen && (
         <ConfirmDialog
           title="Oturumu kapat"

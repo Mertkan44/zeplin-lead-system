@@ -11,6 +11,7 @@ sample leads. Runs only with RUN_E2E=1 (CI's e2e job):
 Set E2E_CHROMIUM_PATH to use an already installed Chromium.
 """
 
+import copy
 import json
 import os
 import threading
@@ -86,8 +87,8 @@ class DashboardE2E(unittest.TestCase):
         cls.playwright = sync_playwright().start()
         executable = os.environ.get("E2E_CHROMIUM_PATH") or None
         cls.browser = cls.playwright.chromium.launch(executable_path=executable)
-        cls.admin = {"email": "boss@example.com", "name": "Boss", "role": "admin"}
-        cls.sales = {"email": "seller@example.com", "name": "Satış Kişisi", "role": "sales"}
+        cls.admin = {"email": "boss@example.com", "name": "Boss", "role": "admin", "updated_at": "2026-10-10T07:00:00Z"}
+        cls.sales = {"email": "seller@example.com", "name": "Satış Kişisi", "role": "sales", "updated_at": "2026-10-10T07:00:00Z"}
         cls.payload = workspace_payload({"sub": cls.admin["email"], **cls.admin})
         # The top lead has passed its checks, so the contact dialog can save.
         top = max(cls.payload["leads"], key=lambda lead: lead["scoring"]["score"])
@@ -102,6 +103,7 @@ class DashboardE2E(unittest.TestCase):
         cls.server.server_close()
 
     def setUp(self):
+        self.payload = copy.deepcopy(type(self).payload)
         self.page = self.browser.new_page(viewport={"width": 1280, "height": 900})
         self.errors, self.external = [], []
         self.session = {"user": self.admin}
@@ -111,6 +113,11 @@ class DashboardE2E(unittest.TestCase):
         self.outreach_posts = []
         self.place_posts = []
         self.metric_periods = []
+        self.team_rows = [{**member, "active": True, "updated_at": "2026-10-10T07:00:00Z", "active_assignments": 3, "overdue_assignments": 1} for member in (self.admin,self.sales)]
+        self.team_posts = []
+        self.team_statuses = []
+        self.password_posts = []
+        self.password_status = 200
         self.pipeline_posts = []
         self.pipeline_statuses = []
         self.pipeline_rows = [{
@@ -190,6 +197,30 @@ class DashboardE2E(unittest.TestCase):
             return route.fulfill(json={"ok": True, "place": {"status": "verified", "match_method": "place_id"}})
         if path == "/api/status" and self.status_save_status != 200:
             return route.fulfill(status=self.status_save_status, json={"ok": False, "error": "status save failed"})
+        if path == "/api/users":
+            if "view=account" in url and request.method == "PATCH":
+                self.password_posts.append(json.loads(request.post_data or "{}"))
+                if self.password_status != 200:
+                    return route.fulfill(status=self.password_status,json={"ok":False,"error":"Mevcut şifre doğru değil."})
+                self.session["user"] = None
+                return route.fulfill(json={"ok":True,"session_ended":True})
+            if request.method in ("POST","PATCH"):
+                body = json.loads(request.post_data or "{}")
+                self.team_posts.append(body)
+                status = self.team_statuses.pop(0) if self.team_statuses else 200
+                if status != 200:
+                    if status == 409:
+                        current = next(row for row in self.team_rows if row['email']==body['email'])
+                        current['updated_at'] = '2026-10-10T07:01:00Z'
+                    return route.fulfill(status=status,json={"ok":False,"error":"Kayıt yapılamadı.","code":"USER_VERSION_CONFLICT" if status==409 else None})
+                current = next((row for row in self.team_rows if row['email']==body['email']),None)
+                if current is None:
+                    current = {"email":body['email'],"active_assignments":0,"overdue_assignments":0}
+                    self.team_rows.append(current)
+                current.update({key:body.get(key) for key in ('name','role','active','title','avatar_url')})
+                current['updated_at'] = '2026-10-10T07:02:00Z'
+                return route.fulfill(json={"ok":True,"user":current})
+            return route.fulfill(json={"ok":True,"users":self.team_rows})
         if path == "/api/admin_search":
             if request.method == "POST":
                 body = json.loads(request.post_data or "{}")
@@ -241,7 +272,7 @@ class DashboardE2E(unittest.TestCase):
         lead = self.lead(0)
         self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
         self.heading(lead["name"])
-        self.page.get_by_text("Profil", exact=True).first.click()
+        self.page.get_by_text("Hesabım", exact=True).first.click()
         self.page.get_by_role("button", name="Çıkış yap").first.click()
         self.page.get_by_role("button", name="Çıkış yap").last.click()  # confirm dialog
         self.page.get_by_placeholder("ad@zeplinmedia.com").wait_for(timeout=10000)
@@ -311,8 +342,9 @@ class DashboardE2E(unittest.TestCase):
             "/pipeline": "Satış kanalı",
             "/analytics": "Raporlar",
             "/hizmetler": "Zeplin Media Hizmetleri",
-            "/profile": "Ekip ve hesap",
-            "/admin": "Search operasyonu",
+            "/profile": "Hesabım ve ayarlar",
+            "/admin": "Tarama merkezi",
+            "/team": "Ekip yönetimi",
             f"/leads/{lead['lead_id']}": lead["name"],
         }
         for path, title in screens.items():
@@ -354,14 +386,14 @@ class DashboardE2E(unittest.TestCase):
         self.page.get_by_role("alert").filter(has_text="Durum kaydedilemedi.").wait_for(timeout=10000)
         self.page.wait_for_function("() => document.getElementById('lead-stage').value === 'yeni'")
 
-    def test_theme_is_the_only_thing_kept_in_browser_storage(self):
+    def test_only_display_preferences_are_kept_in_browser_storage(self):
         self.page.goto(f"{self.base}/leads/{self.lead(0)['lead_id']}")
         self.heading(self.lead(0)["name"])
         self.page.get_by_role("button", name="Aydınlık moda geç").click()
         self.page.reload()
         self.heading(self.lead(0)["name"])
         self.assertEqual(self.page.evaluate("document.documentElement.dataset.theme"), "light")
-        self.assertEqual(self.page.evaluate("Object.keys(localStorage)"), ["zeplin_theme"])
+        self.assertEqual(set(self.page.evaluate("Object.keys(localStorage)")), {"zeplin_theme", "zeplin_density"})
         self.assertEqual(self.page.evaluate("Object.keys(sessionStorage)"), [])
 
     def test_contact_result_keeps_the_form_on_failure_and_retries_once(self):
@@ -488,7 +520,7 @@ class DashboardE2E(unittest.TestCase):
         self.session["user"] = self.sales
         self.page.goto(f"{self.base}/")
         self.heading("Bugün")
-        self.assertEqual(self.page.get_by_role("link", name="Admin").count(), 0)
+        self.assertEqual(self.page.get_by_role("link", name="Tarama merkezi").count(), 0)
         late = self.page.get_by_role("region", name="Geciken")
         late.get_by_role("heading", name=overdue["name"]).wait_for()
         late.get_by_text("Önceki sonuç: Ulaşılamadı").wait_for()
@@ -632,6 +664,62 @@ class DashboardE2E(unittest.TestCase):
         self.assertEqual(self.pipeline_posts[0]["stage"], "new")
         self.assertEqual(self.pipeline_posts[0]["expected_opportunity_revision"], 0)
         self.assertEqual(self.errors, [])
+
+    def test_team_editor_retains_form_on_error_and_refreshes_conflict(self):
+        self.team_statuses = [503,409]
+        self.page.goto(f"{self.base}/team")
+        self.heading("Ekip yönetimi")
+        card = self.page.locator("li").filter(has=self.page.get_by_role("heading",name=self.sales['name'],exact=True))
+        card.get_by_role("button",name="Düzenle",exact=True).click()
+        dialog = self.page.get_by_role("dialog",name="Ekip üyesini düzenle")
+        dialog.get_by_label("Unvan (isteğe bağlı)").fill("Müşteri ilişkileri")
+        dialog.get_by_label("Rol",exact=True).select_option('admin')
+        dialog.get_by_label("Aktif hesap").uncheck()
+        dialog.get_by_role("button",name="Kaydet",exact=True).click()
+        dialog.get_by_role("alert").wait_for()
+        self.assertEqual(dialog.get_by_label("Unvan (isteğe bağlı)").input_value(),"Müşteri ilişkileri")
+        dialog.get_by_role("button",name="Kaydet",exact=True).click()
+        dialog.get_by_role("button",name="Güncel bilgileri al").click()
+        dialog.get_by_text("Güncel hesap alındı.",exact=False).wait_for()
+        self.assertEqual(dialog.get_by_label("Rol",exact=True).input_value(),'admin')
+        self.assertFalse(dialog.get_by_label("Aktif hesap").is_checked())
+        dialog.get_by_role("button",name="Kaydet",exact=True).click()
+        dialog.wait_for(state='detached')
+        self.assertEqual(self.team_posts[0]['idempotency_key'],self.team_posts[1]['idempotency_key'])
+        self.assertNotEqual(self.team_posts[1]['idempotency_key'],self.team_posts[2]['idempotency_key'])
+        self.assertEqual(self.team_posts[2]['expected_updated_at'],'2026-10-10T07:01:00Z')
+
+    def test_account_password_and_density_are_real_preferences(self):
+        self.page.goto(f"{self.base}/profile")
+        self.heading("Hesabım ve ayarlar")
+        self.page.get_by_label("Lead listesindeki satır aralığı").select_option('compact')
+        self.page.reload()
+        self.assertEqual(self.page.get_by_label("Lead listesindeki satır aralığı").input_value(),'compact')
+        self.assertEqual(self.page.locator('html').get_attribute('data-density'),'compact')
+        self.password_status = 400
+        self.page.get_by_label("Mevcut şifre",exact=True).fill('wrong')
+        self.page.get_by_label("Yeni şifre",exact=True).fill('Synthetic new password')
+        self.page.get_by_label("Yeni şifre tekrar",exact=True).fill('Synthetic new password')
+        self.page.get_by_role("button",name="Şifreyi değiştir").click()
+        self.page.get_by_role("alert").get_by_text("Mevcut şifre doğru değil.").wait_for()
+        self.assertEqual(self.page.get_by_label("Yeni şifre",exact=True).input_value(),'Synthetic new password')
+        self.password_status = 200
+        self.page.get_by_role("button",name="Şifreyi değiştir").click()
+        self.page.get_by_text("Şifren değiştirildi. Yeni şifrenle tekrar giriş yap.").wait_for()
+        self.page.get_by_placeholder("ad@zeplinmedia.com").wait_for()
+        self.assertEqual(len(self.password_posts),2)
+
+    def test_team_sales_guard_and_services_without_leads(self):
+        self.session['user'] = self.sales
+        self.page.goto(f"{self.base}/team")
+        self.page.get_by_text("Bu ekran yalnız yöneticilere açık.").wait_for()
+        self.assertEqual(self.page.get_by_role("button",name="Kişi ekle").count(),0)
+        self.payload['leads'] = []
+        self.page.goto(f"{self.base}/hizmetler")
+        self.heading("Zeplin Media Hizmetleri")
+        self.page.get_by_text("Kapsam ve keşif soruları",exact=True).first.click()
+        self.page.get_by_role("heading",name="Keşifte sor",exact=True).first.wait_for()
+        self.assertEqual(self.errors,[])
 
     def test_phone_layout_has_bottom_bar_and_menu(self):
         self.page.set_viewport_size({"width": 390, "height": 844})

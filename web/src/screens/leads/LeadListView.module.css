@@ -76,3 +76,6 @@
   .cellAction { grid-column: 1 / -1; }
   .cellAction .action { width: 100%; min-height: 44px; }
 }
+
+:global([data-density="compact"]) .table td { padding-top: 7px; padding-bottom: 7px; }
+@media(max-width:767px){:global([data-density="compact"]) .table tr{padding:10px;gap:4px var(--space-3);}}
