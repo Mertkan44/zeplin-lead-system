@@ -65,6 +65,10 @@ export interface Workflow {
   ready_to_contact?: boolean;
   contact_available?: boolean;
   latest_contact_at?: string | null;
+  latest_outcome?: string | null;
+  latest_outcome_label?: string | null;
+  follow_up_at?: string | null;
+  follow_up_due?: boolean;
 }
 
 export interface Lead {
