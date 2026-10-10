@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
 
 from src.auth import require_auth, require_lead_access
 from src.http_api import read_json, send_internal_error, send_json, send_options
-from src.storage.supabase import insert_audit_event, is_enabled as supabase_enabled, set_lead_status
+from src.storage.supabase import CommandRejected, insert_audit_event, is_enabled as supabase_enabled, set_lead_status
 
 
 class handler(BaseHTTPRequestHandler):
@@ -45,6 +45,8 @@ class handler(BaseHTTPRequestHandler):
                 meta={"status": status},
             )
             send_json(self, 200, {"ok": True}, allow_methods="POST, OPTIONS")
+        except CommandRejected as exc:
+            send_json(self, exc.status, {"ok": False, "error": exc.code, "code": exc.code}, allow_methods="POST, OPTIONS")
         except PermissionError as exc:
             send_json(self, 403, {"ok": False, "error": str(exc)}, allow_methods="POST, OPTIONS")
         except Exception as exc:

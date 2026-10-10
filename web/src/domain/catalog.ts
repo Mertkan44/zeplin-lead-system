@@ -65,6 +65,7 @@ export const ACTIONS: Record<string, ActionMeta> = {
   proposal_sent:             { label: 'Teklif Gönderildi',         icon: '📤', status: 'contacted' },
   deal_won:                  { label: 'Anlaşma Yapıldı 🎉',        icon: '🎉', status: 'converted' },
   deal_lost:                 { label: 'Anlaşma Düştü',             icon: '❌', status: 'lost' },
+  opportunity_stage_changed: { label: 'Fırsat Aşaması Değişti',    icon: '→',  status: null },
 };
 
 export function actionMeta(action: string): ActionMeta {
@@ -164,6 +165,7 @@ export const OUTREACH_ERRORS: Record<string, string> = {
   LEAD_NOT_ASSIGNED: 'Bu lead artık sana atanmış değil; sonuç kaydedilmedi.',
   LEAD_NOT_FOUND: 'Lead bulunamadı; silinmiş veya birleştirilmiş olabilir.',
   IDEMPOTENCY_KEY_REUSED: 'Form değişti; tekrar kaydet.',
+  OPPORTUNITY_REOPEN_REQUIRED: 'Bu fırsat kapanmış. Yeni görüşme kaydetmeden önce yönetici yeniden açmalı.',
 };
 
 export function roleLabel(role: string | null | undefined): string {

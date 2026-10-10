@@ -129,6 +129,11 @@ def set_lead_status(name: str, status: str) -> None:
             headers=_headers(config, prefer="return=minimal"),
             json={"status": status, "updated_at": datetime.now(timezone.utc).isoformat()},
         )
+        if response.status_code in {400, 403, 404, 409}:
+            body = response.json()
+            code = str(body.get("message") or "")
+            if str(body.get("code") or "").startswith("PT") and code.isupper():
+                raise CommandRejected(response.status_code, code)
         response.raise_for_status()
 
 
@@ -659,7 +664,7 @@ def set_app_user_active(email: str, active: bool) -> None:
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
 
 
-REQUIRED_SCHEMA_VERSION = "011"
+REQUIRED_SCHEMA_VERSION = "013"
 
 
 def fetch_schema_readiness() -> dict[str, Any]:
@@ -688,7 +693,11 @@ def evaluate_schema_readiness(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def schema_status() -> dict[str, Any]:
-    return evaluate_schema_readiness(fetch_schema_readiness())
+    raw = fetch_schema_readiness()
+    if str(raw.get("version") or "") >= "013":
+        checks = _rpc("opportunity_schema_readiness", {})
+        raw = {**raw, "checks": {**(raw.get("checks") or {}), **(checks or {"opportunity_schema": False})}}
+    return evaluate_schema_readiness(raw)
 
 
 def _count(client: httpx.Client, config: SupabaseConfig, table: str, query: str) -> int:
@@ -1255,3 +1264,26 @@ def fetch_model_rates() -> list[dict[str, Any]]:
 def fetch_spend_summary(*, today_start: datetime | None = None) -> dict[str, Any]:
     """Whole-ledger AI totals from the database (ai_spend_summary, migration 011)."""
     return _rpc("ai_spend_summary", {"p_today_start": today_start.isoformat() if today_start else None}) or {}
+
+
+def fetch_opportunities(*, actor: str, is_admin: bool) -> list[dict[str, Any]]:
+    return _rpc('list_opportunities', {'p_actor': actor, 'p_is_admin': is_admin}) or []
+
+
+def fetch_opportunity_history(*, actor: str, is_admin: bool, lead_id: int, before: int | None) -> list[dict[str, Any]]:
+    return _rpc('read_opportunity_history', {'p_actor': actor, 'p_is_admin': is_admin, 'p_lead_id': lead_id,
+                                            'p_before': before, 'p_limit': 50}) or []
+
+
+def change_opportunity_stage(**values) -> dict[str, Any]:
+    config = _require_config()
+    with httpx.Client(timeout=20) as client:
+        response = client.post(config.url + '/rest/v1/rpc/change_opportunity_stage',
+                               headers=_headers(config), json={'p_' + key: value for key, value in values.items()})
+    if response.status_code in {400, 403, 404, 409}:
+        body = response.json()
+        code = str(body.get('message') or '')
+        if str(body.get('code') or '').startswith('PT') and code.isupper():
+            raise CommandRejected(response.status_code, code)
+    response.raise_for_status()
+    return response.json()

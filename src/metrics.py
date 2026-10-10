@@ -3,8 +3,8 @@
 Every metric says which date it counts by and what its scope is; days start
 at midnight Europe/Istanbul. Current-state numbers (status distribution,
 follow-ups, scores) are "now"; activity numbers count inside the period.
-There is no stage history yet, so status counts are a distribution, not a
-conversion funnel. Pure functions: callers pass leads, events and states.
+Status counts are a distribution; opportunity history is not a cohort funnel.
+Pure functions: callers pass leads, events and states.
 """
 
 from __future__ import annotations
@@ -154,6 +154,12 @@ def build_metrics(
         if event.get("action") == "contact_result_recorded" and event.get("lead_name") in lead_names
     ]
     in_period = [event for event in results if _within(parse_time(event.get("happened_at")), start, end)]
+    commercial_closures = [event for event in events
+        if event.get("action") == "opportunity_stage_changed" and event.get("lead_name") in lead_names
+        and _within(parse_time(event.get("happened_at")), start, end)]
+
+    def closed_businesses(outcomes: set[str]) -> int:
+        return len({event.get("lead_name") for event in [*in_period, *commercial_closures] if event.get("outcome") in outcomes})
 
     def businesses(outcomes: set[str] | None = None) -> int:
         return len({
@@ -224,8 +230,8 @@ def build_metrics(
             "contact_results": _metric(len(in_period), "Görüşme sonucu", "Dönemde kaydedilen görüşme sonuçları; aynı işletmeyle tekrar görüşmeler ayrı sayılır."),
             "interested_businesses": _metric(businesses(INTERESTED_OUTCOMES), "İlgilenen işletme", "Dönemde “İlgilendi” veya “Teklif istedi” sonucu alan farklı işletme."),
             "proposal_businesses": _metric(businesses({"proposal_requested"}), "Teklif isteyen işletme", "Dönemde “Teklif istedi” sonucu alan farklı işletme."),
-            "won_businesses": _metric(businesses({"won"}), "Kazanılan işletme", "Dönemde “Anlaşma yapıldı” kaydedilen farklı işletme; aynı işletme iki kez sayılmaz. Tutar değil."),
-            "lost_businesses": _metric(businesses(LOST_OUTCOMES), "Kaybedilen işletme", "Dönemde “İlgilenmedi” veya “Kaybedildi” kaydedilen farklı işletme."),
+            "won_businesses": _metric(closed_businesses({"won"}), "Kazanılan işletme", "Dönemde görüşme sonucu veya fırsat geçişiyle kazanılan farklı işletme; aynı işletme iki kez sayılmaz. Tutar değil."),
+            "lost_businesses": _metric(closed_businesses(LOST_OUTCOMES), "Kaybedilen işletme", "Dönemde görüşme sonucu veya fırsat geçişiyle kaybedilen farklı işletme."),
             "outcomes": [
                 {"key": key, "label": label, "count": outcome_counts.get(key, 0)}
                 for key, label in OUTCOME_LABELS.items()
@@ -238,7 +244,7 @@ def build_metrics(
         },
         "statuses": {
             "label": "Durum dağılımı",
-            "definition": "Lead'lerin şu anki durumu. Aşama geçmişi tutulmadığı için bu bir dönüşüm hunisi değildir; dönemden etkilenmez.",
+            "definition": "Lead'lerin şu anki durumu; dönemden etkilenmez ve bir dönüşüm hunisi değildir. Ticari fırsatların aşamaları Pipeline ekranında ayrı tutulur.",
             "items": statuses,
         },
         "research": {
