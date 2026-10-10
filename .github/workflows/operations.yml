@@ -1,0 +1,70 @@
+name: Operations checks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zeplin-operations
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SMOKE_URL: ${{ vars.PRODUCTION_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      # Always run the currently trusted main code. This workflow never runs PR
+      # code with service credentials and never creates issues or sends messages.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Ignore a superseded release
+        id: release
+        env:
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+          IS_RELEASE: ${{ github.event_name == 'workflow_run' }}
+        run: |
+          current=$(git rev-parse HEAD)
+          if [ "$IS_RELEASE" = "true" ] && [ "$EVENT_SHA" != "$current" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=$current" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v7
+        if: steps.release.outputs.skip != 'true'
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+        if: steps.release.outputs.skip != 'true'
+      - name: Wait for this release and smoke the public application
+        if: steps.release.outputs.skip != 'true'
+        env:
+          SMOKE_EXPECTED_COMMIT: ${{ steps.release.outputs.sha }}
+        run: |
+          if [ -z "$SMOKE_URL" ]; then
+            echo "::error::Set repository variable PRODUCTION_URL to the production origin."
+            exit 1
+          fi
+          for attempt in 1 2 3 4 5 6; do
+            if python scripts/smoke_release.py; then exit 0; fi
+            if [ "$attempt" -lt 6 ]; then sleep 30; fi
+          done
+          echo "::error::Read-only release smoke failed. Inspect Vercel deployment and database readiness."
+          exit 1
+      - name: Check queue, worker and AI counters
+        if: always() && steps.release.outputs.skip != 'true'
+        run: python scripts/check_operations.py

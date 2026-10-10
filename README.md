@@ -394,4 +394,16 @@ stalled jobs, queue age, failed generations, and provider errors in the last
 24 hours. Usage-ledger persistence errors are visible without repeating a paid
 call. Reservations close in the same transaction as a terminal transition.
 Schema readiness is checked before Actions claims any work. Release, monitoring
-and backup/restore automation are the next work package (WP15).
+and backup/restore procedures are covered by WP15 below.
+
+## Operations and release checks (WP15)
+
+Read-only release smoke, hourly queue/AI monitoring, private PostgreSQL backups
+and an empty-target restore rehearsal are described in [docs/operations.md](docs/operations.md).
+Set the GitHub repository variable `PRODUCTION_URL` to the production origin.
+The Operations workflow verifies the deployed commit after main CI; it never
+starts paid work. CI also proves synthetic backup/restore, RLS/grant parity and
+refusal of populated targets or damaged archives. Live backups need a separate
+DB connection and protected storage; service-role HTTP access alone cannot create
+one. Audit persistence failures produce a sanitized operational log without
+turning a successful CRM mutation into a retry.

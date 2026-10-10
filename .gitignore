@@ -14,3 +14,6 @@ outreach_log.local.json
 outreach_log.json
 !tests/fixtures/leads_sample.json
 node_modules/
+backups/
+*.dump
+*.backup.json
