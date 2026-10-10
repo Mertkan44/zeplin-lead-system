@@ -31,7 +31,7 @@ export interface DialogProps {
   onClose: () => void;
   /** false while an action runs: Escape, outside click and the close button do nothing. */
   dismissible?: boolean;
-  size?: 'sm' | 'md' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   /** center: a card; left/right: a full-height drawer (full screen on phones). */
   placement?: 'center' | 'left' | 'right';
   role?: 'dialog' | 'alertdialog';
@@ -157,6 +157,9 @@ export interface ConfirmDialogProps {
   title: string;
   text: ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
+  /** The action discards or deletes something: shown in the danger style. */
+  destructive?: boolean;
   busyLabel?: string;
   busy?: boolean;
   onConfirm: () => void;
@@ -164,14 +167,14 @@ export interface ConfirmDialogProps {
 }
 
 /** Asks before an action with consequences (not for routine saves). */
-export function ConfirmDialog({ title, text, confirmLabel, busyLabel, busy = false, onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ title, text, confirmLabel, cancelLabel = 'Vazgeç', destructive = false, busyLabel, busy = false, onConfirm, onCancel }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
   return (
     <Dialog title={title} onClose={onCancel} dismissible={!busy} size="sm" role="alertdialog" closeButton={false} initialFocus={cancelRef}>
       <p className={styles.description}>{text}</p>
       <div className={styles.footer}>
-        <Button ref={cancelRef} disabled={busy} onClick={onCancel}>Vazgeç</Button>
-        <Button variant="primary" busy={busy} busyLabel={busyLabel} onClick={onConfirm}>{confirmLabel}</Button>
+        <Button ref={cancelRef} disabled={busy} onClick={onCancel}>{cancelLabel}</Button>
+        <Button variant={destructive ? 'danger' : 'primary'} busy={busy} busyLabel={busyLabel} onClick={onConfirm}>{confirmLabel}</Button>
       </div>
     </Dialog>
   );
