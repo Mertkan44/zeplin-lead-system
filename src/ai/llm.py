@@ -117,6 +117,8 @@ def _deepseek_chat(
 
     def _call(request_payload: dict[str, Any]) -> tuple[str, dict[str, Any] | None]:
         """One request, reported to on_attempt whatever happens."""
+        from src.ai.usage import check_job_lease
+        check_job_lease()
         attempt_model = request_payload["model"]
         try:
             with httpx.Client(timeout=90) as client:
@@ -186,6 +188,8 @@ def _groq_chat(
     kwargs: dict[str, Any] = {}
     if json_output:
         kwargs["response_format"] = {"type": "json_object"}
+    from src.ai.usage import check_job_lease
+    check_job_lease()
     try:
         response = groq_client().chat.completions.create(
             model=model,

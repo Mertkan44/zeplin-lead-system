@@ -1667,6 +1667,733 @@ $$;
 
 insert into public.schema_migrations (version) values ('011') on conflict do nothing;
 
+-- ===== 012_worker_lifecycle.sql =====
+
+-- Durable, fenced worker ownership. Apply before rolling out the new worker;
+-- pause/drain old Actions runs first (the legacy claim RPC is retired below).
+alter table public.admin_search_jobs drop constraint if exists admin_search_jobs_status_check;
+alter table public.admin_search_jobs add constraint admin_search_jobs_status_check
+  check (status in ('queued','running','retry_wait','success','partial_success','failed','cancelled'));
+alter table public.admin_search_jobs add column if not exists lease_owner text;
+alter table public.admin_search_jobs add column if not exists lease_until timestamptz;
+alter table public.admin_search_jobs add column if not exists heartbeat_at timestamptz;
+alter table public.admin_search_jobs add column if not exists attempt_count integer not null default 0;
+alter table public.admin_search_jobs add column if not exists max_attempts integer not null default 3;
+alter table public.admin_search_jobs add column if not exists next_attempt_at timestamptz;
+alter table public.admin_search_jobs add column if not exists progress_stage text not null default 'queued';
+alter table public.admin_search_jobs add column if not exists progress_done integer not null default 0;
+alter table public.admin_search_jobs add column if not exists progress_total integer not null default 0;
+alter table public.admin_search_jobs add column if not exists last_error jsonb;
+-- Legacy jobs get a grace period; do not steal an old worker's live work.
+update public.admin_search_jobs set lease_owner='legacy', lease_until=now()+interval '1 hour', attempt_count=1
+where status='running' and lease_owner is null;
+
+create table if not exists public.admin_search_checkpoints (
+  job_id bigint not null references public.admin_search_jobs(id) on delete cascade,
+  item_key text not null,
+  stage text not null,
+  payload jsonb not null default '{}'::jsonb,
+  lead_id bigint references public.leads(id) on delete set null,
+  error jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (job_id,item_key)
+);
+alter table public.admin_search_checkpoints enable row level security;
+grant select,insert,update,delete on public.admin_search_checkpoints to service_role;
+create index if not exists admin_search_checkpoints_lead_idx on public.admin_search_checkpoints(lead_id,job_id);
+
+-- Close reservations atomically with terminal transitions (including recovery).
+create or replace function public.close_search_reservation(p_job_id bigint, p_status text)
+returns void language plpgsql security definer set search_path=public as $$
+begin
+  perform 1 from public.admin_search_jobs where id=p_job_id for update;
+  insert into public.ai_token_ledger(job_id,kind,meta)
+  select p_job_id,'release',jsonb_build_object('job_status',p_status)
+  where not exists (select 1 from public.ai_token_ledger where job_id=p_job_id and kind='release');
+end;
+$$;
+
+create or replace function public.claim_search_job(p_owner text)
+returns setof public.admin_search_jobs language plpgsql security definer set search_path=public as $$
+declare exhausted public.admin_search_jobs;
+begin
+  if coalesce(p_owner,'')='' then raise exception 'owner required'; end if;
+  for exhausted in
+    update public.admin_search_jobs set status=case when exists(select 1 from public.admin_search_checkpoints c where c.job_id=admin_search_jobs.id and c.lead_id is not null) then 'partial_success' else 'failed' end,
+      lease_owner=null,lease_until=null,updated_at=now(),
+      last_error=jsonb_build_object('stage',progress_stage,'code','retry_limit','message','Tarama deneme sınırına ulaştı.')
+    where status='running' and lease_until<=now() and attempt_count>=max_attempts returning *
+  loop perform public.close_search_reservation(exhausted.id,exhausted.status); end loop;
+  return query
+  with candidate as (
+    select id from public.admin_search_jobs
+    where attempt_count<max_attempts and (
+      status='queued' or (status='retry_wait' and next_attempt_at<=now())
+      or (status='running' and lease_until<=now()))
+    order by created_at,id for update skip locked limit 1
+  )
+  update public.admin_search_jobs j set status='running',lease_owner=p_owner,
+    lease_until=now()+interval '3 minutes',heartbeat_at=now(),updated_at=now(),
+    attempt_count=attempt_count+1,next_attempt_at=null,progress_stage='starting'
+  from candidate where j.id=candidate.id returning j.*;
+end;
+$$;
+
+create or replace function public.heartbeat_search_job(p_job_id bigint,p_owner text)
+returns boolean language plpgsql security definer set search_path=public as $$
+begin
+  update public.admin_search_jobs set heartbeat_at=now(),lease_until=now()+interval '3 minutes',updated_at=now()
+  where id=p_job_id and status='running' and lease_owner=p_owner and lease_until>now();
+  return found;
+end;
+$$;
+
+create or replace function public.checkpoint_search_job(
+  p_job_id bigint,p_owner text,p_item_key text,p_stage text,p_payload jsonb,p_lead_id bigint,p_error jsonb
+)
+returns boolean language plpgsql security definer set search_path=public as $$
+begin
+  perform 1 from public.admin_search_jobs where id=p_job_id and status='running'
+    and lease_owner=p_owner and lease_until>now() for update;
+  if not found then return false; end if;
+  insert into public.admin_search_checkpoints(job_id,item_key,stage,payload,lead_id,error)
+  values(p_job_id,p_item_key,p_stage,p_payload,p_lead_id,p_error)
+  on conflict(job_id,item_key) do update set stage=excluded.stage,payload=excluded.payload,
+    lead_id=coalesce(excluded.lead_id,admin_search_checkpoints.lead_id),error=excluded.error,updated_at=now();
+  update public.admin_search_jobs set progress_stage=p_stage,updated_at=now(),
+    progress_done=(select count(*) from public.admin_search_checkpoints where job_id=p_job_id and stage='synced'),
+    progress_total=case when p_item_key='_discovery' then jsonb_array_length(p_payload->'items') else progress_total end,
+    last_error=p_error
+  where id=p_job_id;
+  return true;
+end;
+$$;
+
+create or replace function public.finish_search_job(p_job_id bigint,p_owner text,p_result jsonb,p_error jsonb)
+returns text language plpgsql security definer set search_path=public as $$
+declare job public.admin_search_jobs; final_status text;
+begin
+  select * into job from public.admin_search_jobs where id=p_job_id and status='running'
+    and lease_owner=p_owner and lease_until>now() for update;
+  if not found then return 'lease_lost'; end if;
+  final_status := case when p_error is null then 'success'
+    when job.attempt_count<job.max_attempts then 'retry_wait'
+    when exists(select 1 from public.admin_search_checkpoints where job_id=p_job_id and lead_id is not null)
+      then 'partial_success' else 'failed' end;
+  update public.admin_search_jobs set status=final_status,result=p_result,last_error=p_error,
+    lease_owner=null,lease_until=null,updated_at=now(),
+    next_attempt_at=case when final_status='retry_wait' then now()+make_interval(secs=>60*job.attempt_count) end,
+    progress_stage=case when final_status='success' then 'complete' else progress_stage end
+  where id=p_job_id;
+  if final_status<>'retry_wait' then perform public.close_search_reservation(p_job_id,final_status); end if;
+  return final_status;
+end;
+$$;
+
+create or replace function public.control_search_job(p_job_id bigint,p_action text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare job public.admin_search_jobs;
+begin
+  select * into job from public.admin_search_jobs where id=p_job_id for update;
+  if not found then return jsonb_build_object('ok',false,'code','not_found'); end if;
+  if p_action='cancel' then
+    if job.status='cancelled' then return jsonb_build_object('ok',true); end if;
+    if job.status not in ('queued','running','retry_wait') then return jsonb_build_object('ok',false,'code','terminal'); end if;
+    update public.admin_search_jobs set status='cancelled',lease_owner=null,lease_until=null,updated_at=now() where id=p_job_id;
+    perform public.close_search_reservation(p_job_id,'cancelled');
+  elsif p_action='retry' then
+    if job.status in ('queued','retry_wait') then return jsonb_build_object('ok',true); end if;
+    if job.status not in ('failed','partial_success') or job.attempt_count>=job.max_attempts
+      then return jsonb_build_object('ok',false,'code','retry_limit'); end if;
+    update public.admin_search_jobs set status='retry_wait',next_attempt_at=now(),updated_at=now() where id=p_job_id;
+  else return jsonb_build_object('ok',false,'code','invalid_action'); end if;
+  return jsonb_build_object('ok',true);
+end;
+$$;
+
+-- Retire the unfenced claim path. Older API reads and writes remain compatible;
+-- an old worker must fail closed rather than bypass bounded retries.
+create or replace function public.claim_admin_search_jobs(job_limit integer default 1)
+returns setof public.admin_search_jobs language plpgsql security definer set search_path=public as $$
+begin raise exception 'Worker migration 012 requires scripts/process_search_jobs.py from WP12'; end;
+$$;
+
+-- Completion is fenced by the actual generation owner. The old completion RPC
+-- remains for compatibility with an earlier API deployment.
+create or replace function public.complete_owned_ai_generation(
+ p_cache_key text,p_owner text,p_content text,p_provider text,p_model text,p_usage jsonb
+)
+returns boolean language plpgsql security definer set search_path=public as $$
+begin
+ update public.ai_generations set status='ready',content=p_content,provider=p_provider,model=p_model,
+   usage=coalesce(p_usage,'{}'::jsonb),claimed_by=null,claimed_until=null,error=null
+ where cache_key=p_cache_key and status='pending' and claimed_by=p_owner and claimed_until>now();
+ return found;
+end;
+$$;
+
+revoke all on function public.close_search_reservation(bigint,text) from public;
+revoke all on function public.claim_search_job(text) from public;
+revoke all on function public.heartbeat_search_job(bigint,text) from public;
+revoke all on function public.checkpoint_search_job(bigint,text,text,text,jsonb,bigint,jsonb) from public;
+revoke all on function public.finish_search_job(bigint,text,jsonb,jsonb) from public;
+revoke all on function public.control_search_job(bigint,text) from public;
+revoke all on function public.complete_owned_ai_generation(text,text,text,text,text,jsonb) from public;
+grant execute on function public.close_search_reservation(bigint,text) to service_role;
+grant execute on function public.claim_search_job(text) to service_role;
+grant execute on function public.heartbeat_search_job(bigint,text) to service_role;
+grant execute on function public.checkpoint_search_job(bigint,text,text,text,jsonb,bigint,jsonb) to service_role;
+grant execute on function public.finish_search_job(bigint,text,jsonb,jsonb) to service_role;
+grant execute on function public.control_search_job(bigint,text) to service_role;
+grant execute on function public.complete_owned_ai_generation(text,text,text,text,text,jsonb) to service_role;
+
+-- Worker calls have a generation retry cap in addition to the job cap. A cached
+-- success is always readable. Lock the job first, then the generation everywhere.
+create or replace function public.claim_worker_ai_generation(
+ p_job_id bigint,p_job_owner text,p_cache_key text,p_task text,p_owner text,p_lease_seconds integer,
+ p_provider text,p_requested_model text,p_lead_id bigint,p_input_hash text,p_prompt_version text,p_catalog_version text
+)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare generation public.ai_generations;
+begin
+ perform 1 from public.admin_search_jobs where id=p_job_id and status='running'
+   and lease_owner=p_job_owner and lease_until>now() for update;
+ if not found then return jsonb_build_object('status','lease_lost'); end if;
+ select * into generation from public.ai_generations where cache_key=p_cache_key for update;
+ if found and generation.status<>'ready' and generation.attempts>=3 then
+   return jsonb_build_object('status','exhausted');
+ end if;
+ return public.claim_ai_generation(p_cache_key,p_task,p_owner,p_lease_seconds,p_provider,p_requested_model,
+   p_lead_id,p_input_hash,p_prompt_version,p_catalog_version);
+end;
+$$;
+revoke all on function public.claim_worker_ai_generation(bigint,text,text,text,text,integer,text,text,bigint,text,text,text) from public;
+grant execute on function public.claim_worker_ai_generation(bigint,text,text,text,text,integer,text,text,bigint,text,text,text) to service_role;
+
+-- Workers refresh scrape/research data, never the trusted Places record. Keep
+-- that source current even if a Places refresh raced with the frozen AI input.
+create or replace function public.merge_worker_raw(p_previous jsonb,p_incoming jsonb,p_audit boolean)
+returns jsonb language plpgsql immutable set search_path=public as $$
+declare merged jsonb;
+begin
+ if p_audit then
+   p_incoming:=p_incoming - array['research_brief','ai_report','ai_email','ai_input_hash','ai_prompt_version','ai_generated_at'];
+ end if;
+ merged:=p_previous||p_incoming;
+ if p_previous#>'{research,google_places}' is not null then
+   merged:=jsonb_set(merged,'{research}',coalesce(p_previous->'research','{}'::jsonb)||
+     coalesce(p_incoming->'research','{}'::jsonb)||jsonb_build_object('google_places',p_previous#>'{research,google_places}'));
+ end if;
+ return merged;
+end;
+$$;
+revoke all on function public.merge_worker_raw(jsonb,jsonb,boolean) from public;
+grant execute on function public.merge_worker_raw(jsonb,jsonb,boolean) to service_role;
+
+-- Fence the lead write and its checkpoint in the same transaction. Repeating a
+-- sync is safe, and no sales status/ownership/contact mutation is included.
+create or replace function public.persist_search_lead(
+ p_job_id bigint,p_owner text,p_item_key text,p_stage text,p_row jsonb,p_payload jsonb,p_error jsonb
+)
+returns bigint language plpgsql security definer set search_path=public as $$
+declare item public.leads; saved_id bigint;
+begin
+ perform 1 from public.admin_search_jobs where id=p_job_id and status='running'
+   and lease_owner=p_owner and lease_until>now() for update;
+ if not found then return null; end if;
+ item := jsonb_populate_record(null::public.leads,p_row);
+ insert into public.leads (external_id,name,sector,city,category,phone,address,rating,review_count,maps_url,
+   website_url,instagram_url,score,grade,estimated_value_tl,sales_priority_score,next_action,priority_reason,
+   recommended_package,matched_services,data_quality,research_brief,ai_report,ai_email,last_analyzed,raw,updated_at)
+ values(item.external_id,item.name,item.sector,item.city,item.category,item.phone,item.address,item.rating,
+   item.review_count,item.maps_url,item.website_url,item.instagram_url,item.score,item.grade,item.estimated_value_tl,
+   item.sales_priority_score,item.next_action,item.priority_reason,item.recommended_package,item.matched_services,
+   item.data_quality,item.research_brief,item.ai_report,item.ai_email,item.last_analyzed,item.raw,now())
+ on conflict(name) do update set external_id=excluded.external_id,sector=excluded.sector,city=excluded.city,
+   category=excluded.category,phone=excluded.phone,address=excluded.address,rating=excluded.rating,
+   review_count=excluded.review_count,maps_url=excluded.maps_url,website_url=excluded.website_url,
+   instagram_url=excluded.instagram_url,score=excluded.score,grade=excluded.grade,
+   estimated_value_tl=excluded.estimated_value_tl,sales_priority_score=excluded.sales_priority_score,
+   next_action=excluded.next_action,priority_reason=excluded.priority_reason,recommended_package=excluded.recommended_package,
+   matched_services=excluded.matched_services,data_quality=excluded.data_quality,research_brief=case when p_stage='audited' then leads.research_brief else excluded.research_brief end,
+   ai_report=case when p_stage='audited' then leads.ai_report else excluded.ai_report end,
+   ai_email=case when p_stage='audited' then leads.ai_email else excluded.ai_email end,
+   last_analyzed=coalesce(excluded.last_analyzed,leads.last_analyzed),raw=public.merge_worker_raw(leads.raw,excluded.raw,p_stage='audited'),updated_at=now()
+ returning id into saved_id;
+ perform public.checkpoint_search_job(p_job_id,p_owner,p_item_key,p_stage,
+   p_payload||jsonb_build_object('lead_id',saved_id),saved_id,p_error);
+ return saved_id;
+end;
+$$;
+revoke all on function public.persist_search_lead(bigint,text,text,text,jsonb,jsonb,jsonb) from public;
+grant execute on function public.persist_search_lead(bigint,text,text,text,jsonb,jsonb,jsonb) to service_role;
+
+create or replace function public.search_worker_summary()
+returns jsonb language sql stable security definer set search_path=public as $$
+ select jsonb_build_object(
+   'queued',count(*) filter(where status='queued'),
+   'retry_wait',count(*) filter(where status='retry_wait'),
+   'running',count(*) filter(where status='running'),
+   'stalled',count(*) filter(where status='running' and lease_until<=now()),
+   'oldest_queue_seconds',coalesce(extract(epoch from now()-min(created_at) filter(where status='queued')),0),
+   'failed_generations',(select count(*) from public.ai_generations where status='failed'),
+   'provider_errors_24h',(select count(*) from public.ai_token_ledger where kind='usage' and outcome in ('error','empty') and created_at>=now()-interval '1 day')
+ ) from public.admin_search_jobs;
+$$;
+revoke all on function public.search_worker_summary() from public;
+grant execute on function public.search_worker_summary() to service_role;
+create or replace function public.schema_readiness()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'version', (select max(version) from public.schema_migrations),
+    'checks', jsonb_build_object(
+      'worker_stage', to_regprocedure('public.set_search_job_stage(bigint,text,text)') is not null,
+      'worker_heartbeat', to_regprocedure('public.heartbeat_search_job(bigint,text)') is not null,
+      'worker_finish', to_regprocedure('public.finish_search_job(bigint,text,jsonb,jsonb)') is not null,
+      'worker_control', to_regprocedure('public.control_search_job(bigint,text)') is not null,
+      'worker_generation', to_regprocedure('public.claim_worker_ai_generation(bigint,text,text,text,text,integer,text,text,bigint,text,text,text)') is not null,
+      'owned_generation_completion', to_regprocedure('public.complete_owned_ai_generation(text,text,text,text,text,jsonb)') is not null,
+      'worker_claim', to_regprocedure('public.claim_search_job(text)') is not null,
+      'worker_checkpoint', to_regprocedure('public.checkpoint_search_job(bigint,text,text,text,jsonb,bigint,jsonb)') is not null,
+      'worker_persistence', to_regprocedure('public.persist_search_lead(bigint,text,text,text,jsonb,jsonb,jsonb)') is not null,
+      'assign_lead_owner', to_regprocedure('public.assign_lead_owner(text,text,timestamptz,text,text,jsonb)') is not null,
+      'claim_admin_search_jobs', to_regprocedure('public.claim_admin_search_jobs(integer)') is not null,
+      'create_admin_search_job', to_regprocedure('public.create_admin_search_job(text,text,integer,boolean,text,text,integer,numeric,jsonb)') is not null,
+      'check_login_rate_limit', to_regprocedure('public.check_login_rate_limit(text,integer,integer)') is not null,
+      'record_login_attempt', to_regprocedure('public.record_login_attempt(text,boolean)') is not null,
+      'record_contact_result', to_regprocedure('public.record_contact_result(text,text,text,boolean,text,integer,text,text,timestamptz,text[],text,text,text,text)') is not null,
+      'readable_leads', to_regprocedure('public.readable_leads(text)') is not null,
+      'list_leads', to_regprocedure('public.list_leads(text,boolean,integer,bigint,integer,text,text)') is not null,
+      'lead_activity_state', to_regclass('public.lead_activity_state') is not null,
+      'one_active_owner_index', to_regclass('public.lead_assignments_one_active_owner_uidx') is not null,
+      'idempotency_constraint', exists (
+        select 1 from pg_constraint
+        where conrelid = 'public.outreach_events'::regclass
+          and conname = 'outreach_events_idempotency_key_key'
+      ),
+      'structured_outreach_columns', exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'outreach_events' and column_name = 'follow_up_at'
+      ),
+      'lead_id_columns', exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'lead_assignments' and column_name = 'lead_id'
+      ),
+      'lead_revision', exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'leads' and column_name = 'revision'
+      ),
+      'lead_sources', to_regclass('public.lead_sources') is not null,
+      'claim_ai_generation', to_regprocedure('public.claim_ai_generation(text,text,text,integer,text,text,bigint,text,text,text)') is not null,
+      'ai_spend_summary', to_regprocedure('public.ai_spend_summary(timestamptz)') is not null,
+      'ai_model_rates', to_regclass('public.ai_model_rates') is not null,
+      'usage_ledger_columns', exists (
+        select 1 from information_schema.columns
+        where table_schema = 'public' and table_name = 'ai_token_ledger' and column_name = 'cached_tokens'
+      )
+    )
+  );
+$$;
+
+
+create or replace function public.set_search_job_stage(p_job_id bigint,p_owner text,p_stage text)
+returns boolean language plpgsql security definer set search_path=public as $$
+begin
+ update public.admin_search_jobs set progress_stage=p_stage,updated_at=now()
+ where id=p_job_id and status='running' and lease_owner=p_owner and lease_until>now();
+ return found;
+end;
+$$;
+revoke all on function public.set_search_job_stage(bigint,text,text) from public;
+grant execute on function public.set_search_job_stage(bigint,text,text) to service_role;
+
+create or replace function public.ai_spend_summary(p_today_start timestamptz default null)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with usage_rows as (
+    select * from public.ai_token_ledger where kind = 'usage'
+  ),
+  -- A reservation is open while its job is queued or running and has no
+  -- release row; jobs finished before 011 have no release row but are closed.
+  reservations as (
+    select ledger.job_id,
+           sum(ledger.estimated_tokens) filter (where ledger.kind = 'reservation') as reserved_tokens,
+           sum(ledger.estimated_cost_usd) filter (where ledger.kind = 'reservation') as reserved_usd,
+           bool_or(ledger.kind = 'release')
+             or coalesce(max(job.status) not in ('queued', 'running', 'retry_wait'), true) as released
+    from public.ai_token_ledger ledger
+    left join public.admin_search_jobs job on job.id = ledger.job_id
+    where ledger.kind in ('reservation', 'release')
+    group by ledger.job_id
+  )
+  select jsonb_build_object(
+    'actual_cost_usd', coalesce((select round(sum(actual_cost_usd), 6) from usage_rows), 0),
+    'actual_tokens', coalesce((select sum(actual_tokens) from usage_rows), 0),
+    'provider_calls', (select count(*) from usage_rows where coalesce(outcome, 'success') <> 'cache_hit'),
+    'cache_hits', (select count(*) from usage_rows where outcome = 'cache_hit'),
+    'failed_calls', (select count(*) from usage_rows where outcome in ('error', 'empty')),
+    'unpriced_calls', (select count(*) from usage_rows where actual_tokens > 0 and actual_cost_usd is null),
+    'today_cost_usd', coalesce((
+      select round(sum(actual_cost_usd), 6) from usage_rows
+      where p_today_start is not null and created_at >= p_today_start
+    ), 0),
+    'active_reserved_tokens', coalesce((select sum(reserved_tokens) from reservations where not released), 0),
+    'active_reserved_usd', coalesce((select round(sum(reserved_usd), 6) from reservations where not released), 0),
+    'estimated_cost_usd', coalesce((select round(sum(reserved_usd), 6) from reservations), 0),
+    'estimated_tokens', coalesce((select sum(reserved_tokens) from reservations), 0),
+    'by_task', coalesce((
+      select jsonb_object_agg(task_name, totals) from (
+        select coalesce(task, 'unknown') as task_name,
+               jsonb_build_object('calls', count(*), 'tokens', coalesce(sum(actual_tokens), 0),
+                                  'cost_usd', coalesce(round(sum(actual_cost_usd), 6), 0)) as totals
+        from usage_rows where coalesce(outcome, 'success') <> 'cache_hit'
+        group by 1
+      ) grouped
+    ), '{}'::jsonb),
+    'by_model', coalesce((
+      select jsonb_object_agg(model_name, totals) from (
+        select coalesce(model, 'unknown') as model_name,
+               jsonb_build_object('calls', count(*), 'tokens', coalesce(sum(actual_tokens), 0),
+                                  'cost_usd', coalesce(round(sum(actual_cost_usd), 6), 0)) as totals
+        from usage_rows where coalesce(outcome, 'success') <> 'cache_hit'
+        group by 1
+      ) grouped
+    ), '{}'::jsonb)
+  );
+$$;
+
+
+insert into public.schema_migrations(version) values('012') on conflict do nothing;
+
+-- ===== 013_opportunity_pipeline.sql =====
+
+-- Explicit commercial opportunities, separate from research readiness.
+-- No historical leads are reclassified. One opportunity per lead in this release.
+create table if not exists public.opportunities (
+  id bigint generated by default as identity primary key,
+  lead_id bigint not null unique references public.leads(id) on delete cascade,
+  stage text not null default 'new' check(stage in ('new','contact','discovery','proposal','decision','won','lost')),
+  revision integer not null default 0,
+  service_slug text,
+  amount numeric(14,2) check(amount is null or amount between 0.01 and 1000000000),
+  amount_unknown boolean not null default true,
+  currency text not null default 'TRY' check(currency='TRY'),
+  lost_reason text,
+  stage_entered_at timestamptz not null default now(),
+  closed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check ((amount is null) = amount_unknown),
+  check ((stage in ('won','lost')) = (closed_at is not null))
+);
+create table if not exists public.opportunity_history (
+  id bigint generated by default as identity primary key,
+  opportunity_id bigint not null references public.opportunities(id) on delete cascade,
+  revision integer not null,
+  from_stage text,
+  to_stage text not null,
+  actor_email text,
+  source text not null,
+  note text,
+  amount numeric(14,2),
+  amount_unknown boolean not null,
+  service_slug text,
+  cleared_contact_event_id bigint,
+  happened_at timestamptz not null default now(),
+  unique(opportunity_id,revision)
+);
+create index if not exists opportunity_history_lookup_idx on public.opportunity_history(opportunity_id,id desc);
+alter table public.opportunities enable row level security;
+alter table public.opportunity_history enable row level security;
+revoke all on public.opportunities,public.opportunity_history from anon,authenticated;
+grant select on public.opportunities,public.opportunity_history to service_role;
+-- Writes are domain commands, history stays append-only for application clients.
+revoke insert,update,delete on public.opportunities,public.opportunity_history from service_role;
+grant usage,select on sequence public.opportunities_id_seq,public.opportunity_history_id_seq to service_role;
+
+create or replace function public.opportunity_stage_rank(p_stage text)
+returns integer language sql immutable set search_path=public as $$
+ select array_position(array['new','contact','discovery','proposal','decision','won','lost'],p_stage);
+$$;
+revoke all on function public.opportunity_stage_rank(text) from public,anon,authenticated,service_role;
+
+-- Shared transition used by the pipeline and contact-result trigger. The caller
+-- locks the lead first. This helper is private (not a callable service-role RPC).
+create or replace function public.apply_opportunity_transition(
+ p_lead_id bigint,p_stage text,p_actor text,p_source text,p_note text,
+ p_amount numeric,p_amount_unknown boolean,p_service text,p_expected integer
+) returns public.opportunities language plpgsql security definer set search_path=public as $$
+declare current_row public.opportunities; previous_stage text; created boolean:=false; happened timestamptz:=now();
+begin
+ if public.opportunity_stage_rank(p_stage) is null then
+   raise exception using errcode='PT400',message='OPPORTUNITY_STAGE_INVALID';
+ end if;
+ if p_amount_unknown is null or (p_amount is null) <> p_amount_unknown
+    or p_amount is not null and (p_amount<=0 or p_amount>1000000000 or p_amount<>round(p_amount,2)) then
+   raise exception using errcode='PT400',message='OPPORTUNITY_AMOUNT_INVALID';
+ end if;
+ if length(coalesce(p_note,''))>2000 or length(coalesce(p_service,''))>80 then
+   raise exception using errcode='PT400',message='OPPORTUNITY_DETAILS_INVALID';
+ end if;
+ select * into current_row from public.opportunities where lead_id=p_lead_id for update;
+ if not found then
+   if p_expected is not null and p_expected<>0 then
+     raise exception using errcode='PT409',message='OPPORTUNITY_VERSION_CONFLICT';
+   end if;
+   insert into public.opportunities(lead_id) values(p_lead_id) returning * into current_row;
+   created:=true;
+ else
+   if p_expected is not null and p_expected<>current_row.revision then
+     raise exception using errcode='PT409',message='OPPORTUNITY_VERSION_CONFLICT';
+   end if;
+ end if;
+ previous_stage:=case when created then null else current_row.stage end;
+ if current_row.stage in ('won','lost') and p_stage<>current_row.stage and p_stage<>'new' then
+   raise exception using errcode='PT409',message='OPPORTUNITY_REOPEN_REQUIRED';
+ end if;
+ if p_source='contact_result' and current_row.stage in ('won','lost') and p_stage<>current_row.stage then
+   raise exception using errcode='PT409',message='OPPORTUNITY_REOPEN_REQUIRED';
+ end if;
+ if p_source='pipeline' and not created and public.opportunity_stage_rank(p_stage)<public.opportunity_stage_rank(current_row.stage)
+    and nullif(trim(p_note),'') is null then
+   raise exception using errcode='PT400',message='OPPORTUNITY_REASON_REQUIRED';
+ end if;
+ if p_stage='lost' and p_source='pipeline' and nullif(trim(p_note),'') is null then
+   raise exception using errcode='PT400',message='OPPORTUNITY_REASON_REQUIRED';
+ end if;
+ if not created and current_row.stage=p_stage and current_row.amount is not distinct from p_amount
+    and current_row.service_slug is not distinct from p_service
+    and (p_stage<>'lost' or current_row.lost_reason is not distinct from nullif(trim(p_note),'')) then
+   return current_row;
+ end if;
+ update public.opportunities set stage=p_stage,revision=revision+1,
+   amount=p_amount,amount_unknown=p_amount_unknown,service_slug=p_service,
+   lost_reason=case when p_stage='lost' then nullif(trim(p_note),'') end,
+   stage_entered_at=case when stage<>p_stage or created then happened else stage_entered_at end,
+   closed_at=case when p_stage in ('won','lost') then coalesce(closed_at,happened) end,
+   updated_at=happened
+ where id=current_row.id returning * into current_row;
+ insert into public.opportunity_history(opportunity_id,revision,from_stage,to_stage,actor_email,source,note,amount,amount_unknown,service_slug,cleared_contact_event_id,happened_at)
+ values(current_row.id,current_row.revision,previous_stage,p_stage,lower(p_actor),p_source,nullif(trim(p_note),''),p_amount,p_amount_unknown,p_service,
+   case when p_stage in ('won','lost') or previous_stage in ('won','lost') then
+     (select (latest_contact->>'id')::bigint from public.lead_activity_state where lead_id=p_lead_id) end,happened);
+ if p_source<>'contact_result' then
+   insert into public.outreach_events(lead_id,lead_name,action,actor_email,source,note,outcome,happened_at)
+   select p_lead_id,name,'opportunity_stage_changed',lower(p_actor),p_source,nullif(trim(p_note),''),
+     case when p_stage in ('won','lost') and previous_stage is distinct from p_stage then p_stage end,happened
+   from public.leads where id=p_lead_id;
+ end if;
+ return current_row;
+end;
+$$;
+revoke all on function public.apply_opportunity_transition(bigint,text,text,text,text,numeric,boolean,text,integer) from public,anon,authenticated,service_role;
+
+create or replace function public.change_opportunity_stage(
+ p_key text,p_hash text,p_actor text,p_is_admin boolean,p_lead_id bigint,
+ p_expected_lead integer,p_expected_opportunity integer,p_stage text,p_note text,
+ p_amount numeric,p_amount_unknown boolean,p_service text
+) returns jsonb language plpgsql security definer set search_path=public as $$
+declare target public.leads; owner_row public.lead_assignments; previous public.command_requests;
+ opp public.opportunities; before_opp public.opportunities; answer jsonb; reopening boolean;
+begin
+ if p_key is null or p_key!~'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+    or nullif(p_hash,'') is null or nullif(trim(p_actor),'') is null or p_expected_lead is null or p_expected_opportunity is null then
+   raise exception using errcode='PT400',message='OPPORTUNITY_COMMAND_INVALID';
+ end if;
+ perform pg_advisory_xact_lock(hashtext('opportunity:'||p_key));
+ select * into target from public.leads where id=p_lead_id for update;
+ if not found then raise exception using errcode='PT404',message='LEAD_NOT_FOUND'; end if;
+ select * into owner_row from public.lead_assignments where lead_id=target.id and status='active' for update;
+ select * into previous from public.command_requests where idempotency_key=p_key;
+ if found then
+   -- Closing completes the assignment; its original owner can still replay
+   -- the committed answer, until the lead is handed over to someone else.
+   if not coalesce(p_is_admin,false) and not exists(select 1 from public.readable_leads(p_actor) r where r.lead_id=target.id) then
+     raise exception using errcode='PT403',message='LEAD_NOT_ASSIGNED';
+   end if;
+   if previous.command<>'change_opportunity_stage' or previous.request_hash<>p_hash or lower(previous.actor_email)<>lower(p_actor)
+      or (previous.response->'opportunity'->>'lead_id')::bigint<>target.id then
+     raise exception using errcode='PT409',message='IDEMPOTENCY_KEY_REUSED';
+   end if;
+   return previous.response||jsonb_build_object('replayed',true);
+ end if;
+ if not coalesce(p_is_admin,false) and (owner_row.id is null or lower(owner_row.user_email)<>lower(p_actor)) then
+   raise exception using errcode='PT403',message='LEAD_NOT_ASSIGNED';
+ end if;
+ if target.revision<>p_expected_lead then raise exception using errcode='PT409',message='LEAD_VERSION_CONFLICT'; end if;
+ select * into before_opp from public.opportunities where lead_id=target.id for update;
+ reopening:=before_opp.stage in ('won','lost') and p_stage='new';
+ if (reopening or target.status in ('converted','lost') and before_opp.id is null)
+    and (not coalesce(p_is_admin,false) or nullif(trim(p_note),'') is null) then
+   raise exception using errcode='PT403',message='OPPORTUNITY_REOPEN_ADMIN_REQUIRED';
+ end if;
+ opp:=public.apply_opportunity_transition(target.id,p_stage,p_actor,'pipeline',p_note,p_amount,p_amount_unknown,p_service,p_expected_opportunity);
+ -- This is a commercial transition, never a fabricated call/email/contact event.
+ if opp.revision is distinct from before_opp.revision then
+   update public.leads set
+     status=case when p_stage='won' then 'converted' when p_stage='lost' then 'lost'
+                 when reopening or status in ('converted','lost') then 'yeni' else status end,
+     revision=revision+1 where id=target.id returning * into target;
+   if p_stage in ('won','lost') then
+     update public.lead_assignments set status='done',due_at=null,updated_at=now()
+       where lead_id=target.id and status='active';
+     update public.lead_activity_state set latest_follow_up_at=null where lead_id=target.id;
+   end if;
+   if reopening then
+     -- Admin may reopen without inventing a next contact date or reassigning ownership.
+     -- A fresh assignment is a separate explicit operation.
+     update public.lead_activity_state set latest_follow_up_at=null where lead_id=target.id;
+   end if;
+   insert into public.audit_events(actor_email,event_type,target_type,target_key,meta)
+   values(lower(p_actor),'opportunity_stage_changed','lead',target.name,
+     jsonb_build_object('opportunity_id',opp.id,'from',before_opp.stage,'to',opp.stage,'revision',opp.revision));
+ end if;
+ answer:=jsonb_build_object('opportunity',to_jsonb(opp),'lead_revision',target.revision,'lead_status',target.status);
+ insert into public.command_requests(idempotency_key,command,actor_email,request_hash,response)
+ values(p_key,'change_opportunity_stage',lower(p_actor),p_hash,answer);
+ return answer||jsonb_build_object('replayed',false);
+end;
+$$;
+revoke all on function public.change_opportunity_stage(text,text,text,boolean,bigint,integer,integer,text,text,numeric,boolean,text) from public,anon,authenticated;
+grant execute on function public.change_opportunity_stage(text,text,text,boolean,bigint,integer,integer,text,text,numeric,boolean,text) to service_role;
+
+-- New contact results enter the same stage history in the existing transaction.
+-- Existing timelines are intentionally not replayed or backfilled.
+create or replace function public.contact_opportunity_transition()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare next_stage text; current_row public.opportunities; detail text; plain jsonb;
+begin
+ if new.action<>'contact_result_recorded' or new.lead_id is null then return new; end if;
+ perform 1 from public.leads where id=new.lead_id for update;
+ select * into current_row from public.opportunities where lead_id=new.lead_id for update;
+ next_stage:=case new.outcome when 'reached_interested' then 'discovery' when 'proposal_requested' then 'proposal'
+   when 'won' then 'won' when 'lost' then 'lost' when 'not_interested' then 'lost'
+   when 'no_answer' then 'contact' when 'reached_later' then 'contact' end;
+ if next_stage is null then return new; end if;
+ if next_stage not in ('won','lost') and current_row.stage not in ('won','lost')
+    and public.opportunity_stage_rank(current_row.stage)>public.opportunity_stage_rank(next_stage) then
+   next_stage:=current_row.stage;
+ end if;
+ detail:=new.note;
+ if left(coalesce(detail,''),19)='ZEPLIN_ACTIVITY_V1:' then
+   begin plain:=substring(detail from 20)::jsonb; detail:=plain->>'note';
+   exception when invalid_text_representation then detail:=null; end;
+ end if;
+ perform public.apply_opportunity_transition(new.lead_id,next_stage,new.actor_email,'contact_result',left(detail,2000),
+   current_row.amount,coalesce(current_row.amount_unknown,true),coalesce(current_row.service_slug,new.service_slugs[1]),null);
+ return new;
+end;
+$$;
+revoke all on function public.contact_opportunity_transition() from public,anon,authenticated,service_role;
+create or replace trigger outreach_opportunity_transition after insert on public.outreach_events
+for each row execute function public.contact_opportunity_transition();
+
+-- A later note/manual verification rebuilds the activity projection. It must
+-- not resurrect a contact's old cancelled follow-up after closing/reopening.
+-- Event ids work even when several commands share the same transaction time.
+create or replace function public.clear_opportunity_follow_up()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare cancelled_id bigint;
+begin
+ if exists(select 1 from public.opportunities where lead_id=new.lead_id and stage in ('won','lost')) then
+   new.latest_follow_up_at:=null;
+ else
+   select max(h.cleared_contact_event_id) into cancelled_id
+   from public.opportunity_history h join public.opportunities o on o.id=h.opportunity_id
+   where o.lead_id=new.lead_id;
+   if cancelled_id is not null and (new.latest_contact->>'id')::bigint<=cancelled_id then
+     new.latest_follow_up_at:=null;
+   end if;
+ end if;
+ return new;
+end;
+$$;
+revoke all on function public.clear_opportunity_follow_up() from public,anon,authenticated,service_role;
+create or replace trigger activity_opportunity_follow_up before insert or update on public.lead_activity_state
+for each row execute function public.clear_opportunity_follow_up();
+
+-- Keep legacy status writes compatible without reopening a commercial deal
+-- silently. Pipeline/contacts have already applied their transition before this.
+create or replace function public.sync_opportunity_closed_status()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare opp public.opportunities; next_stage text;
+begin
+ if new.status is not distinct from old.status then return new; end if;
+ select * into opp from public.opportunities where lead_id=new.id for update;
+ if opp.id is null then return new; end if;
+ next_stage:=case new.status when 'converted' then 'won' when 'lost' then 'lost' end;
+ if next_stage is not null and opp.stage<>next_stage then
+   perform public.apply_opportunity_transition(new.id,next_stage,null,'legacy_status',null,opp.amount,opp.amount_unknown,opp.service_slug,null);
+ end if;
+ if next_stage is null and opp.stage in ('won','lost') then
+   raise exception using errcode='PT409',message='OPPORTUNITY_REOPEN_REQUIRED';
+ end if;
+ if next_stage is not null then
+   update public.lead_assignments set status='done',due_at=null,updated_at=now() where lead_id=new.id and status='active';
+   update public.lead_activity_state set latest_follow_up_at=null where lead_id=new.id;
+ end if;
+ return new;
+end;
+$$;
+revoke all on function public.sync_opportunity_closed_status() from public,anon,authenticated,service_role;
+create or replace trigger leads_opportunity_closed_status after update of status on public.leads
+for each row execute function public.sync_opportunity_closed_status();
+
+create or replace function public.list_opportunities(p_actor text,p_is_admin boolean)
+returns jsonb language sql stable security definer set search_path=public as $$
+ select coalesce(jsonb_agg(to_jsonb(opp)||jsonb_build_object(
+  'lead_name',lead.name,'lead_revision',lead.revision,'lead_status',lead.status,
+  'owner_email',owner_row.user_email,'due_at',case when owner_row.status='active' then owner_row.due_at end,
+  'last_contact_at',state.latest_contact_at,
+  'can_write',p_is_admin or (owner_row.status='active' and lower(owner_row.user_email)=lower(p_actor))
+ ) order by opp.stage_entered_at,opp.id),'[]'::jsonb)
+ from public.opportunities opp join public.leads lead on lead.id=opp.lead_id
+ left join lateral(select a.* from public.lead_assignments a where a.lead_id=lead.id
+   and a.status in ('active','done','snoozed') order by (a.status='active') desc,a.updated_at desc,a.id desc limit 1) owner_row on true
+ left join public.lead_activity_state state on state.lead_id=lead.id
+ where p_is_admin or exists(select 1 from public.readable_leads(p_actor) readable where readable.lead_id=lead.id);
+$$;
+revoke all on function public.list_opportunities(text,boolean) from public,anon,authenticated;
+grant execute on function public.list_opportunities(text,boolean) to service_role;
+
+create or replace function public.read_opportunity_history(p_actor text,p_is_admin boolean,p_lead_id bigint,p_before bigint,p_limit integer)
+returns jsonb language sql stable security definer set search_path=public as $$
+ select coalesce(jsonb_agg(to_jsonb(rows) order by rows.id desc),'[]'::jsonb) from (
+  select history.* from public.opportunity_history history join public.opportunities opp on opp.id=history.opportunity_id
+  where opp.lead_id=p_lead_id and (p_before is null or history.id<p_before)
+    and (p_is_admin or exists(select 1 from public.readable_leads(p_actor) readable where readable.lead_id=opp.lead_id))
+  order by history.id desc limit greatest(1,least(coalesce(p_limit,50),100))
+ ) rows;
+$$;
+revoke all on function public.read_opportunity_history(text,boolean,bigint,bigint,integer) from public,anon,authenticated;
+grant execute on function public.read_opportunity_history(text,boolean,bigint,bigint,integer) to service_role;
+
+-- Extra readiness is additive: do not replace 012's worker checks when both
+-- packages are installed. The application combines both RPCs.
+create or replace function public.opportunity_schema_readiness()
+returns jsonb language sql stable security definer set search_path=public as $$
+ select jsonb_build_object(
+  'opportunities',to_regclass('public.opportunities') is not null,
+  'opportunity_history',to_regclass('public.opportunity_history') is not null,
+  'opportunity_command',to_regprocedure('public.change_opportunity_stage(text,text,text,boolean,bigint,integer,integer,text,text,numeric,boolean,text)') is not null,
+  'opportunity_contact_trigger',exists(select 1 from pg_trigger where tgrelid='public.outreach_events'::regclass and tgname='outreach_opportunity_transition'),
+  'opportunity_status_trigger',exists(select 1 from pg_trigger where tgrelid='public.leads'::regclass and tgname='leads_opportunity_closed_status')
+  ,'opportunity_follow_up_trigger',exists(select 1 from pg_trigger where tgrelid='public.lead_activity_state'::regclass and tgname='activity_opportunity_follow_up')
+ );
+$$;
+revoke all on function public.opportunity_schema_readiness() from public,anon,authenticated;
+grant execute on function public.opportunity_schema_readiness() to service_role;
+insert into public.schema_migrations(version) values('013') on conflict do nothing;
+
 -- ===== 014_team_management.sql =====
 
 -- One atomic user command; legacy direct writes also keep the last admin.

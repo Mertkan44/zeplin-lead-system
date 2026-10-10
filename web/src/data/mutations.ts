@@ -7,12 +7,15 @@ import { queryClient } from '../lib/queryClient';
 import { ACTIONS, OUTREACH_ERRORS } from '../domain/catalog';
 import { normalizeOutreachEvent, queryKeys } from './workspace';
 import type { Lead, LeadStatus, OutreachEvent, Workspace } from './types';
+import { opportunityKeys } from './opportunities';
 
 /** Refetch the workspace and any open timeline from the server. */
 export function refreshWorkspace(): Promise<void> {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.workspaceRoot }),
     queryClient.invalidateQueries({ queryKey: queryKeys.timelineRoot }),
+    queryClient.invalidateQueries({ queryKey: opportunityKeys.root }),
+    queryClient.invalidateQueries({ queryKey: opportunityKeys.historyRoot }),
   ]).then(() => undefined);
 }
 

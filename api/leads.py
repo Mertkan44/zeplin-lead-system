@@ -141,6 +141,8 @@ class handler(BaseHTTPRequestHandler):
         lead = attach_assignments_to_leads([lead], assignments)[0]
         state = fetch_activity_states([lead["lead_id"]]).get(lead["lead_id"]) or {}
         latest_contact = enrich_outreach_event(dict(state["latest_contact"])) if state.get("latest_contact") else None
+        if latest_contact:
+            latest_contact["follow_up_at"] = state.get("latest_follow_up_at")
         activity = {
             "latest_contact": latest_contact,
             "latest_manual_verification": (
