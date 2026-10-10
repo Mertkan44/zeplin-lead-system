@@ -32,7 +32,9 @@ class BudgetExceeded(RuntimeError):
 @contextmanager
 def usage_context(**fields: Any) -> Iterator[dict[str, int]]:
     parent = _context.get() or {}
-    counters = {"provider_calls": 0, "cache_hits": 0, "cost_usd": 0.0}
+    counters = parent.get("_counters")
+    if counters is None:
+        counters = {"provider_calls": 0, "cache_hits": 0, "cost_usd": 0.0, "ledger_errors": 0}
     token = _context.set({**parent, **{k: v for k, v in fields.items() if v is not None}, "_counters": counters})
     try:
         yield counters
@@ -95,6 +97,8 @@ def record(
         if is_enabled():
             insert_usage_event(row)
     except Exception as exc:  # the call already happened; losing the row must be visible, not fatal
+        if counters is not None:
+            counters["ledger_errors"] = counters.get("ledger_errors", 0) + 1
         logger.warning("AI usage row not recorded (%s %s): %s", task, outcome, exc)
     return row
 
@@ -117,3 +121,12 @@ def check_budget() -> None:
     spent = float(fetch_spend_summary(today_start=business_day_start()).get("today_cost_usd") or 0)
     if spent >= cap:
         raise BudgetExceeded(f"daily AI budget reached ({spent:.4f} / {cap:.2f} USD)")
+
+
+def check_job_lease() -> None:
+    """Before every paid attempt, including fallback, fail closed on cancellation."""
+    context = current()
+    if context.get("job_owner"):
+        from src.storage.supabase import heartbeat_search_job
+        if not heartbeat_search_job(context["job_id"], context["job_owner"]):
+            raise RuntimeError("search job lease lost")

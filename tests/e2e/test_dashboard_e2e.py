@@ -121,6 +121,8 @@ class DashboardE2E(unittest.TestCase):
             "owner_email": "seller@example.com", "due_at": None, "last_contact_at": None,
             "lost_reason": None, "can_write": True, "stage_entered_at": "2026-10-09T07:00:00Z",
         } for index, lead in enumerate(self.payload["leads"])]
+        self.search_jobs = []
+        self.search_posts = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
         self.page.on("console", lambda msg: msg.type == "error" and self.errors.append(msg.text))
         self.page.route("**/*", self._route)
@@ -188,6 +190,22 @@ class DashboardE2E(unittest.TestCase):
             return route.fulfill(json={"ok": True, "place": {"status": "verified", "match_method": "place_id"}})
         if path == "/api/status" and self.status_save_status != 200:
             return route.fulfill(status=self.status_save_status, json={"ok": False, "error": "status save failed"})
+        if path == "/api/admin_search":
+            if request.method == "POST":
+                body = json.loads(request.post_data or "{}")
+                self.search_posts.append(body)
+                if body.get("action") == "cancel":
+                    for job in self.search_jobs:
+                        if job["id"] == body["job_id"]:
+                            job["status"] = "cancelled"
+                    return route.fulfill(json={"ok": True})
+                return route.fulfill(json={"ok": True, "job": {"id": 10}, "estimate": {"estimated_tokens": 1000}})
+            if "estimate=1" in url:
+                return route.fulfill(json={"ok": True, "estimate": {"estimated_tokens": 1000, "estimated_cost_usd": 0.02, "priced": True}})
+            return route.fulfill(json={"ok": True, "jobs": self.search_jobs, "token_summary": {}, "worker_summary": {
+                "queued": 1, "retry_wait": 1, "stalled": 1, "oldest_queue_seconds": 1200,
+                "failed_generations": 1, "provider_errors_24h": 2,
+            }})
         if path.startswith("/api/"):
             return route.fulfill(json={"ok": True, "users": [], "items": [], "jobs": [], "token_summary": {}})
         return route.continue_()
@@ -241,6 +259,49 @@ class DashboardE2E(unittest.TestCase):
         self.workspace_status = 401
         self.page.goto(f"{self.base}/")
         self.page.get_by_text("Oturumun sona erdi").wait_for(timeout=15000)
+
+    def worker_fixture(self):
+        base = {"query": "Sentetik sağlık ve güzellik merkezi uzun işletme taraması", "city": "Istanbul Kadıköy", "max_results": 10,
+                "ai_mode": "smart", "estimated_tokens": 1000, "created_at": "2026-10-10T10:00:00Z", "max_attempts": 3}
+        self.search_jobs = [
+            {**base, "id": 1, "status": "queued", "progress_stage": "queued", "attempt_count": 0},
+            {**base, "id": 2, "status": "running", "progress_stage": "report", "attempt_count": 1,
+             "progress_done": 2, "progress_total": 10, "heartbeat_at": "2026-10-10T10:01:00Z", "lease_until": "2026-10-10T10:04:00Z"},
+            {**base, "id": 3, "status": "retry_wait", "progress_stage": "brief", "attempt_count": 2,
+             "next_attempt_at": "2026-10-10T10:05:00Z", "last_error": {"stage": "report", "code": "HTTPStatusError"}},
+            {**base, "id": 4, "status": "partial_success", "progress_stage": "brief", "attempt_count": 3,
+             "progress_done": 2, "progress_total": 10, "last_error": {"stage": "report", "code": "retry_limit"}},
+        ]
+
+    def test_worker_states_and_cancellation(self):
+        self.worker_fixture()
+        self.page.goto(f"{self.base}/admin")
+        self.heading("Tarama kuyruğu")
+        self.page.get_by_text("Kısmen tamamlandı", exact=True).wait_for()
+        self.assertEqual(self.page.get_by_text("Sırada", exact=True).count(), 1)
+        self.page.get_by_role("button", name="Tarama #1 iptal et").click()
+        self.page.get_by_text("İptal edildi", exact=True).wait_for()
+        self.assertEqual(self.search_posts, [{"job_id": 1, "action": "cancel"}])
+        self.assertEqual(self.page.get_by_role("button", name="Tarama #4 yeniden dene").count(), 0)
+        self.assertEqual(self.errors, [])
+
+    def test_worker_queue_all_viewports_and_themes(self):
+        self.worker_fixture()
+        output = os.environ.get("E2E_SCREENSHOTS_DIR")
+        if output:
+            Path(output).mkdir(parents=True, exist_ok=True)
+        for theme in ("dark", "light"):
+            self.page.add_init_script(f"localStorage.setItem('zeplin_theme', '{theme}')")
+            for width, height in ((1440, 900), (1280, 800), (768, 1024), (390, 844), (320, 844)):
+                with self.subTest(theme=theme, width=width):
+                    self.page.set_viewport_size({"width": width, "height": height})
+                    self.page.goto(f"{self.base}/admin")
+                    self.page.get_by_text("Kısmen tamamlandı", exact=True).wait_for()
+                    self.assertEqual(self.page.evaluate("document.documentElement.dataset.theme"), theme)
+                    self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"), width)
+                    if output:
+                        self.page.screenshot(path=str(Path(output) / f"wp12-{theme}-{width}.png"), full_page=True)
+        self.assertEqual(self.errors, [])
 
     def test_every_screen_renders_under_the_production_csp(self):
         lead = self.lead(0)

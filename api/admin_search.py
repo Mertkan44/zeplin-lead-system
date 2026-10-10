@@ -13,6 +13,8 @@ from src.auth import require_admin
 from src.http_api import read_json, send_internal_error, send_json, send_options
 from src.storage.supabase import (
     create_search_job,
+    control_search_job,
+    fetch_worker_summary,
     estimate_search_tokens,
     fetch_search_jobs,
     fetch_spend_summary,
@@ -66,6 +68,7 @@ class handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "jobs": fetch_search_jobs(limit=20),
+                    "worker_summary": fetch_worker_summary(),
                     "token_summary": fetch_spend_summary(today_start=business_day_start()),
                 },
             )
@@ -87,6 +90,24 @@ class handler(BaseHTTPRequestHandler):
             payload = read_json(self)
         except ValueError as exc:
             send_json(self, 400, {"ok": False, "error": str(exc)})
+            return
+
+        if payload.get("action"):
+            try:
+                action = str(payload["action"])
+                if action not in {"cancel", "retry"}:
+                    raise ValueError("Geçersiz tarama işlemi.")
+                job_id = int(payload.get("job_id") or 0)
+                if job_id < 1:
+                    raise ValueError("Geçersiz tarama numarası.")
+                result = control_search_job(job_id, action)
+                if not result.get("ok"):
+                    result["error"] = "Tarama bu durumda değiştirilemez veya deneme sınırı dolmuştur."
+                send_json(self, 200 if result.get("ok") else 409, result)
+            except (TypeError, ValueError):
+                send_json(self, 400, {"ok": False, "error": "Geçersiz tarama işlemi."})
+            except Exception as exc:
+                send_internal_error(self, exc, error="search control failed")
             return
 
         query = _clean_text(payload.get("query"))
