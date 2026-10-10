@@ -296,6 +296,45 @@ class DashboardE2E(unittest.TestCase):
         self.page.go_back()
         self.heading("Leadler")
 
+    def test_lead_list_filters_live_in_the_url(self):
+        ready = self.lead(0)
+        self.page.goto(f"{self.base}/raporlar")
+        self.heading("Leadler")
+        self.page.get_by_role("button", name="Filtreler").click()
+        drawer = self.page.get_by_role("dialog", name="Filtreler")
+        drawer.get_by_label("Sonraki iş").select_option("first_contact")
+        drawer.get_by_role("button", name="sonucu göster").click()
+        self.page.wait_for_url("**/raporlar?is=first_contact")
+        rows = self.page.locator("tbody tr")
+        self.assertEqual(rows.count(), 1)
+        rows.get_by_role("link", name=ready["name"]).wait_for()
+        # Back returns to the unfiltered list; forward and the chip's × work too.
+        self.page.go_back()
+        self.page.wait_for_url(f"{self.base}/raporlar")
+        self.assertEqual(rows.count(), len(self.payload["leads"]))
+        self.page.go_forward()
+        self.page.get_by_role("button", name="Sonraki iş filtresini kaldır").click()
+        self.page.wait_for_url(f"{self.base}/raporlar")
+        # Typing a search goes into the URL too.
+        self.page.get_by_label("Leadlerde ara").fill(ready["name"])
+        self.page.wait_for_url("**/raporlar?q=*")
+        self.assertEqual(rows.count(), 1)
+        self.assertEqual(self.errors, [])
+
+    def test_csv_export_defuses_spreadsheet_formulas(self):
+        lead = self.lead(0)
+        original = lead.get("city")
+        self.addCleanup(lead.__setitem__, "city", original)
+        lead["city"] = '=HYPERLINK("http://example.com","x")'
+        self.page.goto(f"{self.base}/raporlar")
+        self.heading("Leadler")
+        with self.page.expect_download() as download:
+            self.page.get_by_role("button", name="Dışa aktar (CSV)").click()
+        text = Path(download.value.path()).read_text(encoding="utf-8-sig")
+        self.assertIn('"\'=HYPERLINK(""http://example.com"",""x"")"', text)
+        self.assertNotIn(',"=HYPERLINK', text)
+        self.assertTrue(text.startswith('"İşletme","Sektör","Şehir","Telefon"'))
+
     def test_workspace_card_selects_and_panel_links_to_the_lead(self):
         lead = self.lead(1)
         self.page.goto(f"{self.base}/")
