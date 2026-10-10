@@ -1,124 +1,195 @@
-// The signed-in account, the team and the logout button.
-import { useMemo } from 'react';
+import { useState, type FormEvent } from "react";
+import type { User } from "../../data/types";
+import { roleLabel } from "../../domain/catalog";
+import { apiRequest, ApiError, SESSION_EXPIRED_EVENT } from "../../lib/api";
+import type { Density } from "../../app/density";
+import type { Theme } from "../../app/theme";
+import { Button, Field, Input, Link, Select } from "../../ui";
+import { PageHeader } from "../shared/PageHeader";
+import styles from "./ProfileView.module.css";
 
-import type { Assignment, User, WorkspaceSummary } from '../../data/types';
-import { roleLabel } from '../../domain/catalog';
-import { initialsFor } from '../../domain/format';
-import { Button } from '../../ui';
-import { PageHeader } from '../shared/PageHeader';
-import styles from './ProfileView.module.css';
-
-function RolePill({ role }: { role?: string | null }) {
-  return <span className={role === 'admin' ? `${styles.pill} ${styles.pillAdmin}` : styles.pill}>{roleLabel(role)}</span>;
-}
-
-function Avatar({ user }: { user: User }) {
-  return user.avatar_url
-    ? <img src={user.avatar_url} alt={user.name || user.email} className={styles.photo} />
-    : <div className={styles.initials} aria-hidden="true">{initialsFor(user.name || user.email)}</div>;
-}
-
-export interface ProfileViewProps {
+export function ProfileView({
+  user,
+  theme,
+  onToggleTheme,
+  onLogout,
+  density,
+  onDensityChange,
+}: {
   user: User;
-  users: User[];
-  summary: WorkspaceSummary | null;
-  assignments: Assignment[];
+  theme: Theme;
+  onToggleTheme: () => void;
   onLogout: () => void;
-}
-
-export function ProfileView({ user, users, summary, assignments, onLogout }: ProfileViewProps) {
-  // Admins first, then by name; the signed-in user is always listed.
-  const team = useMemo(() => {
-    const byEmail = new Map<string, User>();
-    users.forEach(item => { if (item?.email) byEmail.set(item.email, item); });
-    if (!byEmail.has(user.email)) byEmail.set(user.email, user);
-    return [...byEmail.values()].sort((a, b) => {
-      const rank = (member: User) => (member.role === 'admin' ? 0 : 1);
-      if (rank(a) !== rank(b)) return rank(a) - rank(b);
-      return String(a.name || a.email).localeCompare(String(b.name || b.email), 'tr');
-    });
-  }, [users, user]);
-
-  const assignmentCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    assignments.forEach(item => {
-      if (item.status === 'active') counts[item.user_email] = (counts[item.user_email] || 0) + 1;
-    });
-    return counts;
-  }, [assignments]);
-
-  const isAdmin = user.role === 'admin';
-  const current = team.find(item => item.email === user.email) || user;
-  const currentCount = summary?.assigned_count
-    ?? (isAdmin ? Object.values(assignmentCounts).reduce((sum, value) => sum + value, 0) : assignmentCounts[user.email] ?? 0);
-
+  density: Density;
+  onDensityChange: (value: Density) => void;
+}) {
+  const [old, setOld] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setError("");
+    if (password !== confirm) {
+      setError("Yeni şifreler eşleşmiyor.");
+      return;
+    }
+    if (!user.updated_at) {
+      setError("Hesap bilgilerini yenilemek için tekrar giriş yap.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await apiRequest("/api/users?view=account", {
+        method: "PATCH",
+        body: {
+          current_password: old,
+          new_password: password,
+          expected_updated_at: user.updated_at,
+        },
+      });
+      setOld("");
+      setPassword("");
+      setConfirm("");
+      window.dispatchEvent(
+        new CustomEvent(SESSION_EXPIRED_EVENT, {
+          detail: {
+            notice: "Şifren değiştirildi. Yeni şifrenle tekrar giriş yap.",
+          },
+        }),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.code === "USER_VERSION_CONFLICT"
+          ? "Hesabın bu sırada değişti. Tekrar giriş yapıp şifre değişimini yeniden dene."
+          : err instanceof Error
+            ? err.message
+            : "Şifre değiştirilemedi.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className={styles.root}>
       <PageHeader
-        eyebrow="PROFİL"
-        title="Ekip ve hesap"
-        subtitle="Aktif oturum, ekip rolleri ve profil fotoğrafları."
+        eyebrow="HESAP"
+        title="Hesabım ve ayarlar"
+        subtitle="Kişisel hesap, görünüm ve oturum."
         actions={<Button onClick={onLogout}>Çıkış yap</Button>}
       />
-
-      <section className={styles.hero} aria-label="Bu hesap">
-        <div className={styles.heroPhoto}><Avatar user={current} /></div>
-        <div className={styles.heroText}>
-          <div className={styles.heroEyebrow}>Şu an bu hesaptasın</div>
-          <div className={styles.heroName}>{current.name || current.email}</div>
-          <div className={styles.heroMeta}>
-            <span>{current.email}</span>
-            <span aria-hidden="true">·</span>
-            <span>{current.title || roleLabel(current.role)}</span>
-          </div>
-          <div className={styles.pills}>
-            <RolePill role={current.role} />
-            <span className={styles.pill}>{current.active === false ? 'Pasif' : 'Aktif hesap'}</span>
-            <span className={styles.pill}>{currentCount} atanmış lead</span>
-          </div>
-        </div>
-        <dl className={styles.heroStats}>
-          <div className={styles.stat}><dt>Toplam kişi</dt><dd>{team.length}</dd></div>
-          <div className={styles.stat}><dt>Aktif</dt><dd>{team.filter(item => item.active !== false).length}</dd></div>
-          <div className={styles.stat}><dt>Patron</dt><dd>{team.filter(item => item.role === 'admin').length}</dd></div>
-          <div className={styles.stat}><dt>Çalışan</dt><dd>{team.filter(item => item.role === 'sales').length}</dd></div>
-        </dl>
-      </section>
-
-      <div className={styles.sectionHead}>
-        <div>
-          <div className={styles.eyebrow}>EKİP</div>
-          <h2 className={styles.sectionTitle}>Zeplin kullanıcıları</h2>
-        </div>
-        <div className={styles.sectionHint}>Fotoğraflar canlı profilden geliyor.</div>
+      <div className={styles.grid}>
+        <section className={styles.panel} aria-labelledby="account-info">
+          <h2 id="account-info">Hesap bilgileri</h2>
+          <dl>
+            <div>
+              <dt>Ad</dt>
+              <dd>{user.name || "Belirtilmedi"}</dd>
+            </div>
+            <div>
+              <dt>E-posta</dt>
+              <dd>{user.email}</dd>
+            </div>
+            <div>
+              <dt>Rol</dt>
+              <dd>{roleLabel(user.role)}</dd>
+            </div>
+            <div>
+              <dt>Unvan</dt>
+              <dd>{user.title || "Belirtilmedi"}</dd>
+            </div>
+          </dl>
+          <p>Hesap bilgilerini ve yetkilerini yönetici düzenler.</p>
+          {user.role === "admin" && <Link to="/team">Ekip yönetimini aç</Link>}
+        </section>
+        <section className={styles.panel} aria-labelledby="appearance">
+          <h2 id="appearance">Görünüm</h2>
+          <p>
+            Bu cihazdaki tema: {theme === "dark" ? "Koyu" : "Açık"}. Tercihin bu
+            tarayıcıda hatırlanır.
+          </p>
+          <Button onClick={onToggleTheme}>
+            {theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"}
+          </Button>
+          <Field label="Lead listesindeki satır aralığı">
+            {(control) => (
+              <Select
+                {...control}
+                value={density}
+                onChange={(e) => onDensityChange(e.target.value as Density)}
+              >
+                <option value="comfortable">Rahat</option>
+                <option value="compact">Sıkı</option>
+              </Select>
+            )}
+          </Field>
+          <p>
+            Hatırlatmalar Bugün ve Takip listelerinde gösterilir. E-posta veya
+            tarayıcı bildirimi gönderilmez.
+          </p>
+        </section>
+        <section className={styles.panel} aria-labelledby="account-password">
+          <h2 id="account-password">Şifre ve oturum</h2>
+          <p>
+            Şifreyi değiştirmek mevcut cihazlardaki oturumlarını sonlandırır.
+            Ardından yeniden giriş yaparsın.
+          </p>
+          <form onSubmit={submit} className={styles.form}>
+            <fieldset disabled={busy} className={styles.fields}>
+              <Field label="Mevcut şifre">
+                {(control) => (
+                  <Input
+                    {...control}
+                    type="password"
+                    required
+                    maxLength={128}
+                    autoComplete="current-password"
+                    value={old}
+                    onChange={(e) => setOld(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label="Yeni şifre" hint="12–128 karakter.">
+                {(control) => (
+                  <Input
+                    {...control}
+                    type="password"
+                    required
+                    minLength={12}
+                    maxLength={128}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label="Yeni şifre tekrar">
+                {(control) => (
+                  <Input
+                    {...control}
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                  />
+                )}
+              </Field>
+            </fieldset>
+            {error && <p role="alert">{error}</p>}
+            <Button
+              type="submit"
+              variant="primary"
+              busy={busy}
+              busyLabel="Şifre değiştiriliyor…"
+            >
+              Şifreyi değiştir
+            </Button>
+          </form>
+        </section>
       </div>
-
-      <ul className={styles.team}>
-        {team.map(member => {
-          const isMe = member.email === user.email;
-          return (
-            <li key={member.email} className={isMe ? `${styles.member} ${styles.memberMe}` : styles.member}>
-              <div className={styles.memberPhoto}>
-                <Avatar user={member} />
-                {isMe && <span className={styles.meBadge}>Bu hesap</span>}
-              </div>
-              <div className={styles.memberBody}>
-                <div className={styles.memberName}>{member.name || member.email}</div>
-                <div className={styles.memberEmail} title={member.email}>{member.email}</div>
-                <div className={styles.memberPills}>
-                  <RolePill role={member.role} />
-                  <span className={styles.pill}>{member.title || roleLabel(member.role)}</span>
-                  <span className={member.active === false ? `${styles.pill} ${styles.pillPassive}` : styles.pill}>{member.active === false ? 'Pasif' : 'Aktif'}</span>
-                </div>
-              </div>
-              <div className={styles.memberFooter}>
-                <span>Atanmış lead</span>
-                <strong>{isAdmin || isMe ? assignmentCounts[member.email] || 0 : '—'}</strong>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

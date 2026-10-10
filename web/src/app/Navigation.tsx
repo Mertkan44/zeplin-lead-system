@@ -25,7 +25,8 @@ function navItems(user: User, leadCount: number): NavItem[] {
     { view: 'pipeline', label: 'Pipeline' },
     { view: 'analytics', label: 'Raporlar' },
     { view: 'hizmetler', label: 'Hizmetler' },
-    user.role === 'admin' && { view: 'admin', label: 'Admin' },
+    user.role === 'admin' && { view: 'team', label: 'Ekip' },
+    user.role === 'admin' && { view: 'admin', label: 'Tarama merkezi' },
   ];
   return items.filter((item): item is NavItem => Boolean(item));
 }
@@ -67,11 +68,11 @@ function Account({ user, current, onNavigate }: { user: User; current: View; onN
       onClick={onNavigate}
       className={styles.account}
       aria-current={current === 'profile' ? 'page' : undefined}
-      title={`${user.name || user.email} · Profil`}
+      title={`${user.name || user.email} · Hesabım`}
     >
       <span className={styles.avatar}>{user.avatar_url ? <img src={user.avatar_url} alt="" /> : initialsFor(user.name || user.email)}</span>
       <span className={styles.accountText}>
-        <span className={styles.accountName}>Profil</span>
+        <span className={styles.accountName}>Hesabım</span>
         <span className={styles.accountRole}>{user.name || user.email} · {roleLabel(user.role)}</span>
       </span>
     </Link>

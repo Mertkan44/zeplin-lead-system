@@ -9,7 +9,7 @@
 // so a filtered view can be shared and back returns to the previous one.
 import { useSyncExternalStore, type MouseEvent } from 'react';
 
-export const VIEWS = ['today', 'cockpit', 'pipeline', 'hizmetler', 'raporlar', 'analytics', 'profile', 'admin'] as const;
+export const VIEWS = ['today', 'cockpit', 'pipeline', 'hizmetler', 'raporlar', 'analytics', 'profile', 'team', 'admin'] as const;
 export type View = (typeof VIEWS)[number];
 
 export type Route =

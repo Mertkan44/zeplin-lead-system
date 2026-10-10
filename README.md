@@ -28,9 +28,13 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-The current code requires migration 011. Always apply new migrations before
+The current code requires migration 014. Always apply new migrations before
 deploying the code that needs them; every migration also works with the previous
 code version.
+
+Migration 014 adds atomic team management, last-active-admin protection and
+personal password changes. See [team and account settings](docs/team-settings.md)
+for API contracts, session invalidation and the ordered 012/013/014 rollout.
 
 Migration 011 ties AI generations to their input and records every provider call;
 see "AI generations and costs". It removes nothing, so it can be applied through the

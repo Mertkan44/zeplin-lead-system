@@ -39,6 +39,7 @@ class handler(BaseHTTPRequestHandler):
                         "role": user.get("role"),
                         "title": user.get("title"),
                         "avatar_url": user.get("avatar_url"),
+                        "updated_at": user.get("ver"),
                     }
                     if user
                     else None
@@ -106,6 +107,7 @@ class handler(BaseHTTPRequestHandler):
                     "role": user["role"],
                     "title": user.get("title"),
                     "avatar_url": user.get("avatar_url"),
+                    "updated_at": user.get("session_version"),
                 },
             },
             allow_methods="GET, POST, DELETE, OPTIONS",

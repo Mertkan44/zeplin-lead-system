@@ -94,3 +94,5 @@ jobs:
         run: python scripts/schema_parity.py --dsn postgresql://postgres:postgres@localhost:5432/postgres
       - name: Synthetic backup and restore rehearsal
         run: python scripts/backup_rehearsal.py --dsn postgresql://postgres:postgres@localhost:5432/postgres
+      - name: Last-admin concurrent commands and legacy writers
+        run: python scripts/team_concurrency.py --dsn postgresql://postgres:postgres@localhost:5432/postgres

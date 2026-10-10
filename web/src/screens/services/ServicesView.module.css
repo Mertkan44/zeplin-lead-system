@@ -1,23 +1,157 @@
-.root { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; padding: 24px 32px 40px; list-style: none; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--rs); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.tag { font: 600 10.5px var(--font-display); padding: 3px 9px; border-radius: 99px; background: var(--raised); color: var(--sub); }
-.tagMonthly { background: var(--info-bg); color: var(--info-tx); }
-.tagProject { background: rgba(197,242,74,0.12); color: var(--accent-text); }
-.name { font: 600 17px var(--font-display); letter-spacing: -0.3px; margin-top: 4px; color: var(--tx); }
-.desc { font-size: 12.5px; color: var(--sub); line-height: 1.45; }
-.detects { font-size: 12px; color: var(--sub); background: var(--panel2); padding: 8px 12px; border-radius: 8px; line-height: 1.4; }
-.stats { display: flex; gap: 24px; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 4px; }
-.stats > div { display: flex; flex-direction: column; }
-.statLabel { order: 2; }
-.statValue { font: 700 20px var(--font-display); letter-spacing: -0.5px; color: var(--tx); }
-.statConfirmed { color: var(--accent-text); }
-.statDiscovery { color: #ffcf4a; }
-:global([data-theme="light"]) .statDiscovery { color: #855500; }
-.statLabel { font: 11px var(--font-display); color: var(--muted); margin-top: 2px; }
-.price { font: 600 15px var(--font-display); color: var(--tx); margin-top: 4px; }
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 24px 32px 40px;
+  list-style: none;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--rs);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font: 600 10.5px var(--font-display);
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--raised);
+  color: var(--sub);
+}
+.tagMonthly {
+  background: var(--info-bg);
+  color: var(--info-tx);
+}
+.tagProject {
+  background: rgba(197, 242, 74, 0.12);
+  color: var(--accent-text);
+}
+.name {
+  font: 600 17px var(--font-display);
+  letter-spacing: -0.3px;
+  margin-top: 4px;
+  color: var(--tx);
+}
+.desc {
+  font-size: 12.5px;
+  color: var(--sub);
+  line-height: 1.45;
+}
+.detects {
+  font-size: 12px;
+  color: var(--sub);
+  background: var(--panel2);
+  padding: 8px 12px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+.stats {
+  display: flex;
+  gap: 24px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.stats > div {
+  display: flex;
+  flex-direction: column;
+}
+.statLabel {
+  order: 2;
+}
+.statValue {
+  font: 700 20px var(--font-display);
+  letter-spacing: -0.5px;
+  color: var(--tx);
+}
+.statConfirmed {
+  color: var(--accent-text);
+}
+.statDiscovery {
+  color: #ffcf4a;
+}
+:global([data-theme="light"]) .statDiscovery {
+  color: #855500;
+}
+.statLabel {
+  font: 11px var(--font-display);
+  color: var(--muted);
+  margin-top: 2px;
+}
+.price {
+  font: 600 15px var(--font-display);
+  color: var(--tx);
+  margin-top: 4px;
+}
 
 @media (max-width: 760px) {
-  .grid { padding: 16px 16px 32px; grid-template-columns: 1fr; }
+  .grid {
+    padding: 16px 16px 32px;
+    grid-template-columns: 1fr;
+  }
+}
+.scope {
+  color: var(--sub);
+  font-size: 12.5px;
+  line-height: 1.7;
+  padding: 16px 32px 0;
+}
+.stats {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.stats dd {
+  margin: 0;
+}
+.stats dt {
+  line-height: 1.5;
+}
+.price {
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.details {
+  margin-top: auto;
+  color: var(--sub);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.details summary {
+  color: var(--tx);
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+  min-height: 40px;
+}
+.details h3 {
+  color: var(--tx);
+  font-size: 13px;
+  margin: 14px 0 6px;
+}
+.details ul {
+  padding-left: 18px;
+}
+.details li {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .scope {
+    padding: 16px 16px 0;
+  }
 }

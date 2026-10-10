@@ -76,7 +76,7 @@ export function AdminView({ user }: { user: User }) {
   });
 
   if (!isAdmin) {
-    return <ErrorState eyebrow="YETKİ" title="Admin alanı" message="Yeni search ve token bütçesi sadece patron hesaplarında açık." />;
+    return <ErrorState eyebrow="YETKİ" title="Tarama merkezi" message="Tarama ve analiz bütçesi yalnız yöneticilere açık." />;
   }
 
   const jobs = overview.data?.jobs || [];
@@ -92,7 +92,7 @@ export function AdminView({ user }: { user: User }) {
       body: { query, city, max_results: Number(maxResults), deep_research: deepResearch, ai_mode: aiMode },
     })
       .then(data => {
-        setFeedback(`Search job #${data.job.id} kuyruğa alındı. Tahmini ${count(data.estimate.estimated_tokens)} token.`);
+        setFeedback(`Tarama #${data.job.id} kuyruğa alındı. Tahmini ${count(data.estimate.estimated_tokens)} token.`);
         return queryClient.invalidateQueries({ queryKey: ['admin-search'] });
       })
       .catch((err: Error) => setFeedback(err.message))
@@ -102,16 +102,16 @@ export function AdminView({ user }: { user: User }) {
   return (
     <div className={styles.root}>
       <PageHeader
-        eyebrow="ADMIN"
-        title="Search operasyonu"
-        subtitle="Yeni lead taraması, DeepSeek bütçesi ve Supabase job kuyruğu."
+        eyebrow="TARAMA"
+        title="Tarama merkezi"
+        subtitle="Yeni işletme taraması, analiz bütçesi ve iş kuyruğu."
         actions={<div className={styles.userChip}>{user.name || user.email}</div>}
       />
 
       <div className={styles.grid}>
         <form className={styles.panel} onSubmit={createJob} aria-labelledby="new-search-title">
-          <div className={styles.eyebrow}>YENİ SEARCH</div>
-          <h2 id="new-search-title" className={styles.title}>Admin tarama başlat</h2>
+          <div className={styles.eyebrow}>YENİ TARAMA</div>
+          <h2 id="new-search-title" className={styles.title}>Yeni tarama başlat</h2>
           <div className={styles.form}>
             <Field label="Arama tipi">
               {control => <Input {...control} value={query} onChange={event => setQuery(event.target.value)} placeholder="restoran, mağaza, kuaför" />}
@@ -126,23 +126,23 @@ export function AdminView({ user }: { user: User }) {
               <Field label="AI modu">
                 {control => (
                   <Select {...control} value={aiMode} onChange={event => setAiMode(event.target.value)}>
-                    <option value="smart">Smart</option>
-                    <option value="flash">Flash</option>
-                    <option value="pro">Pro</option>
+                    <option value="smart">Otomatik seçim</option>
+                    <option value="flash">Ekonomik analiz</option>
+                    <option value="pro">Derin analiz</option>
                   </Select>
                 )}
               </Field>
             </div>
             <label className={styles.check}>
               <input type="checkbox" checked={deepResearch} onChange={event => setDeepResearch(event.target.checked)} />
-              <span>Deep research açık</span>
+              <span>Website ve sosyal hesapları da araştır</span>
             </label>
             <div className={styles.estimate} aria-live="polite">
               <div><strong>{cost ? count(cost.estimated_tokens) : '—'}</strong> tahmini token</div>
               <div><strong>{cost ? (cost.priced ? usd(cost.estimated_cost_usd) : 'Fiyat yok') : '—'}</strong> tahmini maliyet</div>
             </div>
             {feedback && <div className={styles.feedback} role="status">{feedback}</div>}
-            <Button type="submit" variant="primary" size="lg" block busy={busy} busyLabel="Kuyruğa alınıyor…" disabled={!query.trim() || !city.trim()}>Search job oluştur</Button>
+            <Button type="submit" variant="primary" size="lg" block busy={busy} busyLabel="Kuyruğa alınıyor…" disabled={!query.trim() || !city.trim()}>Taramayı kuyruğa al</Button>
           </div>
         </form>
 
@@ -164,10 +164,10 @@ export function AdminView({ user }: { user: User }) {
 
           <section className={styles.panel} aria-labelledby="jobs-title">
             <div className={styles.eyebrow}>SON İŞLER</div>
-            <h2 id="jobs-title" className={styles.title}>Search kuyruğu</h2>
+            <h2 id="jobs-title" className={styles.title}>Tarama kuyruğu</h2>
             {overview.isError && <div className={styles.feedback} role="alert">{overview.error.message}</div>}
             <ul className={styles.jobs}>
-              {jobs.length === 0 && <li className={styles.muted}>{overview.isPending ? 'Yükleniyor…' : 'Henüz job yok.'}</li>}
+              {jobs.length === 0 && <li className={styles.muted}>{overview.isPending ? 'Yükleniyor…' : 'Henüz tarama yok.'}</li>}
               {jobs.map(job => (
                 <li key={job.id} className={styles.job}>
                   <div>
