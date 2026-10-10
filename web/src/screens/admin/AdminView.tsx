@@ -24,7 +24,39 @@ interface Job {
   ai_mode: string;
   estimated_tokens?: number;
   status: string;
+  created_at?: string;
+  heartbeat_at?: string;
+  lease_until?: string;
+  next_attempt_at?: string;
+  attempt_count?: number;
+  max_attempts?: number;
+  progress_stage?: string;
+  progress_done?: number;
+  progress_total?: number;
+  last_error?: { stage?: string; code?: string; message?: string };
+  result?: { ai_usage?: { ledger_errors?: number } };
 }
+
+interface WorkerSummary {
+  queued?: number;
+  retry_wait?: number;
+  stalled?: number;
+  oldest_queue_seconds?: number;
+  failed_generations?: number;
+  provider_errors_24h?: number;
+}
+
+const statusLabels: Record<string, string> = {
+  queued: 'Sırada', running: 'Çalışıyor', retry_wait: 'Tekrar denenecek',
+  success: 'Tamamlandı', partial_success: 'Kısmen tamamlandı', failed: 'Başarısız', cancelled: 'İptal edildi',
+};
+const stageLabels: Record<string, string> = {
+  queued: 'Başlamadı', starting: 'Hazırlanıyor', scraped: 'İşletmeler bulundu', listed: 'İşletme incelemesi',
+  audit: 'İşletme incelemesi', audited: 'İnceleme kaydedildi', research: 'Araştırma', researched: 'Araştırma kaydedildi',
+  brief: 'Araştırma özeti', report: 'AI raporu', email: 'İletişim taslağı', sync: 'Sonuçları kaydetme',
+  synced: 'Sonuç kaydedildi', complete: 'Tüm aşamalar tamamlandı', scrape: 'İşletme arama',
+};
+const dateTime = (value?: string) => value ? new Date(value).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', dateStyle: 'short', timeStyle: 'short' }) : '—';
 
 interface TokenSummary {
   actual_cost_usd?: number;
@@ -59,11 +91,13 @@ export function AdminView({ user }: { user: User }) {
   const [aiMode, setAiMode] = useState('smart');
   const [feedback, setFeedback] = useState('');
   const [busy, setBusy] = useState(false);
+  const [busyJob, setBusyJob] = useState<number | null>(null);
 
   const overview = useQuery({
     queryKey: ['admin-search', user.email],
     enabled: isAdmin,
-    queryFn: ({ signal }) => apiRequest<{ jobs?: Job[]; token_summary?: TokenSummary }>('/api/admin_search', { signal }),
+    queryFn: ({ signal }) => apiRequest<{ jobs?: Job[]; token_summary?: TokenSummary; worker_summary?: WorkerSummary }>('/api/admin_search', { signal }),
+    refetchInterval: query => query.state.data?.jobs?.some(job => ['queued', 'running', 'retry_wait'].includes(job.status)) ? 15000 : false,
   });
   const params = useDebounced(
     new URLSearchParams({ estimate: '1', max_results: String(maxResults || 1), deep_research: deepResearch ? '1' : '0', ai_mode: aiMode }).toString(),
@@ -82,6 +116,7 @@ export function AdminView({ user }: { user: User }) {
   const jobs = overview.data?.jobs || [];
   const tokens = overview.data?.token_summary || {};
   const cost = estimate.data;
+  const worker = overview.data?.worker_summary;
 
   function createJob(event: FormEvent) {
     event.preventDefault();
@@ -97,6 +132,20 @@ export function AdminView({ user }: { user: User }) {
       })
       .catch((err: Error) => setFeedback(err.message))
       .finally(() => setBusy(false));
+  }
+
+  async function controlJob(job: Job, action: 'cancel' | 'retry') {
+    setBusyJob(job.id);
+    setFeedback('');
+    try {
+      await apiRequest('/api/admin_search', { method: 'POST', body: { job_id: job.id, action } });
+      setFeedback(`#${job.id} ${action === 'cancel' ? 'iptal edildi' : 'yeniden deneme kuyruğuna alındı'}.`);
+      await overview.refetch();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'İşlem kaydedilemedi.');
+    } finally {
+      setBusyJob(null);
+    }
   }
 
   return (
@@ -164,7 +213,12 @@ export function AdminView({ user }: { user: User }) {
 
           <section className={styles.panel} aria-labelledby="jobs-title">
             <div className={styles.eyebrow}>SON İŞLER</div>
-            <h2 id="jobs-title" className={styles.title}>Search kuyruğu</h2>
+            <h2 id="jobs-title" className={styles.title}>Tarama kuyruğu</h2>
+            <p className={styles.muted}>İşler yaklaşık 15 dakikada bir alınır. En fazla üç deneme yapılır; tamamlanan aşamalar korunur.</p>
+            {worker && <p className={styles.muted}>
+              Sırada {worker.queued ?? 0} · Tekrar denenecek {worker.retry_wait ?? 0} · Yanıt vermeyen {worker.stalled ?? 0}<br />
+              En eski bekleme: {Math.floor((worker.oldest_queue_seconds ?? 0) / 60)} dk · Son 24 saat sağlayıcı hatası: {worker.provider_errors_24h ?? 0} · Başarısız AI üretimi: {worker.failed_generations ?? 0}
+            </p>}
             {overview.isError && <div className={styles.feedback} role="alert">{overview.error.message}</div>}
             <ul className={styles.jobs}>
               {jobs.length === 0 && <li className={styles.muted}>{overview.isPending ? 'Yükleniyor…' : 'Henüz job yok.'}</li>}
@@ -173,8 +227,24 @@ export function AdminView({ user }: { user: User }) {
                   <div>
                     <div className={styles.jobTitle}>#{job.id} {job.query} · {job.city}</div>
                     <div className={styles.muted}>{job.max_results} lead · {job.ai_mode} · {count(job.estimated_tokens)} token</div>
+                    <div className={styles.muted}>
+                      {stageLabels[job.progress_stage || 'queued'] || job.progress_stage} · {job.progress_done ?? 0}/{job.progress_total || job.max_results} işletme tamamlandı<br />
+                      Deneme {job.attempt_count ?? 0}/{job.max_attempts ?? 3} · Oluşturulma: {dateTime(job.created_at)}
+                    </div>
+                    {job.status === 'running' && <p className={styles.muted}>
+                      Son yaşam sinyali: {dateTime(job.heartbeat_at)}
+                      {job.lease_until && Date.parse(job.lease_until) <= Date.now() && ' · İşçi yanıt vermiyor; sıradaki çalışmada kurtarılacak.'}
+                    </p>}
+                    {job.status === 'retry_wait' && <p className={styles.muted}>En erken yeniden deneme: {dateTime(job.next_attempt_at)}</p>}
+                    {job.last_error && <p className={styles.jobError}>
+                      {stageLabels[job.last_error.stage || ''] || 'Tarama'}: {job.last_error.code || 'Hata'}.
+                      {['failed', 'partial_success'].includes(job.status) ? ' Deneme sınırı doldu. Kaydedilen sonuçları inceleyin.' : ' Tamamlanan aşamalar korunarak yeniden denenecek.'}
+                    </p>}
+                    {(job.result?.ai_usage?.ledger_errors ?? 0) > 0 && <p className={styles.jobError}>Bazı AI maliyet kayıtları yazılamadı. Tarama sonuçları korundu.</p>}
+                    {['queued', 'running', 'retry_wait'].includes(job.status) && <Button size="sm" disabled={busyJob !== null} onClick={() => void controlJob(job, 'cancel')} aria-label={`Tarama #${job.id} iptal et`}>İptal et</Button>}
+                    {['failed', 'partial_success'].includes(job.status) && (job.attempt_count ?? 0) < (job.max_attempts ?? 3) && <Button size="sm" disabled={busyJob !== null} onClick={() => void controlJob(job, 'retry')} aria-label={`Tarama #${job.id} yeniden dene`}>Yeniden dene</Button>}
                   </div>
-                  <span className={styles.jobStatus}>{job.status}</span>
+                  <span className={styles.jobStatus} data-status={job.status}>{statusLabels[job.status] || job.status}</span>
                 </li>
               ))}
             </ul>
