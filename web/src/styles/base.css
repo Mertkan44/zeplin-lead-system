@@ -4,6 +4,7 @@
    the sticky top bar and lets focus scroll the page sideways. */
 html, body { min-height: 100vh; background: var(--bg); overflow-x: clip; }
 body {
+  font-size: var(--fs-md);
   font-family: var(--font-body);
   color: var(--tx);
   -webkit-font-smoothing: antialiased;

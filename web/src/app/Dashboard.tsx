@@ -19,7 +19,7 @@ import { TodayView } from '../screens/today/TodayView';
 import { WorkspaceView } from '../screens/workspace/WorkspaceView';
 import { SearchDialog } from './SearchDialog';
 import type { Theme } from './theme';
-import { Topbar } from './Topbar';
+import { BottomNav, MenuDrawer, Sidebar, TopBar, type NavigationProps } from './Navigation';
 import styles from './Dashboard.module.css';
 
 export interface DashboardProps {
@@ -38,12 +38,26 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
   const crm = useMemo(() => (workspace.data ? buildCrm(workspace.data) : null), [workspace.data]);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [resultLeadName, setResultLeadName] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     if (route.kind === 'unknown') navigate('/', { replace: true });
   }, [route.kind]);
+
+  // "/" opens the lead search, unless the user is typing somewhere.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+      event.preventDefault();
+      setSearchOpen(true);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const leads = crm?.leads || [];
   const selectedIdx = route.kind === 'lead' ? leads.findIndex(item => Number(item.lead_id) === route.leadId) : -1;
@@ -144,33 +158,39 @@ export function Dashboard({ theme, onToggleTheme }: DashboardProps) {
   }
 
   const schema = crm?.schema;
+  const nav: NavigationProps = {
+    view,
+    homeView,
+    user,
+    leadCount: crm?.rows.length || 0,
+    theme,
+    onToggleTheme,
+    onOpenSearch: () => setSearchOpen(true),
+  };
   return (
     <CrmContext.Provider value={crm}>
       <div className={styles.root}>
-        <Topbar
-          view={view}
-          homeView={homeView}
-          user={user}
-          leadCount={crm?.rows.length || 0}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          onOpenSearch={() => setSearchOpen(true)}
-        />
-        {schema && !schema.ready && (
-          <Banner urgent>
-            Veritabanı şeması bu sürümle uyumlu değil (kurulu: {schema.version || 'bilinmiyor'}, gereken: {schema.required_version}).
-            {schema.failed_checks?.length ? ` Eksik: ${schema.failed_checks.join(', ')}.` : ''} Eksik migration'ları README'deki sırayla uygula.
-          </Banner>
-        )}
-        {crm && workspace.isError && (
-          <Banner actionLabel="Tekrar dene" onAction={() => void workspace.refetch()} actionBusy={workspace.isFetching}>
-            Veriler güncellenemedi; son alınan veriler gösteriliyor. ({workspace.error.message})
-          </Banner>
-        )}
-        {actionError && (
-          <Banner tone="danger" urgent actionLabel="Kapat" onAction={() => setActionError('')}>{actionError}</Banner>
-        )}
-        <div className={styles.content}>{renderContent()}</div>
+        <Sidebar {...nav} />
+        <div className={styles.main}>
+          <TopBar {...nav} />
+          {schema && !schema.ready && (
+            <Banner urgent>
+              Veritabanı şeması bu sürümle uyumlu değil (kurulu: {schema.version || 'bilinmiyor'}, gereken: {schema.required_version}).
+              {schema.failed_checks?.length ? ` Eksik: ${schema.failed_checks.join(', ')}.` : ''} Eksik migration'ları README'deki sırayla uygula.
+            </Banner>
+          )}
+          {crm && workspace.isError && (
+            <Banner actionLabel="Tekrar dene" onAction={() => void workspace.refetch()} actionBusy={workspace.isFetching}>
+              Veriler güncellenemedi; son alınan veriler gösteriliyor. ({workspace.error.message})
+            </Banner>
+          )}
+          {actionError && (
+            <Banner tone="danger" urgent actionLabel="Kapat" onAction={() => setActionError('')}>{actionError}</Banner>
+          )}
+          <div className={styles.content}>{renderContent()}</div>
+        </div>
+        <BottomNav {...nav} onOpenMenu={() => setMenuOpen(true)} />
+        {menuOpen && <MenuDrawer {...nav} onClose={() => setMenuOpen(false)} />}
         {searchOpen && crm && <SearchDialog leads={leads} statuses={crm.statuses} onClose={() => setSearchOpen(false)} />}
         {resultLead && (
           <ContactResultDialog

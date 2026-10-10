@@ -37,3 +37,24 @@
   .overlay { padding: 12px; place-items: start stretch; }
   .panel { max-height: none; }
 }
+
+/* Drawers: full height from one side; full screen below 760 px. */
+.drawer-right, .drawer-left { padding: 0; place-items: stretch end; }
+.drawer-left { place-items: stretch start; }
+.drawer-right .panel, .drawer-left .panel {
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  border-width: 0;
+  padding: 20px 24px;
+}
+.drawer-right .panel { border-left-width: 1px; animation: slideFromRight .18s ease-out; }
+.drawer-left .panel { border-right-width: 1px; animation: slideFromLeft .18s ease-out; }
+.drawer-right .sm, .drawer-left .sm { max-width: 320px; }
+.drawer-right .md, .drawer-left .md { max-width: 520px; }
+.drawer-right .xl, .drawer-left .xl { max-width: 960px; }
+@keyframes slideFromRight { from { transform: translateX(24px); opacity: 0; } }
+@keyframes slideFromLeft { from { transform: translateX(-24px); opacity: 0; } }
+@media (max-width: 760px) {
+  .drawer-right .panel, .drawer-left .panel { max-width: none; padding: 16px; }
+}

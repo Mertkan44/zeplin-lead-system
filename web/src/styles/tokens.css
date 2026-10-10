@@ -1,88 +1,119 @@
-/* Theme tokens. Every color, radius and font in the dashboard comes from here;
-   components use the semantic names (--surface, --text-primary, …). The short
-   names (--panel, --tx, …) are what the screens still on legacy inline styles
-   use; they stay until those screens move to CSS. */
+/* Theme tokens (review §11.2): graphite surfaces, limited lime accent, a
+   light theme of equal quality. Components use the semantic names
+   (--surface, --text-primary, …); the short names (--panel, --tx, …) are the
+   same values under the names older screen CSS still uses. */
 
 :root,
 [data-theme="dark"] {
+  --bg: #0b0d10;
+  --surface: #14171d;
+  --surface-sunken: #101318;
+  --surface-raised: #1b2028;
+  --text-primary: #f4f6f8;
+  --text-secondary: #b4bdc8;
+  --text-muted: #8c98a7;
+  --border: #252c36;
+  --border-strong: #303844;
   --accent: #c5f24a;
-  --accent-ink: #12140a;
-  --bg: #0a0a0b;
-  --panel: #141418;
-  --panel2: #17171c;
-  --raised: #1c1c22;
-  --line: rgba(255, 255, 255, 0.07);
-  --line2: rgba(255, 255, 255, 0.12);
-  --tx: #f3f3f0;
-  --sub: #93938f;
-  --muted: #5c5c5a;
-  --selected-bg: #000000;
-  --selected-tx: #f3f3f0;
-  --warn-bg: rgba(244, 197, 107, 0.12);
-  --warn-tx: #f4c56b;
-  --danger-bg: rgba(255, 107, 107, 0.12);
-  --danger-tx: #ff9494;
-  --success-bg: rgba(182, 242, 74, 0.12);
-  --success-tx: #b6f24a;
-  --info-bg: rgba(124, 197, 255, 0.14);
-  --info-tx: #7cc5ff;
+  --accent-ink: #17200a;
+  /* Accent as text on the page background (lime on white is unreadable). */
+  --accent-text: #c5f24a;
+  --accent-soft: rgba(197, 242, 74, 0.1);
   --focus-ring: #a8cbff;
-  --overlay: rgba(0, 0, 0, 0.56);
-  --shadow-dialog: 0 24px 80px rgba(0, 0, 0, 0.34);
-  --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197, 242, 74, 0.06), transparent 60%);
+  --success-tx: #71d9a0;
+  --success-bg: rgba(113, 217, 160, 0.12);
+  --warn-tx: #f4c56b;
+  --warn-bg: rgba(244, 197, 107, 0.12);
+  --danger-tx: #ff9494;
+  --danger-bg: rgba(255, 148, 148, 0.12);
+  --info-tx: #8fc2ff;
+  --info-bg: rgba(143, 194, 255, 0.12);
+  --selected-bg: #232a34;
+  --selected-tx: #f4f6f8;
+  --overlay: rgba(4, 6, 8, 0.64);
+  --shadow-dialog: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --shadow-card: none;
+  --glow: none;
   color-scheme: dark;
 }
 
 [data-theme="light"] {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-sunken: #f0f3f7;
+  --surface-raised: #eef2f6;
+  --text-primary: #15202b;
+  --text-secondary: #526171;
+  --text-muted: #637184;
+  --border: #e3e8ef;
+  --border-strong: #d8dfe8;
   --accent: #c5f24a;
-  --accent-ink: #12140a;
-  --bg: #faf9f4;
-  --panel: #ffffff;
-  --panel2: #f3f1e9;
-  --raised: #efece0;
-  --line: #e9e4d6;
-  --line2: #ddd6c2;
-  --tx: #0c0b08;
-  --sub: #4a4535;
-  --muted: #8b856f;
-  --selected-bg: #0c0b08;
-  --selected-tx: #faf9f4;
-  --warn-bg: #fff4dc;
-  --warn-tx: #855500;
-  --danger-bg: #fde8ea;
-  --danger-tx: #ae2436;
-  --success-bg: #e6f4ea;
-  --success-tx: #187449;
-  --info-bg: #e5effc;
-  --info-tx: #245ecc;
+  --accent-ink: #17200a;
+  --accent-text: #4a6800;
+  --accent-soft: rgba(126, 170, 0, 0.12);
   --focus-ring: #245ecc;
-  --overlay: rgba(12, 11, 8, 0.42);
-  --shadow-dialog: 0 24px 80px rgba(12, 11, 8, 0.18);
-  --glow: radial-gradient(1200px 600px at 78% -8%, rgba(197, 242, 74, 0.14), transparent 60%);
+  --success-tx: #187449;
+  --success-bg: #e3f4ea;
+  --warn-tx: #855500;
+  --warn-bg: #fff3d9;
+  --danger-tx: #ae2436;
+  --danger-bg: #fde8eb;
+  --info-tx: #245ecc;
+  --info-bg: #e6eefc;
+  --selected-bg: #15202b;
+  --selected-tx: #ffffff;
+  --overlay: rgba(21, 32, 43, 0.4);
+  --shadow-dialog: 0 24px 80px rgba(21, 32, 43, 0.18);
+  --shadow-card: 0 1px 2px rgba(21, 32, 43, 0.05);
+  --glow: none;
   color-scheme: light;
 }
 
 :root {
-  /* Semantic names (review §11.2) mapped onto the current palette. */
-  --surface: var(--panel);
-  --surface-sunken: var(--panel2);
-  --surface-raised: var(--raised);
-  --text-primary: var(--tx);
-  --text-secondary: var(--sub);
-  --text-muted: var(--muted);
-  --border: var(--line);
-  --border-strong: var(--line2);
+  /* Short names used by older screen CSS. */
+  --panel: var(--surface);
+  --panel2: var(--surface-sunken);
+  --raised: var(--surface-raised);
+  --tx: var(--text-primary);
+  --sub: var(--text-secondary);
+  --muted: var(--text-muted);
+  --line: var(--border);
+  --line2: var(--border-strong);
 
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Instrument Sans', system-ui, sans-serif;
 
-  --r: 26px;
-  --rs: 18px;
-  --radius-sm: 7px;
+  /* Type scale (§11.3): body 14, tables 13–14, helper 12, nothing smaller
+     for information a decision depends on. */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --fs-page: 30px;
+
+  /* 4 px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --r: 16px;
+  --rs: 14px;
+  --radius-sm: 8px;
   --radius-md: 10px;
-  --radius-lg: 12px;
+  --radius-lg: 14px;
   --radius-pill: 999px;
 
   --control-height: 40px;
   --control-height-sm: 32px;
+  --touch-target: 44px;
+
+  --sidebar-width: 232px;
+  --sidebar-collapsed: 72px;
+  --topbar-height: 60px;
+  --bottom-nav-height: 64px;
 }

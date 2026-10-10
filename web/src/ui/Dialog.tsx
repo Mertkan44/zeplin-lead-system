@@ -32,6 +32,8 @@ export interface DialogProps {
   /** false while an action runs: Escape, outside click and the close button do nothing. */
   dismissible?: boolean;
   size?: 'sm' | 'md' | 'xl';
+  /** center: a card; left/right: a full-height drawer (full screen on phones). */
+  placement?: 'center' | 'left' | 'right';
   role?: 'dialog' | 'alertdialog';
   /** Show the close button in the header (default true). */
   closeButton?: boolean;
@@ -49,6 +51,7 @@ export function Dialog({
   onClose,
   dismissible = true,
   size = 'md',
+  placement = 'center',
   role = 'dialog',
   closeButton = true,
   initialFocus,
@@ -118,7 +121,7 @@ export function Dialog({
   return createPortal(
     <div
       role="presentation"
-      className={[styles.overlay, size === 'xl' ? styles.tall : ''].filter(Boolean).join(' ')}
+      className={[styles.overlay, size === 'xl' ? styles.tall : '', placement !== 'center' ? styles[`drawer-${placement}`] : ''].filter(Boolean).join(' ')}
       onMouseDown={event => {
         if (event.target === event.currentTarget && dismissible) onClose();
       }}
