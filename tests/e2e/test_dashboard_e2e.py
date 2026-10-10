@@ -271,18 +271,39 @@ class DashboardE2E(unittest.TestCase):
         dialog.wait_for()
         dialog.get_by_role("button", name="Ulaşılamadı", exact=True).click()
         dialog.get_by_label("Görüşme notu").fill("Telefon kapalıydı")
-        dialog.get_by_role("button", name="Sonucu ve görevi kaydet").click()
+        dialog.get_by_role("button", name="Sonucu kaydet").click()
         dialog.get_by_role("alert").wait_for()
         # Nothing typed or chosen is lost.
         self.assertEqual(dialog.get_by_label("Görüşme notu").input_value(), "Telefon kapalıydı")
         self.assertEqual(dialog.get_by_role("button", name="Ulaşılamadı", exact=True).get_attribute("aria-pressed"), "true")
-        dialog.get_by_role("button", name="Sonucu ve görevi kaydet").click()
+        dialog.get_by_role("button", name="Sonucu kaydet").click()
         dialog.wait_for(state="detached")
         first, retry = self.outreach_posts
         self.assertEqual(first["idempotency_key"], retry["idempotency_key"])
         self.assertEqual((retry["outcome"], retry["note"], retry["lead_name"]), ("no_answer", "Telefon kapalıydı", lead["name"]))
         # The browser logs the simulated 503 itself; nothing else may fail.
         self.assertEqual([e for e in self.errors if "status of 503" not in e], [])
+
+    def test_closing_a_filled_contact_form_asks_first(self):
+        lead = self.lead(0)
+        self.page.goto(f"{self.base}/leads/{lead['lead_id']}")
+        self.heading(lead["name"])
+        self.page.get_by_role("button", name="Sonuç kaydet", exact=True).click()
+        dialog = self.page.get_by_role("dialog", name=lead["name"])
+        dialog.get_by_role("button", name="İlgilendi", exact=True).click()
+        dialog.get_by_text("2 gün sonra 10:00 için takip görevi açılır").wait_for()
+        dialog.get_by_role("button", name="Haftaya").click()
+        self.page.keyboard.press("Escape")
+        confirm = self.page.get_by_role("alertdialog", name="Sonuç kaydedilmedi")
+        confirm.wait_for()
+        confirm.get_by_role("button", name="Forma dön").click()
+        confirm.wait_for(state="detached")
+        self.assertEqual(dialog.get_by_role("button", name="İlgilendi", exact=True).get_attribute("aria-pressed"), "true")
+        dialog.get_by_role("button", name="Vazgeç").click()
+        self.page.get_by_role("alertdialog").get_by_role("button", name="Kaydetmeden kapat").click()
+        dialog.wait_for(state="detached")
+        self.assertEqual(self.outreach_posts, [])
+        self.assertEqual(self.errors, [])
 
     def test_lead_list_rows_are_links(self):
         lead = self.lead(3)

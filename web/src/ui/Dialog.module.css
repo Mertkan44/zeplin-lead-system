@@ -25,6 +25,7 @@
 .panel:focus { outline: none; }
 .sm { max-width: 420px; }
 .md { max-width: 620px; }
+.lg { max-width: 720px; }
 .xl { max-width: 1240px; max-height: 92vh; }
 
 .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
@@ -52,6 +53,7 @@
 .drawer-left .panel { border-right-width: 1px; animation: slideFromLeft .18s ease-out; }
 .drawer-right .sm, .drawer-left .sm { max-width: 320px; }
 .drawer-right .md, .drawer-left .md { max-width: 520px; }
+.drawer-right .lg, .drawer-left .lg { max-width: 720px; }
 .drawer-right .xl, .drawer-left .xl { max-width: 960px; }
 @keyframes slideFromRight { from { transform: translateX(24px); opacity: 0; } }
 @keyframes slideFromLeft { from { transform: translateX(-24px); opacity: 0; } }
