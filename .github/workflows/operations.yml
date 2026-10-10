@@ -20,7 +20,7 @@ jobs:
   check:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     env:
       SMOKE_URL: ${{ vars.PRODUCTION_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -59,9 +59,9 @@ jobs:
             echo "::error::Set repository variable PRODUCTION_URL to the production origin."
             exit 1
           fi
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in $(seq 1 21); do
             if python scripts/smoke_release.py; then exit 0; fi
-            if [ "$attempt" -lt 6 ]; then sleep 30; fi
+            if [ "$attempt" -lt 21 ]; then sleep 30; fi
           done
           echo "::error::Read-only release smoke failed. Inspect Vercel deployment and database readiness."
           exit 1

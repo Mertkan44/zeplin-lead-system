@@ -39,7 +39,7 @@ içindeki audit hatası ise transaction'ı geri alır; bu ayrı davranıştır.
    işleri bitir/drain et. Yeni SQL ve yeni worker uyumluluğunu paketin rollout
    belgesinden kontrol et. Özellikle 012 eski worker'ı emekliye ayırır.
 5. PR'ı birleştir; Vercel Git entegrasyonunun main commit'ini yayınlamasını bekle.
-   Actions release smoke beklenen commit'i doğrular. Smoke kırmızıysa yeni tarama
+   Actions release smoke beklenen commit'i en fazla 10 dakika bekleyerek doğrular. Smoke kırmızıysa yeni tarama
    başlatma; önce şema ve yayın commit'ini kontrol et.
 6. Yeni worker sürümünün schema preflight'ı geçtikten sonra schedule'u aç.
    İlk gerçek kullanıcı işinin kalp atışı, ilerleme ve maliyet kayıtlarını izle.
@@ -64,7 +64,7 @@ barındırır. Git'e, CI artifact'ına veya sohbete konulmaz. İzinler 0600; yen
 araç kendi başına şifreleme ya da dış depoya yükleme yapmaz.
 
 `pg_dump`, `pg_restore`, `psql` sunucunun PostgreSQL ana sürümüyle eşleşmeli.
-[PostgreSQL pg_dump belgesi](https://www.postgresql.org/docs/16/app-pgdump.html)
+[PostgreSQL pg_dump belgesi](https://www.postgresql.org/docs/17/app-pgdump.html)
 custom archive ve tutarlı snapshot davranışını açıklar.
 
 Yetkili operatör bağlantıyı güvenli ortam değişkeninden yükler; bağlantı dizesi
@@ -118,3 +118,6 @@ aktif sayılmaz. Aylık restore provası ve her migration öncesi yedek gerekir.
 
 WP15 araçları yerelde sentetik DB ile prova edilebilir. Canlı yedek ve staging
 kanıtı yalnız gerçek erişimle yapılmışsa yayın kaydına yazılır.
+
+10 Ekim 2026 SQL snapshotı, yerel PostgreSQL 17 ve native archive geri yükleme
+kanıtları için [yayın kaydı](releases/2026-10-10.md).
