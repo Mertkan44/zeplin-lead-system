@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -957,8 +958,14 @@ def insert_audit_event(
                 json=row,
             )
             response.raise_for_status()
-    except Exception:
+    except Exception as exc:
         # Audit availability must not turn a valid CRM action into a duplicate retry.
+        # Log only categories: exception text can contain credentials, actor or CRM data.
+        logging.getLogger("zeplin.operations").error(json.dumps({
+            "event": "audit_persistence_failed",
+            "operation": event_type,
+            "error_type": type(exc).__name__,
+        }))
         return
 
 

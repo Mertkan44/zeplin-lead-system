@@ -356,3 +356,15 @@ so current statuses are shown as a distribution, not a conversion funnel.
 
 See `SECURITY.md` for the secret and data history of this repository and the
 remaining owner actions.
+
+## Operations and release checks (WP15)
+
+Read-only release smoke, hourly queue/AI monitoring, private PostgreSQL backups
+and an empty-target restore rehearsal are described in [docs/operations.md](docs/operations.md).
+Set the GitHub repository variable `PRODUCTION_URL` to the production origin.
+The Operations workflow verifies the deployed commit after main CI; it never
+starts paid work. CI also proves synthetic backup/restore, RLS/grant parity and
+refusal of populated targets or damaged archives. Live backups need a separate
+DB connection and protected storage; service-role HTTP access alone cannot create
+one. Audit persistence failures produce a sanitized operational log without
+turning a successful CRM mutation into a retry.

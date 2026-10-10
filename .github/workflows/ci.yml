@@ -92,3 +92,5 @@ jobs:
         run: python scripts/build_schema.py --check
       - name: Fresh install, historical upgrades and behaviour checks
         run: python scripts/schema_parity.py --dsn postgresql://postgres:postgres@localhost:5432/postgres
+      - name: Synthetic backup and restore rehearsal
+        run: python scripts/backup_rehearsal.py --dsn postgresql://postgres:postgres@localhost:5432/postgres
