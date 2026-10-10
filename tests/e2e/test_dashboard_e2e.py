@@ -309,19 +309,36 @@ class DashboardE2E(unittest.TestCase):
         self.assertEqual(self.page.evaluate("location.pathname"), f"/leads/{lead['lead_id']}")
 
     def test_sales_home_is_the_work_queue(self):
+        from datetime import datetime, timedelta, timezone
+
+        # One lead with a follow-up that was due two days ago.
+        overdue = self.lead(2)
+        original = overdue.get("workflow")
+        self.addCleanup(overdue.__setitem__, "workflow", original)
+        overdue["workflow"] = {
+            **(overdue.get("workflow") or {}),
+            "stage": "follow_up_due",
+            "ready_to_contact": True,
+            "follow_up_at": (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+            "latest_contact_at": (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(),
+            "latest_outcome_label": "Ulaşılamadı",
+        }
         self.session["user"] = self.sales
         self.page.goto(f"{self.base}/")
-        self.heading("Bugünkü İşlerim")
+        self.heading("Bugün")
         self.assertEqual(self.page.get_by_role("link", name="Admin").count(), 0)
-        self.page.get_by_role("button", name="Aramaya hazır").click()
-        self.page.get_by_role("button", name="Temas ekranı").first.click()
-        self.page.get_by_role("dialog").wait_for()
+        late = self.page.get_by_role("region", name="Geciken")
+        late.get_by_role("heading", name=overdue["name"]).wait_for()
+        late.get_by_text("Önceki sonuç: Ulaşılamadı").wait_for()
+        late.get_by_role("button", name="Görüşmeye başla").click()
+        self.page.get_by_role("dialog", name=overdue["name"]).wait_for()
         self.page.keyboard.press("Escape")
         self.page.get_by_role("dialog").wait_for(state="detached")
-        self.page.get_by_role("button", name="Kontrol", exact=False).first.click()
-        queue_item = self.page.get_by_role("link", name="Kontrolü tamamla").first
-        path = queue_item.get_attribute("href")
-        queue_item.click()
+        first = self.page.get_by_role("region", name="İlk temas")
+        first.get_by_role("heading", name=self.lead(0)["name"]).wait_for()
+        check = self.page.get_by_role("region", name="Doğrulama gerekiyor").get_by_role("link", name="Kontrolü tamamla").first
+        path = check.get_attribute("href")
+        check.click()
         self.page.wait_for_url(f"{self.base}{path}")
         self.assertEqual(self.errors, [])
 

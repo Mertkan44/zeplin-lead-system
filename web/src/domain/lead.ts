@@ -2,7 +2,7 @@
 // status and events are passed in, nothing is read from shared state.
 import type { Lead, LeadStatus, OutreachEvent } from '../data/types';
 import { FOLLOW_UP_DELAYS, SECTOR_LABELS, type LeadFilter, type PipelineStageKey } from './catalog';
-import { daysFromNowAtTen, fmtShortDateTime, isToday } from './format';
+import { daysFromNowAtTen } from './format';
 
 export function scoreIsAvailable(lead: Lead | null | undefined): boolean {
   return (lead?.scoring?.score_status || 'insufficient') !== 'insufficient';
@@ -212,59 +212,6 @@ export function canonicalSector(lead: Lead): string {
 export function followUpForOutcome(outcome: string): string {
   const days = FOLLOW_UP_DELAYS[outcome];
   return days ? daysFromNowAtTen(days) : '';
-}
-
-export interface TaskMeta {
-  rank: number;
-  label: string;
-  detail: string;
-  followUp: Date | null;
-  stage: string;
-  ready: boolean;
-  completedToday: boolean;
-}
-
-/** Where a lead sits in today's work queue. `events` newest first. */
-export function taskMetaForLead(lead: Lead, events: OutreachEvent[]): TaskMeta {
-  const workflow = lead.workflow || {};
-  const last = events.find(event => event.action === 'contact_result_recorded') || null;
-  const followUp = last?.followUpAt ? new Date(last.followUpAt) : null;
-  const now = new Date();
-  const due = Boolean(followUp && followUp <= now);
-  const assignmentDue = lead.assignment_due_at ? new Date(lead.assignment_due_at) : null;
-  let rank = 40;
-  let label = workflow.stage_label || 'İlk temas bekliyor';
-  let detail = lead.priority_reason || 'Lead’i incele ve ilk teması gerçekleştir.';
-  if (due && last) {
-    rank = 100;
-    label = isToday(followUp) ? 'Bugün takip' : 'Takip gecikti';
-    detail = `${last.outcomeLabel || 'Önceki temas'} sonrası yeniden iletişime geç.`;
-  } else if (workflow.stage === 'verification_required') {
-    rank = 90;
-    label = 'Kontrol bekliyor';
-    detail = `${workflow.completed_count || 0}/${workflow.required_count || 0} kaynak tamamlandı. Eksik: ${(workflow.missing || []).join(', ') || 'doğrulama'}.`;
-  } else if (workflow.stage === 'ready_to_contact') {
-    rank = 85;
-    label = 'Aramaya hazır';
-    detail = 'Zorunlu kaynak kontrolleri tamamlandı; konuşma rehberiyle temasa geç.';
-  } else if (assignmentDue && assignmentDue <= now) {
-    rank = 80;
-    label = 'Atama tarihi geldi';
-    detail = lead.priority_reason || 'Atanan lead için aksiyon bekleniyor.';
-  } else if (last) {
-    rank = 25;
-    label = last.outcomeLabel || 'Sonuç kaydedildi';
-    detail = followUp ? `Takip: ${fmtShortDateTime(followUp)}` : 'Yeni aksiyon için lead detayını kontrol et.';
-  }
-  return {
-    rank: rank + Number(lead.sales_priority_score || 0) / 100,
-    label,
-    detail,
-    followUp,
-    stage: workflow.stage || (last ? 'contacted' : 'verification_required'),
-    ready: Boolean(workflow.ready_to_contact || last),
-    completedToday: Boolean(last && isToday(last.date)),
-  };
 }
 
 export function manualVerificationDefaults(lead: Lead) {
