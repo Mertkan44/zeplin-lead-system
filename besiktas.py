@@ -24,20 +24,21 @@ CITY = "Istanbul Besiktas"
 MAX_RESULTS = 5
 
 # ── Scraper ────────────────────────────────────────────
-async def scrape(query, city, max_results):
+async def scrape(query, city, max_results, *, verbose=True):
+    log = print if verbose else lambda *_: None
     results = []
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=["--no-sandbox"])
         page = await browser.new_page()
         search = f"{query} {city}".replace(' ', '+')
-        print(f"🔍 {search}")
+        log(f"🔍 {search}")
         await page.goto(f"https://www.google.com/maps/search/{search}")
         await page.wait_for_timeout(3500)
         for _ in range(4):
             await page.keyboard.press("End")
             await page.wait_for_timeout(900)
         listings = await page.query_selector_all('a[href*="/maps/place/"]')
-        print(f"  → {len(listings)} sonuç")
+        log(f"  → {len(listings)} sonuç")
         for listing in listings[:max_results + 3]:
             try:
                 name = await listing.get_attribute("aria-label")
@@ -48,6 +49,55 @@ async def scrape(query, city, max_results):
                 continue
         await browser.close()
     return results[:max_results]
+
+async def audit_one(page, lead, *, verbose=True):
+    """Audit one listing; shared by the CLI and the durable worker."""
+    log = print if verbose else lambda *_: None
+    maps_data = await find_from_google_maps(page, lead["maps_url"], lead["name"], lead.get("city"))
+    log(f"  🌐 {maps_data.get('website_url') or '—'}")
+    log(f"  📞 {maps_data.get('phone') or '—'}")
+    log(f"  📍 {maps_data.get('address') or '—'}")
+    log(f"  ⭐ {maps_data.get('rating','—')} puan · {maps_data.get('review_count','?')} yorum")
+    log(f"  🏷️  {maps_data.get('category') or '—'}")
+
+    sector  = detect_sector(maps_data.get("category"))
+    website = await check_website(
+        maps_data.get("website_url"),
+        lookup_status=maps_data.get("website_lookup_status") or "unknown",
+    )
+    log(f"  📊 Schema:{website['has_schema']} | OG:{website['has_og']} | WA:{website['has_whatsapp']}")
+
+    instagram = await find_instagram(page, lead["name"], maps_data.get("website_url"))
+    ig_stats = {}
+    if instagram["has_instagram"] and instagram.get("instagram_username"):
+        log(f"  📊 Instagram istatistikleri alınıyor...")
+        ig_stats = await get_instagram_stats(page, instagram["instagram_username"])
+
+    log(f"  🎵 TikTok kontrol ediliyor...")
+    tiktok = await find_tiktok(page, lead["name"], website)
+
+    delivery = {}
+    if sector in ("restaurant", "cafe", "default"):
+        log(f"  🛵 Delivery kontrol ediliyor...")
+        delivery = await check_delivery(page, lead["name"], sector)
+
+    maps_data["delivery"] = delivery
+
+    lead_obj = normalize_lead({
+        **lead,
+        "sector":       sector,
+        "phone":        maps_data.get("phone"),
+        "address":      maps_data.get("address"),
+        "rating":       maps_data.get("rating"),
+        "review_count": maps_data.get("review_count"),
+        "category":     maps_data.get("category"),
+        "website":      website,
+        "social":       {**instagram, "stats": ig_stats, "tiktok": tiktok},
+        "delivery":     delivery,
+        "maps":         maps_data,
+        "scoring":      {},
+    })
+    return lead_obj
 
 # ── Dashboard ──────────────────────────────────────────
 def update_dashboard(data):
@@ -95,51 +145,7 @@ async def run(
                 audited.append(cached)
                 continue
 
-            maps_data = await find_from_google_maps(page, lead["maps_url"], name, lead.get("city"))
-            print(f"  🌐 {maps_data.get('website_url') or '—'}")
-            print(f"  📞 {maps_data.get('phone') or '—'}")
-            print(f"  📍 {maps_data.get('address') or '—'}")
-            print(f"  ⭐ {maps_data.get('rating','—')} puan · {maps_data.get('review_count','?')} yorum")
-            print(f"  🏷️  {maps_data.get('category') or '—'}")
-
-            sector  = detect_sector(maps_data.get("category"))
-            website = await check_website(
-                maps_data.get("website_url"),
-                lookup_status=maps_data.get("website_lookup_status") or "unknown",
-            )
-            print(f"  📊 Schema:{website['has_schema']} | OG:{website['has_og']} | WA:{website['has_whatsapp']}")
-
-            instagram = await find_instagram(page, name, maps_data.get("website_url"))
-            ig_stats = {}
-            if instagram["has_instagram"] and instagram.get("instagram_username"):
-                print(f"  📊 Instagram istatistikleri alınıyor...")
-                ig_stats = await get_instagram_stats(page, instagram["instagram_username"])
-
-            print(f"  🎵 TikTok kontrol ediliyor...")
-            tiktok = await find_tiktok(page, name, website)
-
-            delivery = {}
-            if sector in ("restaurant", "cafe", "default"):
-                print(f"  🛵 Delivery kontrol ediliyor...")
-                delivery = await check_delivery(page, name, sector)
-
-            maps_data["delivery"] = delivery
-
-            lead_obj = normalize_lead({
-                **lead,
-                "sector":       sector,
-                "phone":        maps_data.get("phone"),
-                "address":      maps_data.get("address"),
-                "rating":       maps_data.get("rating"),
-                "review_count": maps_data.get("review_count"),
-                "category":     maps_data.get("category"),
-                "website":      website,
-                "social":       {**instagram, "stats": ig_stats, "tiktok": tiktok},
-                "delivery":     delivery,
-                "maps":         maps_data,
-                "scoring":      {},
-            })
-            print(f"  💰 Tahmini değer: {lead_obj['estimated_value_tl']:,} TL/ay · {len(lead_obj['matched_services'])} hizmet eşleşti")
+            lead_obj = await audit_one(page, lead)
             audited.append(lead_obj)
             put_stage(name, "audited", lead_obj, city=city, query=query)
             await asyncio.sleep(1)
@@ -181,7 +187,7 @@ async def run(
             put_stage(lead["name"], "ai", lead, city=city, query=query)
 
     # 4. Birleştir
-    existing = json.load(open('leads_final.json', encoding='utf-8'))
+    existing = json.load(open('leads_final.json', encoding='utf-8')) if os.path.exists('leads_final.json') else []
     existing_map = {lead["name"]: lead for lead in existing}
     new_count = 0
     updated_count = 0

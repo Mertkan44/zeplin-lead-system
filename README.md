@@ -28,9 +28,10 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-The current code requires migration 011. Always apply new migrations before
-deploying the code that needs them; every migration also works with the previous
-code version.
+The current code requires migration 012. Always apply new migrations before
+deploying the code that needs them. For migration 012, pause and drain the old
+search worker first: the CRM API remains compatible, but the old unfenced worker
+claim is deliberately disabled. See [Worker rollout](docs/worker-rollout.md).
 
 Migration 011 ties AI generations to their input and records every provider call;
 see "AI generations and costs". It removes nothing, so it can be applied through the
@@ -237,7 +238,7 @@ manual checks 90 days, Places 30 days, scrape 90 days. An expired manual check h
 to be done again before the lead is ready to contact.
 
 In production, `.github/workflows/process-search-jobs.yml` checks Supabase every
-15 minutes and atomically claims up to three queued admin search jobs. Add these GitHub Actions
+15 minutes and processes up to three jobs, claiming each only when ready to run it. Add these GitHub Actions
 secrets before relying on the automatic worker:
 
 ```bash
@@ -356,3 +357,41 @@ so current statuses are shown as a distribution, not a conversion funnel.
 
 See `SECURITY.md` for the secret and data history of this repository and the
 remaining owner actions.
+
+## Durable search worker (WP12)
+
+Migration 012 adds job ownership (`lease_owner`, `lease_until`), a heartbeat every
+30 seconds, current stage and completed-business counts, and remote per-business
+checkpoints. A lease expires after three minutes without a heartbeat; the next
+scheduled worker resumes it. Waiting jobs stay queued, not "running". No local
+lead export is needed by Actions, and the worker does not write raw leads or AI
+texts to local caches or print contact details.
+
+The result set and researched input are frozen for the job. AI uses the same
+effective-facts policy as the panel (manual corrections and Places included);
+its private input snapshot is never written back as scrape facts. Email generation
+is skipped when the findings do not support an email. Audit, research,
+brief, report, email and final sync are checkpointed independently; retries skip
+finished stages and use the shared generation cache. Audited leads are saved
+before AI, so useful partial results survive. Lead writes and checkpoints share
+one database transaction, check live ownership, and preserve CRM status and older
+reports until replacements are available. Job → checkpoint → lead and usage
+(job_id, lead_id, cache_key) connect the operation to each generation and cost.
+
+Jobs have at most three attempts. A transient error enters `retry_wait` (minimum
+backoff 60/120 seconds; the actual retry waits for the next Actions run). At the
+cap, saved leads produce `partial_success`, otherwise `failed`. Cancelling a job
+revokes ownership immediately and is idempotent. An in-flight provider request
+may still finish and be billed; a subsequent paid fallback requires a live job
+lease. Failed worker generations also have a three-attempt cap **per input**;
+a provider attempt may use the existing model fallback, so this is not a promise
+of three HTTP requests or exactly-once billing. If a process dies after a provider
+charged it but before its answer was stored, replay is bounded rather than free.
+
+The admin queue polls while jobs are active and shows progress, heartbeat,
+retry time, partial failures and cancellation. Its summary counts queued and
+stalled jobs, queue age, failed generations, and provider errors in the last
+24 hours. Usage-ledger persistence errors are visible without repeating a paid
+call. Reservations close in the same transaction as a terminal transition.
+Schema readiness is checked before Actions claims any work. Release, monitoring
+and backup/restore automation are the next work package (WP15).
