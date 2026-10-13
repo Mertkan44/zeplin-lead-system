@@ -130,6 +130,25 @@ class GenerationTests(unittest.TestCase):
         self.report({**LEAD, "website": {"website_url": "https://new-site.example"}})
         self.assertEqual(self.provider.calls, 2)
 
+    def test_checkpoint_jsonb_key_order_does_not_repeat_a_paid_call(self):
+        lead = {**LEAD, "research": {
+            **LEAD["research"], "website": {"excerpt": "Verified clinic", "emails": ["info@example.com"]},
+        }}
+        first = self.report(lead)
+        restored = json.loads(json.dumps(lead, sort_keys=True))
+        self.assertEqual(self.report(restored), first)
+        self.assertEqual(self.provider.calls, 1)
+        self.assertEqual(generator.ai_input_fingerprint(lead), generator.ai_input_fingerprint(restored))
+
+    def test_ready_report_workflow_does_not_invalidate_itself(self):
+        lead = {**LEAD, "next_action": "Prepare research", "priority_reason": "Report is missing"}
+        report = self.report(lead)
+        ready = {**lead, "ai_report": report, "ai_input_hash": generator.ai_input_fingerprint(lead),
+                 "next_action": "Call the prospect", "priority_reason": "Report is ready"}
+        self.assertEqual(generator.ai_state(ready), "current")
+        self.assertEqual(self.report(ready), report)
+        self.assertEqual(self.provider.calls, 1)
+
     def test_places_bookkeeping_alone_is_not_new_input(self):
         self.report()
         touched = json.loads(json.dumps(LEAD))
