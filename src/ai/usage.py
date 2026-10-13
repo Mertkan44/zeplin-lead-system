@@ -57,11 +57,12 @@ def record(
     cache_key: str | None = None,
     error: str | None = None,
     meta: dict[str, Any] | None = None,
+    attempted_at: datetime | None = None,
 ) -> dict[str, Any]:
     """Write one usage row. outcome: success | empty | error | cache_hit."""
     context = current()
     split = usage_split(usage)
-    rates = rates_for(provider, model) if outcome in PAID_OUTCOMES else None
+    rates = rates_for(provider, model, at=attempted_at) if outcome in PAID_OUTCOMES else None
     cost = cost_usd(split, rates) if outcome in PAID_OUTCOMES and split["total_tokens"] else (0 if outcome == "cache_hit" else None)
     row = {
         "kind": "usage",

@@ -70,7 +70,9 @@ class FakeRemote:
         self.ledger.append(row)
 
     def fetch_model_rates(self):
-        return []
+        return [dict(provider='deepseek', model=model, effective_from='2026-01-01',
+                     input_usd_per_m=0.3, cached_input_usd_per_m=0.006, output_usd_per_m=1.2)
+                for model in ('deepseek-v4-pro', 'deepseek-v4-flash')]
 
     def fetch_spend_summary(self, *, today_start=None):
         return {"today_cost_usd": self.today_cost}
@@ -247,7 +249,7 @@ class ProviderAttemptTests(unittest.TestCase):
                          [("deepseek-v4-pro", "empty"), ("deepseek-v4-flash", "success")])
         self.assertEqual(rows[0]["prompt_tokens"], 900)
         self.assertIsNotNone(rows[0]["actual_cost_usd"])
-        self.assertEqual(rows[1]["rates"]["source"], "settings")
+        self.assertEqual(rows[1]["rates"]["source"], "ai_model_rates")
 
     def test_failed_request_is_recorded_before_the_fallback(self):
         result = self._run([(500, {"error": "boom"}), self._reply("tamam", 800)])
@@ -299,12 +301,16 @@ class AdminEstimateTests(unittest.TestCase):
         return captured
 
     def test_panel_estimate_is_the_reserved_estimate(self):
-        shown = self._get("/api/admin_search?estimate=1&max_results=12&deep_research=0&ai_mode=pro")["payload"]["estimate"]
-        with patch("src.storage.supabase.is_enabled", return_value=False):
+        row=dict(provider='deepseek',model='deepseek-v4-pro',effective_from='2026-01-01',
+                 input_usd_per_m=1.32,cached_input_usd_per_m=0.044,output_usd_per_m=3.96,
+                 off_peak_multiplier=0.5,pricing_policy='deepseek_peak_2026')
+        with patch.object(pricing,'_table_rows',return_value=[row]):
+            shown = self._get("/api/admin_search?estimate=1&max_results=12&deep_research=0&ai_mode=pro")["payload"]["estimate"]
             reserved = admin_search_api.estimate_search_tokens(max_results=12, deep_research=False, ai_mode="pro")
         self.assertEqual(shown, reserved)
         self.assertEqual(shown["estimated_tokens"], 12 * 5200)
         self.assertTrue(shown["priced"])
+        self.assertEqual(shown["estimated_cost_usd"],0.1236)
 
     def test_invalid_mode_is_rejected(self):
         self.assertEqual(self._get("/api/admin_search?estimate=1&ai_mode=turbo")["status"], 400)

@@ -1,8 +1,7 @@
 """Provider prices and token accounting for AI calls.
 
 Rates come from `ai_model_rates` (provider + model + start date, entered from
-the provider's official price list). Without a row, DeepSeek falls back to the
-DEEPSEEK_*_USD_PER_M_TOKENS settings; other providers stay unpriced (cost
+the provider's official price list). Unknown models stay unpriced (cost
 None) rather than guessed. Every result says which source it used, so a
 ledger row can be reconciled with the provider's invoice later.
 """
@@ -11,10 +10,11 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from src.config import env
+from src.ai.billing_calendar import billing_period
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +22,6 @@ logger = logging.getLogger(__name__)
 ESTIMATE_INPUT_SHARE = 0.75
 ESTIMATE_TOKENS_PER_LEAD = {True: 9000, False: 5200}  # deep research on / off
 
-_SETTINGS_RATES = {
-    "deepseek": (
-        ("DEEPSEEK_INPUT_USD_PER_M_TOKENS", "0.28"),
-        ("DEEPSEEK_CACHED_INPUT_USD_PER_M_TOKENS", "0.028"),
-        ("DEEPSEEK_OUTPUT_USD_PER_M_TOKENS", "0.42"),
-    ),
-}
 _RATE_TTL_SECONDS = 600
 _rate_rows: tuple[float, list[dict[str, Any]]] | None = None
 
@@ -69,9 +62,14 @@ def _table_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def rates_for(provider: str, model: str | None, *, on: date | None = None) -> dict[str, Any] | None:
+def rates_for(provider: str, model: str | None, *, on: date | None = None,
+              at: datetime | None = None, for_estimate: bool = False) -> dict[str, Any] | None:
     """USD per million tokens: {input, cached_input, output, source, effective_from}."""
-    on = on or date.today()
+    date_only = on is not None and at is None
+    at = at or datetime.now(timezone.utc)
+    if at.tzinfo is None:
+        raise ValueError("Pricing timestamp must include a timezone")
+    on = on or at.astimezone(timezone.utc).date()
     candidates = [
         row for row in _table_rows()
         if row.get("provider") == provider and row.get("model") == model
@@ -79,18 +77,29 @@ def rates_for(provider: str, model: str | None, *, on: date | None = None) -> di
     ]
     if candidates:
         row = max(candidates, key=lambda item: str(item.get("effective_from")))
+        multiplier = 1.0
+        period = "flat"
+        if row.get("pricing_policy") == "deepseek_peak_2026":
+            if date_only and not for_estimate:
+                return None
+            # A queued job may begin in a different billing window: reserve peak.
+            period = "peak_upper_bound" if for_estimate else billing_period(at)
+            if period is None:
+                return None
+            if period == "off_peak":
+                multiplier = float(row["off_peak_multiplier"])
+        elif row.get("pricing_policy"):
+            return None  # Unknown policy is not silently treated as flat pricing.
         return {
-            "input": float(row["input_usd_per_m"]),
-            "cached_input": float(row["cached_input_usd_per_m"]),
-            "output": float(row["output_usd_per_m"]),
+            "input": float(row["input_usd_per_m"]) * multiplier,
+            "cached_input": float(row["cached_input_usd_per_m"]) * multiplier,
+            "output": float(row["output_usd_per_m"]) * multiplier,
             "source": "ai_model_rates",
             "effective_from": str(row.get("effective_from")),
+            "billing_period": period,
+            "priced_at": at.astimezone(timezone.utc).isoformat(),
         }
-    settings = _SETTINGS_RATES.get(provider)
-    if not settings:
-        return None
-    values = [float(env(name, default) or default) for name, default in settings]
-    return {"input": values[0], "cached_input": values[1], "output": values[2], "source": "settings", "effective_from": None}
+    return None  # A generic legacy rate must not price an unknown model.
 
 
 def cost_usd(split: dict[str, int], rates: dict[str, Any] | None) -> float | None:
@@ -113,7 +122,7 @@ def models_for_mode(ai_mode: str) -> list[str]:
 def estimate_search(*, max_results: int, deep_research: bool, ai_mode: str) -> dict[str, Any]:
     """The one estimate for a search job: shown in the panel and stored as the reservation."""
     tokens = max(1, int(max_results)) * ESTIMATE_TOKENS_PER_LEAD[bool(deep_research)]
-    rates = [rates_for("deepseek", model) for model in models_for_mode(ai_mode)]
+    rates = [rates_for("deepseek", model, for_estimate=True) for model in models_for_mode(ai_mode)]
     cost = None
     if all(rates):
         blended = sum(

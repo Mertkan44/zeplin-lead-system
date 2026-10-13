@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 import httpx
@@ -120,6 +121,7 @@ def _deepseek_chat(
         from src.ai.usage import check_job_lease
         check_job_lease()
         attempt_model = request_payload["model"]
+        attempted_at = datetime.now(timezone.utc)
         try:
             with httpx.Client(timeout=90) as client:
                 response = client.post(
@@ -134,10 +136,10 @@ def _deepseek_chat(
             content = ((data["choices"][0].get("message") or {}).get("content") or "").strip()
         except Exception as exc:
             _report(on_attempt, provider="deepseek", model=attempt_model, outcome="error", usage=None,
-                    error=f"{type(exc).__name__}: {exc}"[:300])
+                    error=f"{type(exc).__name__}: {exc}"[:300], attempted_at=attempted_at)
             raise
         _report(on_attempt, provider="deepseek", model=attempt_model,
-                outcome="success" if content else "empty", usage=data.get("usage"), error=None)
+                outcome="success" if content else "empty", usage=data.get("usage"), error=None, attempted_at=attempted_at)
         return content, data.get("usage")
 
     try:
