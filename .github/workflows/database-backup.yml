@@ -2,6 +2,12 @@ name: Encrypted database backup
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Synthetic rehearsal or configured production backup
+        type: choice
+        default: rehearsal
+        options: [rehearsal, production]
   schedule:
     # 02:30 Europe/Istanbul; UTC+3 throughout the year.
     - cron: '30 23 * * *'
@@ -16,7 +22,7 @@ concurrency:
 jobs:
   backup:
     # Explicit activation follows safe secret setup and the first restore proof.
-    if: github.ref == 'refs/heads/main' && vars.BACKUP_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && vars.BACKUP_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'production')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container: public.ecr.aws/docker/library/postgres:17
@@ -41,5 +47,35 @@ jobs:
             ${{ steps.archive.outputs.archive }}
             ${{ steps.archive.outputs.sidecar }}
           retention-days: ${{ steps.archive.outputs.retention }}
+          if-no-files-found: error
+          compression-level: 0
+  rehearsal:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.mode == 'rehearsal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: public.ecr.aws/docker/library/postgres:17
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install encryption and Python
+        run: apt-get update -qq && apt-get install -y --no-install-recommends python3 age ca-certificates
+      - name: Start isolated PostgreSQL
+        run: |
+          install -d -o postgres -g postgres /tmp/zeplin-rehearsal-pg
+          runuser -u postgres -- initdb -D /tmp/zeplin-rehearsal-pg -U postgres --auth=trust
+          runuser -u postgres -- pg_ctl -D /tmp/zeplin-rehearsal-pg -l /tmp/zeplin-rehearsal-pg/server.log -o '-p 55434 -h 127.0.0.1' start
+      - name: Synthetic encrypted backup, safe decrypt and empty restore
+        id: archive
+        run: python3 scripts/encrypted_backup_rehearsal.py --dsn postgresql://postgres@127.0.0.1:55434/postgres --directory /tmp/zeplin-encrypted-rehearsal
+      - name: Verify artifact upload using only synthetic encrypted data
+        uses: actions/upload-artifact@v7
+        with:
+          name: zeplin-synthetic-encrypted-rehearsal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.archive.outputs.archive }}
+            ${{ steps.archive.outputs.sidecar }}
+          retention-days: 1
           if-no-files-found: error
           compression-level: 0

@@ -2,6 +2,9 @@
 
 Akış hazırdır; `BACKUP_ENABLED=false` iken yedek işi atlanır. Günlük yedek
 aldığı ancak ilk gerçek başarılı run ve restore provası tamamlanınca söylenir.
+Manuel workflow varsayılanı `rehearsal`: yalnız sentetik DB ve geçici anahtar
+kullanır, production secrets almaz. `production` seçimi ayrıca etkinlik koşulunu
+ister. Böylece şifreleme/açma/restore ve artifact yükleme yolu güvenle prova edilir.
 Supabase hesabı 13 Ekim 2026 kontrolünde Free plandır; Pro'nun otomatik
 [sağlayıcı yedeği](https://supabase.com/docs/guides/platform/backups) etkin değildir.
 
