@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from urllib.parse import quote_plus, urlparse
 from playwright.async_api import async_playwright
 from rich.console import Console
-from src.audit.website import audit_website
+from src.audit.website import audit_website, is_vendor_social_link
 
 console = Console()
 
@@ -340,43 +340,22 @@ async def check_website(
 
 # ── TikTok bul ─────────────────────────────────────────
 async def find_tiktok(page, business_name: str, website_data: dict) -> dict:
-    result = {"has_tiktok": False, "tiktok_url": None, "tiktok_username": None}
+    result = {"has_tiktok": None, "tiktok_url": None, "tiktok_username": None}
 
     # 1. Website'te link varsa al
     if website_data.get("tiktok_url"):
-        m = re.search(r'tiktok\.com/@([a-zA-Z0-9_.]{2,30})', website_data["tiktok_url"])
-        if m:
+        link = website_data["tiktok_url"]
+        parsed = urlparse(link)
+        m = re.match(r'^/@([a-zA-Z0-9_.]{2,30})(?:/|$)', parsed.path)
+        if ((parsed.hostname or '').lower().removeprefix('www.') == 'tiktok.com'
+                and m and not is_vendor_social_link(link)):
             result.update(has_tiktok=True, tiktok_url=website_data["tiktok_url"],
                           tiktok_username=m.group(1))
             console.print(f"    [green]✓ TikTok (site): @{m.group(1)}[/green]")
             return result
 
-    # 2. Handle tahmin et
-    clean = re.sub(r'[^a-z0-9\s]', '',
-        business_name.lower()
-        .replace('ı','i').replace('ğ','g').replace('ü','u')
-        .replace('ş','s').replace('ö','o').replace('ç','c'))
-    words = clean.split()
-    candidates = [''.join(words), '_'.join(words), words[0] if words else '',
-                  ''.join(words[:2]) if len(words) >= 2 else '']
-    candidates = [c for c in set(candidates) if len(c) >= 3]
-
-    async with httpx.AsyncClient(timeout=6, follow_redirects=True) as client:
-        hdrs = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)"}
-        for u in candidates[:4]:
-            try:
-                resp = await client.get(f"https://www.tiktok.com/@{u}", headers=hdrs)
-                # 200 ve profil sayfası
-                if resp.status_code == 200 and '"uniqueId"' in resp.text:
-                    result.update(has_tiktok=True,
-                                  tiktok_url=f"https://www.tiktok.com/@{u}",
-                                  tiktok_username=u)
-                    console.print(f"    [green]✓ TikTok: @{u}[/green]")
-                    return result
-                await asyncio.sleep(0.3)
-            except:
-                continue
-
+    # A guessed handle and an HTTP 200 profile do not establish business identity.
+    # Without a first-party link, absence is unknown rather than a confirmed gap.
     return result
 
 # ── Delivery platformları (restoran/cafe için) ─────────
@@ -462,7 +441,7 @@ async def find_instagram(page, business_name: str, website_url: str = None) -> d
             await page.goto(website_url, wait_until="domcontentloaded")
             await page.wait_for_timeout(2000)
             for m in re.findall(r'instagram\.com/([a-zA-Z0-9_.]{2,30})/?', await page.content()):
-                if m not in bl:
+                if m not in bl and not is_vendor_social_link(f"https://www.instagram.com/{m}/"):
                     result.update(has_instagram=True,
                                   instagram_url=f"https://www.instagram.com/{m}/",
                                   instagram_username=m,

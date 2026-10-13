@@ -41,7 +41,7 @@ SECTOR_VOICE = {
     ),
 }
 
-AI_PROMPT_VERSION = 7
+AI_PROMPT_VERSION = 8
 # Changes whenever the service catalog the prompts quote changes.
 CATALOG_VERSION = cache.fingerprint(ZEPLIN_SERVICES)[:16]
 
@@ -165,11 +165,13 @@ def _lead_context(lead: dict[str, Any]) -> str:
             for service in (lead.get("matched_services") or [])[:6]
         ],
         "service_recommendation": service_recommendation,
-        "next_action": lead.get("next_action"),
-        "priority_reason": lead.get("priority_reason"),
+        # These workflow fields change when AI text becomes ready. Including
+        # them would invalidate the text as a consequence of its own creation.
         "research": _stable_research(lead.get("research")),
     }
-    return json.dumps(context, ensure_ascii=False, indent=2)
+    # jsonb round trips reorder nested objects; the resumed worker must send
+    # the same request and reuse the same paid generation key.
+    return json.dumps(context, ensure_ascii=False, sort_keys=True, indent=2)
 
 
 def _stable_research(research: Any) -> Any:

@@ -7,7 +7,7 @@ import statistics
 import time
 from datetime import datetime, timezone
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -301,6 +301,14 @@ def _same_host(base: str, candidate: str) -> bool:
         return False
 
 
+def is_vendor_social_link(url: str) -> bool:
+    """Wix's template footer accounts do not identify the local business."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    account = unquote(parsed.path).strip("/").split("/")[0].lstrip("@").casefold()
+    return host in {"instagram.com", "facebook.com", "tiktok.com"} and account == "wix"
+
+
 def _social_links(soup: BeautifulSoup, host: str) -> list[str]:
     values: list[str] = []
     for anchor in soup.find_all("a", href=True):
@@ -308,6 +316,8 @@ def _social_links(soup: BeautifulSoup, host: str) -> list[str]:
         parsed = urlparse(href)
         normalized_host = (parsed.hostname or "").lower()
         if normalized_host == host or normalized_host == f"www.{host}":
+            if is_vendor_social_link(href):
+                continue
             clean = href.split("?", 1)[0]
             if clean not in values:
                 values.append(clean)
