@@ -1,0 +1,45 @@
+name: Encrypted database backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 02:30 Europe/Istanbul; UTC+3 throughout the year.
+    - cron: '30 23 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zeplin-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    # Explicit activation follows safe secret setup and the first restore proof.
+    if: github.ref == 'refs/heads/main' && vars.BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container: public.ecr.aws/docker/library/postgres:17
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install encryption and Python
+        run: apt-get update -qq && apt-get install -y --no-install-recommends python3 age ca-certificates
+      - name: Take and encrypt backup
+        id: archive
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+        run: python3 scripts/encrypted_backup.py --directory /tmp/zeplin-encrypted
+      - name: Upload only encrypted data
+        uses: actions/upload-artifact@v7
+        with:
+          name: zeplin-encrypted-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.archive.outputs.archive }}
+            ${{ steps.archive.outputs.sidecar }}
+          retention-days: ${{ steps.archive.outputs.retention }}
+          if-no-files-found: error
+          compression-level: 0

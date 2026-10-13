@@ -58,6 +58,9 @@ kullanmaz; kullanıcı rolünün uçtan uca kontrolü staging'de yapılır.
 
 ## Yedek alma ve geri yükleme provası
 
+Günlük şifreli GitHub yedek akışı ve bir defalık güvenli bağlantı kurulumu:
+[günlük yedekleme](daily-backups.md). Kurulum doğrulanana kadar schedule kapalıdır.
+
 Yedekler müşteri iletişim bilgilerini ve uygulama kullanıcılarının parola hash'lerini
 barındırır. Git'e, CI artifact'ına veya sohbete konulmaz. İzinler 0600; yeni dizin
 0700. Bu dosya şifrelenmiş bir diskte veya kurumun şifreli yedek deposunda tutulmalı;
