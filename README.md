@@ -28,7 +28,7 @@ hand-edited source. Every migration is idempotent.
   Re-running one that is already applied is safe. Older projects bootstrapped with
   the removed `apply_live_schema.sql` are covered by migrations 003–005.
 
-The current code requires migration 014. Always apply new migrations before
+The current code requires migration 016. Always apply new migrations before
 deploying the code that needs them. Migration 012 requires the controlled worker
 rollout in `docs/worker-rollout.md`; the old worker must be paused first.
 
@@ -119,8 +119,9 @@ Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
   `ai_spend_summary()` totals the whole ledger in the database.
 - **Prices:** `ai_model_rates` (provider, model, start date, input / cached input /
   output USD per million tokens). Enter rows from the provider's official price list;
-  without a row DeepSeek falls back to `DEEPSEEK_*_USD_PER_M_TOKENS`, other providers
-  stay unpriced (counted as `unpriced_calls`, never guessed). The panel's job estimate
+  migration 016 includes verified DeepSeek tariffs and the peak/off-peak policy.
+  Unknown models stay unpriced (counted as `unpriced_calls`, never guessed).
+  See [tariff sources and calendar limits](docs/deepseek-pricing.md). The panel's job estimate
   comes from the API and is the same figure the job reserves.
 - **Budget (optional):** set `AI_DAILY_BUDGET_USD` to refuse new paid calls once
   today's spend (Istanbul day) reaches it; cache hits still work. Unset means no cap.
