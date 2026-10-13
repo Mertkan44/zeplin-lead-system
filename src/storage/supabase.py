@@ -664,7 +664,7 @@ def set_app_user_active(email: str, active: bool) -> None:
 ASSIGNMENT_STATUSES = {"active", "done", "snoozed", "archived"}
 
 
-REQUIRED_SCHEMA_VERSION = "014"
+REQUIRED_SCHEMA_VERSION = "016"
 
 
 def fetch_schema_readiness() -> dict[str, Any]:
@@ -702,6 +702,9 @@ def schema_status() -> dict[str, Any]:
             raw["checks"] = {**(raw.get("checks") or {}), **team_rpc("team_schema_readiness")}
         except Exception:
             raw["checks"] = {**(raw.get("checks") or {}), "team_schema_readiness": False}
+    if str(raw.get("version") or "") >= "016":
+        checks = _rpc("pricing_schema_readiness", {})
+        raw = {**raw, "checks": {**(raw.get("checks") or {}), **(checks or {"time_based_pricing": False})}}
     return evaluate_schema_readiness(raw)
 
 
@@ -1246,7 +1249,7 @@ def fetch_model_rates() -> list[dict[str, Any]]:
         response = client.get(
             _postgrest_url(
                 config, "ai_model_rates",
-                "select=provider,model,effective_from,input_usd_per_m,cached_input_usd_per_m,output_usd_per_m",
+                "select=provider,model,effective_from,input_usd_per_m,cached_input_usd_per_m,output_usd_per_m,off_peak_multiplier,pricing_policy",
             ),
             headers=_headers(config),
         )
